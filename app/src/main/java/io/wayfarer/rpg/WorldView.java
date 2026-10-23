@@ -8,7 +8,7 @@ import java.util.*;
 
 /** Native landscape canvas with fixed-step simulation and independent multi-touch pointers. */
 public final class WorldView extends View implements Choreographer.FrameCallback {
-    public interface Host {void save();void slots();void help();void confirmAbandon();void sound(String event);}
+    public interface Host {void save();void slots();void help();void confirmAbandon();void sound(String event);void editCharacter();void talent(int id);void resetTalents();}
     private final Host host;
     public ActionGame game;
     private final ActionGame.Input input=new ActionGame.Input();
@@ -21,13 +21,13 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     private long lastFrame=0;
     private float accumulator=0,saveElapsed=0,visualTime=0,shake=0;
     private boolean running=false;
-    public boolean soundOn=true;
+    public boolean soundOn=true,showTalents=false,customRoster=false;
     private int bg=Color.rgb(13,24,29),cream=Color.rgb(232,228,202),muted=Color.rgb(155,180,171),gold=Color.rgb(222,186,111);
     private static final class Fx {String kind;float x,y,life,max,vx,vy;int value,color;Fx(String k,float x,float y,float life,int value,int color){kind=k;this.x=x;this.y=y;this.life=life;max=life;this.value=value;this.color=color;}}
     public WorldView(Context c,ActionGame game,Host host){super(c);this.game=game;this.host=host;setFocusable(true);setFocusableInTouchMode(true);setContentDescription("灯下归途：横屏即时动作地牢。左侧摇杆移动，右侧攻击、闪避、技能和药水。暂停键位于右上角。");}
     public void startFrames(){if(!running){running=true;lastFrame=0;Choreographer.getInstance().postFrameCallback(this);}}
     public void stopFrames(){running=false;lastFrame=0;resetInput();Choreographer.getInstance().removeFrameCallback(this);}
-    public void replace(ActionGame restored){game=restored;effects.clear();resetInput();if(game.mode==ActionGame.Mode.PLAY)game.pause();invalidate();}
+    public void replace(ActionGame restored){game=restored;showTalents=false;customRoster=game.custom>=0;effects.clear();resetInput();if(game.mode==ActionGame.Mode.PLAY)game.pause();invalidate();}
     public void resetInput(){movePointer=-1;attackPointer=-1;joyX=0;joyY=0;input.mx=0;input.my=0;input.attack=false;}
     @Override public void onWindowFocusChanged(boolean hasFocus){super.onWindowFocusChanged(hasFocus);if(!hasFocus){resetInput();game.pause();host.save();}lastFrame=0;}
     @Override public void doFrame(long now){
@@ -52,7 +52,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
                 Fx f=new Fx("number",s.x,s.y-30,.7f,s.value,s.kind.equals("hurt")?0xFFFF917E:s.kind.equals("heal")?0xFFB4E9BA:cream);f.vy=-35;effects.add(f);
                 if(s.kind.equals("hurt"))shake=5;
                 for(int i=0;i<6;i++){Fx spark=new Fx("spark",s.x,s.y,.2f+cosmetic.nextFloat()*.2f,0,s.kind.equals("hurt")?0xFFCE705C:gold);spark.vx=(cosmetic.nextFloat()-.5f)*180;spark.vy=(cosmetic.nextFloat()-.5f)*180;effects.add(spark);}
-            }else if(s.kind.equals("skill")||s.kind.equals("slam")||s.kind.equals("clear"))effects.add(new Fx("ring",s.x,s.y,.45f,s.kind.equals("slam")?185:140,s.kind.equals("slam")?0xFFDC7053:0xFFBCE8C5));
+            }else if(s.kind.equals("skill")||s.kind.equals("slam")||s.kind.equals("clear")||s.kind.equals("echo")||s.kind.equals("shield"))effects.add(new Fx("ring",s.x,s.y,.45f,s.kind.equals("slam")?185:s.kind.equals("echo")?s.value:s.kind.equals("shield")?45:140,s.kind.equals("slam")?0xFFDC7053:0xFFBCE8C5));
             else if(s.kind.equals("coin"))effects.add(new Fx("spark",s.x,s.y,.25f,0,gold));
         }
         game.signals.clear();while(effects.size()>140)effects.remove(0);
@@ -68,7 +68,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     @Override protected void onDraw(Canvas canvas){
         super.onDraw(canvas);canvas.drawColor(bg);scale=Math.min(getWidth()/960f,getHeight()/540f);offsetX=(getWidth()-960*scale)/2;offsetY=(getHeight()-540*scale)/2;
         canvas.save();canvas.translate(offsetX,offsetY);canvas.scale(scale,scale);canvas.clipRect(0,0,960,540);
-        if(game.mode==ActionGame.Mode.CAMP)camp(canvas);else{
+        if(game.mode==ActionGame.Mode.CAMP){if(showTalents)talentTree(canvas);else camp(canvas);}else{
             dungeon(canvas);hud(canvas);
             if(game.mode==ActionGame.Mode.PLAY)controls(canvas);
             else if(game.mode==ActionGame.Mode.REWARD)rewards(canvas);
@@ -83,22 +83,59 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         glow(c,480,320,250,0x554C8B77);glow(c,480,320,100,0x66EDB16B);
         for(int i=0;i<7;i++){float a=visualTime*1.5f+i*2;circle(c,470+i*4,310-(visualTime*25+i*13)%80,2,0xFFDEAF76);}
         text(c,"灯 下 归 途",44,62,33,cream,false);text(c,"WAYFARER  /  ACTION RPG KIT",46,88,12,muted,false);
-        text(c,"选择守灯者，穿过五重庭院。每次归来，都让灯火更亮。",46,125,16,muted,false);
+        text(c,"选择守灯者，穿过五重庭院。每次归来，都让灯火更亮。",46,112,14,muted,false);
         text(c,"共享余烬  "+game.bank,820,51,19,gold,true);text(c,"远征 "+game.runs+"  ·  通关 "+game.wins,770,83,13,muted,false);
+        button(c,40,126,130,32,"预设角色",!customRoster);button(c,185,126,130,32,"我的角色",customRoster);
+        text(c,"当前："+game.heroName()+"  ·  可用天赋点 "+game.availablePoints(),350,148,14,gold,false);
         String[] detail={"弧形三连斩 · 震地技能","自动瞄准射击 · 扇形箭雨","高速连击 · 环刃与无敌"};
         for(int i=0;i<3;i++){
-            float bx=40+i*300;rounded(c,bx,170,280,165,12,i==game.hero?0xFF38534E:0xE0203438);
-            if(i==game.hero)box(c,bx,185,3,135,0xFFBED9A3);
-            sprite(c,bx+45,252,i,0,1,false,2.0f,0);
-            text(c,ActionGame.HERO_NAMES[i],bx+91,214,22,cream,false);text(c,"Lv. "+(1+Math.min(19,game.experience[i]/80)),bx+92,239,14,gold,false);
-            text(c,detail[i],bx+20,299,14,muted,false);text(c,i==game.hero?"已选择":"点击选择",bx+235,320,12,i==game.hero?gold:muted,true);
+            float bx=40+i*300;BuildSystem.Profile look=customRoster?game.profiles[i]:null;
+            boolean selected=customRoster?game.custom==i:game.custom<0&&game.hero==i;
+            rounded(c,bx,170,280,165,12,selected?0xFF38534E:0xE0203438);
+            if(selected)box(c,bx,185,3,135,0xFFBED9A3);
+            sprite(c,bx+40,252,look==null?i:look.weapon,0,1,false,1.7f,0,look);
+            text(c,look==null?ActionGame.HERO_NAMES[i]:look.name,bx+90,211,look==null?22:17,cream,false);
+            text(c,"Lv. "+(1+Math.min(19,(look==null?game.experience[i]:look.xp)/80)),bx+92,239,14,gold,false);
+            text(c,look==null?detail[i]:BuildSystem.WEAPONS[look.weapon],bx+20,283,14,muted,false);
+            if(look!=null)text(c,"技能："+BuildSystem.SKILLS[look.skill].split(" · ")[0],bx+20,305,13,gold,false);
+            text(c,selected?"已选择":"点击选择",bx+235,320,12,selected?gold:muted,true);
         }
         button(c,40,365,280,57,"磨刃 +2  ·  "+(game.power>=10?"MAX":game.upgradeCost(game.power)+" 余烬"),false);
         button(c,340,365,280,57,"护火 +10 HP  ·  "+(game.vitality>=10?"MAX":game.upgradeCost(game.vitality)+" 余烬"),false);
         text(c,"永久攻击 "+game.power+"/10     永久生命 "+game.vitality+"/10",40,445,13,muted,false);
         button(c,660,365,260,80,"踏入长夜  →",true);
-        button(c,40,474,130,42,"存档",false);button(c,185,474,130,42,"操作说明",false);
-        text(c,game.notice,340,500,14,muted,false);
+        text(c,game.notice.length()>54?game.notice.substring(0,54):game.notice,40,465,12,muted,false);
+        button(c,40,480,100,42,"存档",false);button(c,155,480,110,42,"操作说明",false);
+        button(c,280,480,155,42,"角色工坊",false);button(c,450,480,175,42,"技能树 · "+game.availablePoints(),true);
+        text(c,"营地可免费改造与重置天赋",650,506,13,muted,false);
+    }
+    public boolean closeWorkshop(){if(showTalents){showTalents=false;invalidate();return true;}return false;}
+    public void drawPortrait(Canvas c,float x,float y,float size,BuildSystem.Profile profile){sprite(c,x,y,profile.weapon,0,1,false,size,0,profile);}
+    private float[] nodeRect(int id){float bx=50+(id/4)*305;int tier=id%4;return new float[]{bx+(tier==3?130:0),tier==0?135:tier==1?238:350,tier<2?250:120,tier<2?67:83};}
+    private void talentTree(Canvas c){
+        box(c,0,0,960,540,0xFF12282D);glow(c,480,270,370,0x223E8976);
+        text(c,game.heroName()+" · 天赋星图",40,48,27,cream,false);
+        text(c,"Lv."+game.heroLevel()+"  ·  经验 "+game.heroXp()+"  ·  可用 "+game.availablePoints()+" / 总点数 "+BuildSystem.points(game.heroXp()),40,80,15,gold,false);
+        button(c,855,15,88,45,"返回",false);
+        for(int b=0;b<3;b++){
+            float x=50+b*305;int tint=new int[]{0xFFE3B17D,0xFF99CEC8,0xFFC4B5DC}[b];
+            text(c,BuildSystem.BRANCHES[b],x+125,119,17,tint,true);
+            line(c,x+125,202,x+125,238,0xFF486561,3);
+            line(c,x+125,305,x+125,326,0xFF486561,3);line(c,x+60,326,x+190,326,0xFF486561,3);
+            line(c,x+60,326,x+60,350,0xFF486561,3);line(c,x+190,326,x+190,350,0xFF486561,3);
+            for(int k=0;k<4;k++){
+                int id=b*4+k,r=game.rank(id);BuildSystem.Node n=BuildSystem.NODES[id];float[] a=nodeRect(id);
+                String reason=BuildSystem.lockReason(game.talents[game.buildId()],game.heroXp(),id);
+                rounded(c,a[0],a[1],a[2],a[3],9,r>0?0xFF36554F:reason.isEmpty()?0xFF2F4148:0xFF1D3037);
+                if(r>0)box(c,a[0],a[1]+9,3,a[3]-18,tint);
+                text(c,n.name,a[0]+a[2]/2,a[1]+27,k<2?20:17,r>0?tint:cream,true);
+                text(c,r+" / "+n.maxRank+(k<2?"  ·  "+(reason.isEmpty()?"可学习":r==n.maxRank?"已满级":"需前置或点数"):""),a[0]+a[2]/2,a[1]+50,12,muted,true);
+                if(k>=2)text(c,r>0?"已定型":"终阶 · 择一",a[0]+a[2]/2,a[1]+70,12,r>0?tint:muted,true);
+            }
+        }
+        text(c,"点击节点查看效果与前置。六个终阶天赋只能选一个。",50,461,14,muted,false);
+        text(c,"初始2点，每80经验+1点，最多16点。各角色独立成长。",50,501,13,gold,false);
+        button(c,700,475,210,42,"免费重置天赋",false);
     }
     private void dungeon(Canvas c){
         cameraX=Math.max(0,Math.min(ActionGame.WIDTH-960,game.x-480));cameraY=Math.max(0,Math.min(ActionGame.HEIGHT-540,game.y-275));
@@ -143,20 +180,24 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         box(c,x-32,y-18,64,46,open?0x885AA899:0xFF15262C);if(open){glow(c,x,y,80,0x554DCEAB);text(c,name,x,y+57,14,tint,true);}else for(int i=-2;i<=2;i++)box(c,x+i*12-2,y-18,4,46,0xFF687575);
     }
     private void player(Canvas c){
+        if(game.shield>0)ring(c,game.x,game.y-10,27,0xCC8ACEDD,2);
+        if(game.dodgeCharge>0)ring(c,game.x,game.y,21,0xCCEACB7E,2);
         if(game.rollTime>0)for(int i=1;i<=3;i++){circle(c,game.x-game.rollX*i*12,game.y-game.rollY*i*12,13,0x223FCAA7);}
-        sprite(c,game.x,game.y,game.hero,game.faceX,game.faceY,game.invulnerable>0&&((int)(visualTime*18)%2==0),1,game.mode==ActionGame.Mode.PLAY?visualTime:0);
+        sprite(c,game.x,game.y,game.hero,game.faceX,game.faceY,game.invulnerable>0&&((int)(visualTime*18)%2==0),1,game.mode==ActionGame.Mode.PLAY?visualTime:0,game.profile());
         if(game.attackAnim>0&&game.hero!=1){
             float angle=(float)Math.toDegrees(Math.atan2(game.faceY,game.faceX));float radius=game.hero==0?83:67;
             color(0xFFEDD6A4);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(game.combo==2?9:6);rect.set(game.x-radius,game.y-radius,game.x+radius,game.y+radius);
             c.drawArc(rect,angle-80+(1-game.attackAnim/.24f)*45,105,false,p);p.setStyle(Paint.Style.FILL);
         }
     }
-    private void sprite(Canvas c,float x,float y,int kind,float dx,float dy,boolean flash,float size,float walk){
+    private void sprite(Canvas c,float x,float y,int kind,float dx,float dy,boolean flash,float size,float walk,BuildSystem.Profile look){
         c.save();c.translate(x,y);c.scale(size,size);float step=(float)Math.sin(walk*11)*(Math.abs(input.mx)+Math.abs(input.my)>.1?2:0);
         color(0x7708131A);c.drawOval(-19,-3,19,9,p);
-        int cloth=kind==0?0xFFA9C59A:kind==1?0xFFC39C70:0xFF9A9FCE;if(flash)cloth=0xFFEBF5CD;
+        int cloth=kind==0?0xFFA9C59A:kind==1?0xFFC39C70:0xFF9A9FCE;if(look!=null)cloth=BuildSystem.PALETTE[look.color];if(flash)cloth=0xFFEBF5CD;
         box(c,-10,-19,20,21,0xFF172B31);box(c,-8,-22,16,21,cloth);box(c,-11,-12,6,16,cloth-0x202020);box(c,5,-12,6,16,cloth-0x202020);
-        box(c,-7,-34,14,13,0xFF1D2A32);box(c,-5,-32,10,11,0xFFD6B48E);box(c,-7,-36,14,6,kind==1?0xFF684A3D:0xFF36484D);
+        box(c,-7,-34,14,13,0xFF1D2A32);box(c,-5,-32,10,11,look==null?0xFFD6B48E:BuildSystem.SKIN[look.skin]);box(c,-7,-36,14,6,kind==1?0xFF684A3D:0xFF36484D);
+        if(look!=null&&look.hair==1){box(c,-8,-33,3,19,0xFF684A3D);box(c,5,-33,3,19,0xFF684A3D);}
+        if(look!=null&&look.hair==2){box(c,-8,-37,16,5,cloth);box(c,-8,-34,3,14,cloth);box(c,5,-34,3,14,cloth);}
         box(c,-8,0+step,6,8,0xFF252B30);box(c,2,0-step,6,8,0xFF252B30);
         box(c,-6,-10,12,3,0xFF6B5741);box(c,-1,-11,3,4,gold);
         if(kind==0){box(c,13,-27,4,27,0xFFC6D5CD);box(c,9,-5,12,3,0xFF947652);box(c,-17,-17,8,19,0xFF678281);}
@@ -177,10 +218,11 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     }
     private void tree(Canvas c,float x,float y,float s,int color){box(c,x-5*s,y-40*s,10*s,50*s,0xFF172B30);circle(c,x,y-55*s,34*s,color);circle(c,x-23*s,y-35*s,24*s,color);circle(c,x+20*s,y-38*s,28*s,color);}
     private void hud(Canvas c){
-        rounded(c,17,13,308,66,10,0xDC12242B);text(c,ActionGame.HERO_NAMES[game.hero]+"  Lv."+game.heroLevel(),30,36,15,cream,false);
+        rounded(c,17,13,308,66,10,0xDC12242B);text(c,game.heroName()+"  Lv."+game.heroLevel(),30,36,15,cream,false);
         box(c,30,47,220,10,0xFF37464A);box(c,30,47,220*Math.max(0,game.hp/game.maxHp()),10,0xFFBA705D);text(c,(int)game.hp+" / "+(int)game.maxHp(),263,57,12,cream,false);
         text(c,"第 "+game.room+" / 5 庭院  ·  "+(game.room>0?ActionGame.ROOM_NAMES[game.room-1]:""),480,28,16,cream,true);
         text(c,"余烬 "+game.loot+"   ·   敌人 "+game.enemies.size(),480,50,13,gold,true);
+        if(game.shield>0||game.dodgeCharge>0)text(c,"护盾 "+(int)game.shield+(game.dodgeCharge>0?"  · 借势就绪":""),30,98,13,gold,false);
         button(c,855,15,88,45,"Ⅱ 暂停",false);
         if(game.roomCleared){rounded(c,280,82,400,35,8,0xDF18372F);text(c,"出口已开启：向上走，选择泉径或余烬之门",480,105,14,0xFFCADEB0,true);}
         for(ActionGame.Enemy e:game.enemies)if(e.type==3){text(c,e.hp<e.maxHp*.5f?"失灯守卫 · 狂怒":"失灯守卫",480,87,14,gold,true);box(c,340,97,280,7,0xFF273239);box(c,340,97,280*e.hp/e.maxHp,7,0xFFB36C5B);}
@@ -211,11 +253,19 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     private boolean inside(float x,float y,float left,float top,float width,float height){return x>=left&&x<=left+width&&y>=top&&y<=top+height;}
     private void uiTap(float x,float y){
         if(game.mode==ActionGame.Mode.CAMP){
-            for(int i=0;i<3;i++)if(inside(x,y,40+i*300,170,280,165)){game.selectHero(i);host.save();return;}
+            if(showTalents){
+                if(inside(x,y,855,15,88,45)){showTalents=false;return;}
+                if(inside(x,y,700,475,210,42)){host.resetTalents();return;}
+                for(int i=0;i<12;i++){float[] a=nodeRect(i);if(inside(x,y,a[0],a[1],a[2],a[3])){host.talent(i);return;}}return;
+            }
+            if(inside(x,y,40,126,130,32)){customRoster=false;return;}
+            if(inside(x,y,185,126,130,32)){customRoster=true;return;}
+            for(int i=0;i<3;i++)if(inside(x,y,40+i*300,170,280,165)){if(customRoster)game.selectCustom(i);else game.selectHero(i);host.save();return;}
             if(inside(x,y,40,365,280,57)){game.upgrade(false);host.save();}
             else if(inside(x,y,340,365,280,57)){game.upgrade(true);host.save();}
             else if(inside(x,y,660,365,260,80)){game.start(System.nanoTime());resetInput();host.save();}
-            else if(inside(x,y,40,474,130,42))host.slots();else if(inside(x,y,185,474,130,42))host.help();
+            else if(inside(x,y,40,480,100,42))host.slots();else if(inside(x,y,155,480,110,42))host.help();
+            else if(inside(x,y,280,480,155,42))host.editCharacter();else if(inside(x,y,450,480,175,42)){showTalents=true;resetInput();}
         }else if(game.mode==ActionGame.Mode.REWARD){for(int i=0;i<3;i++)if(inside(x,y,45+i*300,211,270,165)){game.chooseReward(i);host.save();break;}}
         else if(game.mode==ActionGame.Mode.PAUSED){
             if(inside(x,y,330,205,300,53)){game.resume();resetInput();}

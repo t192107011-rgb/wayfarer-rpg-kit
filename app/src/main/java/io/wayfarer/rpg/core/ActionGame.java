@@ -9,6 +9,30 @@ public final class ActionGame {
     public Mode mode=Mode.CAMP;
     public int hero=0,bank=0,power=0,vitality=0,runs=0,wins=0;
     public final int[] experience=new int[3];
+    public int custom=-1;
+    public final BuildSystem.Profile[] profiles=new BuildSystem.Profile[3];
+    public final int[][] talents=new int[6][12];
+    public float shield=0,dodgeCharge=0;
+    private float swingBoost=1;
+    public ActionGame(){for(int i=0;i<3;i++){profiles[i]=new BuildSystem.Profile();profiles[i].name=new String[]{"余烬旅人","雾林信使","夜渡客"}[i];profiles[i].weapon=i;profiles[i].skill=(i+1)%3;profiles[i].origin=i;profiles[i].trait=i;profiles[i].color=i;}}
+    public int buildId(){return custom<0?hero:3+custom;}
+    public BuildSystem.Profile profile(){return custom<0?null:profiles[custom];}
+    public String heroName(){return custom<0?HERO_NAMES[hero]:profile().name;}
+    public int heroXp(){return custom<0?experience[hero]:profile().xp;}
+    public int rank(int node){return talents[buildId()][node];}
+    public int skillStyle(){return custom<0?hero:profile().skill;}
+    public int availablePoints(){return BuildSystem.points(heroXp())-BuildSystem.spent(talents[buildId()]);}
+    public boolean learn(int node){if(mode!=Mode.CAMP)return false;String reason=BuildSystem.lockReason(talents[buildId()],heroXp(),node);if(!reason.isEmpty()){notice=reason;return false;}talents[buildId()][node]++;hp=maxHp();notice="习得「"+BuildSystem.NODES[node].name+"」";return true;}
+    public void resetTalents(){if(mode==Mode.CAMP){Arrays.fill(talents[buildId()],0);hp=maxHp();shield=0;dodgeCharge=0;notice="天赋已重置，全部点数返还。";}}
+    public void selectCustom(int slot){if(mode==Mode.CAMP&&slot>=0&&slot<3){custom=slot;hero=profiles[slot].weapon;hp=maxHp();notice="已选择 "+heroName();}}
+    public void customize(int slot,BuildSystem.Profile draft){
+        if(mode!=Mode.CAMP||slot<0||slot>=3)throw new IllegalArgumentException("仅能在营地编辑角色");
+        BuildSystem.Profile copy=draft.copy();copy.name=BuildSystem.cleanName(copy.name);copy.xp=profiles[slot].xp;BuildSystem.validate(copy);profiles[slot]=copy;selectCustom(slot);
+    }
+    public float skillPeriod(){return 7-rank(9)*.4f-(custom>=0&&profile().trait==2?.8f:0);}
+    public float dodgePeriod(){return 1.15f-rank(4)*.07f-(custom>=0&&profile().trait==1?.12f:0);}
+    public float potionRatio(){return custom>=0&&profile().trait==0?.55f:.45f;}
+    private float originHp(){return custom<0?0:profile().origin==0?18:profile().origin==1?-10:-8;}
     public int room=0,loot=0,kills=0,potions=2,damageBonus=0,healthBonus=0,speedBonus=0,combo=0;
     public float x=560,y=620,hp=110,faceX=0,faceY=-1,time=0;
     public float attackCd=0,attackAnim=0,rollTime=0,rollCd=0,skillCd=0,invulnerable=0,comboWindow=0;
@@ -50,15 +74,15 @@ public final class ActionGame {
         public String kind;public float x,y;public int value;
         public Signal(String kind,float x,float y,int value){this.kind=kind;this.x=x;this.y=y;this.value=value;}
     }
-    public int heroLevel(){return 1+Math.min(19,experience[hero]/80);}
-    public float maxHp(){return (hero==0?110:hero==1?85:90)+vitality*10+healthBonus+(heroLevel()-1)*3;}
-    public float damage(){return (hero==0?22:hero==1?18:15)+power*2+damageBonus+(heroLevel()-1);}
-    public float speed(){return (hero==2?240:hero==1?215:205)*(1+speedBonus*.08f);}
-    public float attackPeriod(){return hero==0?.48f:hero==1?.4f:.29f;}
+    public int heroLevel(){return 1+Math.min(19,heroXp()/80);}
+    public float maxHp(){return (hero==0?110:hero==1?85:90)+vitality*10+healthBonus+(heroLevel()-1)*3+rank(8)*8+originHp()-(custom>=0&&profile().trait==2?8:0);}
+    public float damage(){float value=(hero==0?22:hero==1?18:15)+power*2+damageBonus+(heroLevel()-1)+rank(0)*2+(custom>=0&&profile().origin==2?2:0);return value*(rank(3)>0&&hp<maxHp()*.4f?1.4f:1);}
+    public float speed(){return (hero==2?240:hero==1?215:205)*(1+speedBonus*.08f+rank(4)*.03f)*(custom<0?1:profile().origin==0?.95f:profile().origin==1?1.07f:1);}
+    public float attackPeriod(){return (hero==0?.48f:hero==1?.4f:.29f)*(custom>=0&&profile().trait==0?1.06f:1);}
     public int upgradeCost(int rank){return 30+rank*25;}
     public int random(int bound){rngState^=rngState<<13;rngState^=rngState>>>7;rngState^=rngState<<17;return (int)Long.remainderUnsigned(rngState,bound);}
     public void signal(String kind,float x,float y,int amount){if(signals.size()<64)signals.add(new Signal(kind,x,y,amount));}
-    public void selectHero(int value){if(mode==Mode.CAMP && value>=0&&value<3){hero=value;hp=maxHp();}}
+    public void selectHero(int value){if(mode==Mode.CAMP && value>=0&&value<3){custom=-1;hero=value;hp=maxHp();}}
     public void upgrade(boolean health){
         if(mode!=Mode.CAMP)return;int rank=health?vitality:power;
         if(rank>=10){notice="这项营地升级已满级。";return;}
@@ -72,7 +96,7 @@ public final class ActionGame {
     }
     public void generateRoom(){
         mode=Mode.PLAY;roomCleared=false;x=WIDTH/2;y=HEIGHT-100;faceX=0;faceY=-1;
-        attackCd=0;attackAnim=0;rollTime=0;rollCd=0;skillCd=0;invulnerable=.8f;comboWindow=0;hitStop=0;
+        attackCd=0;attackAnim=0;rollTime=0;rollCd=0;skillCd=0;shield=0;dodgeCharge=0;swingBoost=1;invulnerable=.8f;comboWindow=0;hitStop=0;
         enemies.clear();shots.clear();blocks.clear();drops.clear();signals.clear();swingHits.clear();
         // Keep the central route and both exits connected in every layout.
         for(int i=0;i<6;i++) {
@@ -100,33 +124,40 @@ public final class ActionGame {
     }
     public void pause(){if(mode==Mode.PLAY){mode=Mode.PAUSED;notice="已暂停";}}
     public void resume(){if(mode==Mode.PAUSED)mode=Mode.PLAY;}
-    public void returnCamp(){if(mode==Mode.RESULT){mode=Mode.CAMP;room=0;damageBonus=0;healthBonus=0;speedBonus=0;roomCleared=false;enemies.clear();shots.clear();blocks.clear();drops.clear();hp=maxHp();notice="冒险所得已结算。选择角色，再次出发。";}}
+    public void returnCamp(){if(mode==Mode.RESULT){mode=Mode.CAMP;room=0;damageBonus=0;healthBonus=0;speedBonus=0;roomCleared=false;shield=0;dodgeCharge=0;enemies.clear();shots.clear();blocks.clear();drops.clear();hp=maxHp();notice="冒险所得已结算。选择角色，再次出发。";}}
     public void abandon(){if(mode==Mode.PAUSED)finish(false);}
     public void dodge(float dx,float dy){
         if(mode!=Mode.PLAY||rollCd>0||rollTime>0)return;
         float len=len(dx,dy);if(len<.1f){dx=faceX;dy=faceY;len=1;}
-        rollX=dx/len;rollY=dy/len;rollTime=.28f;rollCd=1.15f;invulnerable=Math.max(invulnerable,.3f);attackAnim=0;
+        rollX=dx/len;rollY=dy/len;rollTime=.28f;rollCd=dodgePeriod();invulnerable=Math.max(invulnerable,.3f);attackAnim=0;
+        dodgeCharge=rank(5)>0?3:0;
+        if(rank(6)>0){for(Enemy e:enemies)if(len(e.x-x,e.y-y)<85){hit(e,damage()*.75f);e.stun=Math.max(e.stun,.45f);}signal("echo",x,y,85);}
+        if(rank(7)>0)skillCd=Math.max(0,skillCd-2.5f);
         signal("roll",x,y,0);
     }
     public void potion(){
         if(mode!=Mode.PLAY||potions<=0||hp>=maxHp())return;
-        potions--;float amount=maxHp()*.45f;hp=Math.min(maxHp(),hp+amount);signal("heal",x,y,(int)amount);
+        potions--;float amount=maxHp()*potionRatio();hp=Math.min(maxHp(),hp+amount);signal("heal",x,y,(int)amount);
     }
     public void skill(){
         if(mode!=Mode.PLAY||skillCd>0||rollTime>0)return;
-        aimAtNearest(440);skillCd=7;signal("skill",x,y,hero);
-        if(hero==1){double base=Math.atan2(faceY,faceX);for(int i=-2;i<=2;i++)fire((float)Math.cos(base+i*.14),(float)Math.sin(base+i*.14),damage()*1.3f);}
+        aimAtNearest(440);skillCd=skillPeriod();int style=skillStyle();signal("skill",x,y,style);
+        shield=Math.max(shield,rank(9)*6+(rank(11)>0?12:0));
+        if(rank(10)>0){float amount=Math.min(maxHp()-hp,maxHp()*.08f);hp+=amount;signal("heal",x,y,(int)amount);}
+        if(style==1){double base=Math.atan2(faceY,faceX);for(int i=-2;i<=2;i++)fire((float)Math.cos(base+i*.14),(float)Math.sin(base+i*.14),damage()*1.3f);}
         else {
-            float range=hero==0?160:125;
-            for(Enemy e:enemies)if(len(e.x-x,e.y-y)<range){hit(e,damage()*(hero==0?1.8f:2.2f));e.stun=.7f;}
-            if(hero==2)invulnerable=Math.max(invulnerable,.65f);
+            float range=style==0?160:125;
+            for(Enemy e:enemies)if(len(e.x-x,e.y-y)<range){hit(e,damage()*(style==0?1.8f:2.2f));e.stun=.7f;}
+            if(style==2)invulnerable=Math.max(invulnerable,.65f);
             hitStop=.045f;
         }
     }
     private void beginAttack(){
         aimAtNearest(hero==1?500:150);attackCd=attackPeriod();attackAnim=hero==1?.18f:.24f;
         combo=comboWindow>0?(combo+1)%3:0;comboWindow=.85f;swingHits.clear();
-        if(hero==1)fire(faceX,faceY,damage());signal(hero==1?"bow":"swing",x,y,combo);
+        swingBoost=(dodgeCharge>0?1+rank(5)*.15f:1)*(combo==2?1.35f+rank(1)*.12f:1);dodgeCharge=0;
+        if(combo==2&&rank(2)>0){for(Enemy e:enemies)if(len(e.x-x,e.y-y)<140)hit(e,damage()*.6f);signal("echo",x,y,140);}
+        if(hero==1)fire(faceX,faceY,damage()*swingBoost);signal(hero==1?"bow":"swing",x,y,combo);
     }
     private void fire(float dx,float dy,float value){if(shots.size()<160)shots.add(new Shot(x+dx*20,y+dy*20,dx*640,dy*640,value,true));}
     private void aimAtNearest(float range){
@@ -138,7 +169,7 @@ public final class ActionGame {
         if(mode!=Mode.PLAY)return;
         if(!Float.isFinite(dt)||dt<=0)return;dt=Math.min(dt,.05f);
         if(hitStop>0){hitStop=Math.max(0,hitStop-dt);return;}
-        time+=dt;attackCd=dec(attackCd,dt);rollCd=dec(rollCd,dt);skillCd=dec(skillCd,dt);invulnerable=dec(invulnerable,dt);comboWindow=dec(comboWindow,dt);
+        time+=dt;attackCd=dec(attackCd,dt);rollCd=dec(rollCd,dt);skillCd=dec(skillCd,dt);invulnerable=dec(invulnerable,dt);comboWindow=dec(comboWindow,dt);dodgeCharge=dec(dodgeCharge,dt);
         float mx=Float.isFinite(in.mx)?in.mx:0,my=Float.isFinite(in.my)?in.my:0,mag=len(mx,my);
         if(mag>1){mx/=mag;my/=mag;mag=1;}
         if(rollTime>0){movePlayer(rollX*530*dt,rollY*530*dt);rollTime=dec(rollTime,dt);}
@@ -152,7 +183,7 @@ public final class ActionGame {
                 float range=hero==0?90:72,cos=hero==0?-.05f:.1f;
                 for(Enemy e:enemies){float dx=e.x-x,dy=e.y-y,d=len(dx,dy);
                     if(e.hp>0&&!swingHits.contains(e.id)&&d<range+e.radius()&&(d<.01f||(dx*faceX+dy*faceY)/d>cos)&&lineClear(x,y,e.x,e.y)){
-                        swingHits.add(e.id);hit(e,damage()*(combo==2?1.35f:1));hitStop=.025f;
+                        swingHits.add(e.id);hit(e,damage()*swingBoost);hitStop=.025f;
                     }
                 }
             }
@@ -217,13 +248,18 @@ public final class ActionGame {
     }
     private void hit(Enemy e,float value){if(e.hp<=0)return;e.hp=Math.max(0,e.hp-value);e.flash=.12f;e.stun=Math.max(e.stun,e.type==3?.03f:.12f);signal("hit",e.x,e.y,(int)value);}
     private void hurt(float value){
-        if(invulnerable>0||mode!=Mode.PLAY)return;hp=Math.max(0,hp-value);invulnerable=.65f;signal("hurt",x,y,(int)value);
+        if(invulnerable>0||mode!=Mode.PLAY)return;
+        value*= (custom>=0&&profile().trait==1?1.12f:1)*(rank(3)>0?1.15f:1);
+        float absorbed=Math.min(shield,value);shield-=absorbed;value-=absorbed;
+        if(absorbed>0){signal("shield",x,y,(int)absorbed);if(rank(11)>0)for(Enemy e:enemies)if(len(e.x-x,e.y-y)<100)hit(e,absorbed*.5f);}
+        hp=Math.max(0,hp-value);invulnerable=.65f;signal("hurt",x,y,(int)value);
         if(hp<=0)finish(false);
     }
     private void finish(boolean victory){
         if(mode==Mode.RESULT||mode==Mode.CAMP)return;
         won=victory;int reward=victory?loot+40:(int)(loot*.7f);bank=Math.min(999999,bank+reward);
-        experience[hero]=Math.min(1000000,experience[hero]+kills*6+(victory?50:10));
+        int gained=kills*6+(victory?50:10);
+        if(custom<0)experience[hero]=Math.min(1000000,experience[hero]+gained);else profile().xp=Math.min(1000000,profile().xp+gained);
         if(victory)wins=Math.min(999999,wins+1);mode=Mode.RESULT;notice=(victory?"长夜已尽":"灯火尚存")+" · 带回 "+reward+" 余烬";signal(victory?"victory":"death",x,y,reward);
     }
     private void movePlayer(float dx,float dy){if(free(x+dx,y,PLAYER_RADIUS))x+=dx;if(free(x,y+dy,PLAYER_RADIUS))y+=dy;}

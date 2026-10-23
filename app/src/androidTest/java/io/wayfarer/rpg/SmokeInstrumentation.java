@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.graphics.*;
 import android.os.*;
 import android.view.*;
+import android.widget.*;
 import io.wayfarer.rpg.core.*;
 import java.io.*;
 
@@ -21,6 +22,8 @@ public final class SmokeInstrumentation extends Instrumentation {
             Intent launch=new Intent(getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK);
             activity=(MainActivity)startActivitySync(launch);waitForIdleSync();SystemClock.sleep(700);
             ui(()->{activity.world.replace(new ActionGame());check(activity.world.getWidth()>activity.world.getHeight(),"landscape viewport");});
+            workshopFlow();
+            ui(()->activity.world.replace(new ActionGame()));
             screenshot("01-camp.png");
             tap(440,230);ui(()->check(activity.world.game.hero==1,"character card selects archer"));
             tap(785,405);SystemClock.sleep(150);ui(()->check(activity.world.game.mode==ActionGame.Mode.PLAY,"start button enters dungeon"));
@@ -48,9 +51,38 @@ public final class SmokeInstrumentation extends Instrumentation {
                 ActionGame.Enemy s=new ActionGame.Enemy(g.nextId++,1,400,260,80);s.state=1;s.aimX=.78f;s.aimY=.62f;s.timer=.8f;g.enemies.add(s);
                 g.mode=ActionGame.Mode.PLAY;activity.world.stopFrames();});
             screenshot("04-combat-render.png");
-            result.putString("stream","ARPG_SMOKE_OK: launch, landscape, character selection, simultaneous move/attack, dodge, skill, pause, atomic save and resume.\n");
+            result.putString("stream","ARPG_SMOKE_OK: launch, landscape, character selection, simultaneous move/attack, dodge, skill, pause, atomic save and resume; custom editor save/cancel, cross-class skill, talent purchase/locks and profile persistence.\n");
             finish(Activity.RESULT_OK,result);
         }catch(Throwable t){result.putString("stream","ARPG_SMOKE_FAILED: "+t+"\n");finish(Activity.RESULT_CANCELED,result);}
+    }
+    private void workshopFlow(){
+        tap(250,142);tap(140,230);ui(()->check(activity.world.game.custom==0,"custom roster selects independent slot"));
+        tap(350,500);waitForIdleSync();
+        ui(()->{AlertDialog d=activity.workshopDialog;check(d!=null&&d.isShowing(),"editor opens from camp");View root=d.getWindow().getDecorView();
+            ((EditText)root.findViewWithTag("profile-name")).setText("暮灯艾文");
+            ((Spinner)root.findViewWithTag("profile-weapon")).setSelection(1);
+            ((Spinner)root.findViewWithTag("profile-skill")).setSelection(0);
+            ((Spinner)root.findViewWithTag("profile-color")).setSelection(4);
+            ((Spinner)root.findViewWithTag("profile-hair")).setSelection(2);
+        });waitForIdleSync();SystemClock.sleep(150);
+        screenshotDialog("05-character-workshop.png");
+        ui(()->activity.workshopDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick());waitForIdleSync();
+        ui(()->{ActionGame g=activity.world.game;check(g.heroName().equals("暮灯艾文")&&g.hero==1&&g.skillStyle()==0&&g.profile().color==4&&g.profile().hair==2,"native editor commits customization");});
+        tap(350,500);waitForIdleSync();ui(()->{View root=activity.workshopDialog.getWindow().getDecorView();((EditText)root.findViewWithTag("profile-name")).setText("取消的修改");activity.workshopDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();});
+        ui(()->check(activity.world.game.heroName().equals("暮灯艾文"),"cancel preserves profile"));
+        tap(530,500);ui(()->check(activity.world.showTalents,"tree opens"));tap(175,164);
+        ui(()->{check(activity.talentDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled(),"root learn enabled");activity.talentDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();});
+        ui(()->check(activity.world.game.rank(0)==1&&activity.world.game.availablePoints()==1,"learn spends exactly one point"));
+        tap(110,380);ui(()->{check(!activity.talentDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled(),"locked capstone cannot be learned");activity.talentDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();});
+        screenshot("06-talent-tree.png");tap(900,38);screenshot("07-custom-camp.png");
+        ui(()->{try{SaveStore store=new SaveStore(activity);store.write(2,activity.world.game);ActionGame loaded=store.read(2);check(loaded.custom==0&&loaded.hero==1&&loaded.skillStyle()==0&&loaded.rank(0)==1&&loaded.heroName().equals("暮灯艾文"),"custom manual snapshot roundtrip");activity.world.replace(loaded);}catch(IOException e){throw new RuntimeException(e);}});
+        tap(785,405);tap(855,298);ui(()->check(activity.world.game.skillCd>0&&activity.world.game.shots.isEmpty(),"bow user casts selected radial skill"));
+        screenshot("08-custom-dungeon.png");
+    }
+    private void screenshotDialog(String name){ui(()->{try{View v=activity.workshopDialog.getWindow().getDecorView();Bitmap b=Bitmap.createBitmap(v.getWidth(),v.getHeight(),Bitmap.Config.ARGB_8888);v.draw(new Canvas(b));writeBitmap(b,name);}catch(IOException e){throw new RuntimeException(e);}});}
+    private void writeBitmap(Bitmap b,String name)throws IOException{
+        File dir=new File(activity.getExternalFilesDir(null),"smoke");if(!dir.isDirectory()&&!dir.mkdirs())throw new IOException("screenshot directory");
+        try(FileOutputStream out=new FileOutputStream(new File(dir,name))){b.compress(Bitmap.CompressFormat.PNG,100,out);}b.recycle();
     }
     private void tap(float x,float y){long t=SystemClock.uptimeMillis();pointers(t,MotionEvent.ACTION_DOWN,new float[][]{{x,y}},new int[]{0});pointers(t,MotionEvent.ACTION_UP,new float[][]{{x,y}},new int[]{0});}
     private void pointers(long down,int action,float[][] coords,int[] ids){ui(()->{
