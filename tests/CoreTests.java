@@ -103,3 +103,4 @@ public final class CoreTests {
     }
     public static void main(String[] args) throws Exception {completeStory();battleRules();contentAndEconomy();saves();System.out.println("ALL PASSED: "+checks+" checks");}
 }
+
