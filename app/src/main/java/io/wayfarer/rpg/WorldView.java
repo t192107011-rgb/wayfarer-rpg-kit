@@ -24,7 +24,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     public boolean soundOn=true,showTalents=false,customRoster=false;
     private int bg=Color.rgb(13,24,29),cream=Color.rgb(232,228,202),muted=Color.rgb(155,180,171),gold=Color.rgb(222,186,111);
     private static final class Fx {String kind;float x,y,life,max,vx,vy;int value,color;Fx(String k,float x,float y,float life,int value,int color){kind=k;this.x=x;this.y=y;this.life=life;max=life;this.value=value;this.color=color;}}
-    public WorldView(Context c,ActionGame game,Host host){super(c);this.game=game;this.host=host;setFocusable(true);setFocusableInTouchMode(true);setContentDescription("灯下归途：横屏即时动作地牢。左侧摇杆移动，右侧攻击、闪避、技能和药水。暂停键位于右上角。");}
+    public WorldView(Context c,ActionGame game,Host host){super(c);this.game=game;this.host=host;customRoster=game.custom>=0;setFocusable(true);setFocusableInTouchMode(true);setContentDescription("灯下归途：横屏即时动作地牢。左侧摇杆移动，右侧攻击、闪避、技能和药水。暂停键位于右上角。");}
     public void startFrames(){if(!running){running=true;lastFrame=0;Choreographer.getInstance().postFrameCallback(this);}}
     public void stopFrames(){running=false;lastFrame=0;resetInput();Choreographer.getInstance().removeFrameCallback(this);}
     public void replace(ActionGame restored){game=restored;showTalents=false;customRoster=game.custom>=0;effects.clear();resetInput();if(game.mode==ActionGame.Mode.PLAY)game.pause();invalidate();}

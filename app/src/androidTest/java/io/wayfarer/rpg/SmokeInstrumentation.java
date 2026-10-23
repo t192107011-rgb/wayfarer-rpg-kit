@@ -75,7 +75,7 @@ public final class SmokeInstrumentation extends Instrumentation {
         ui(()->check(activity.world.game.rank(0)==1&&activity.world.game.availablePoints()==1,"learn spends exactly one point"));
         tap(110,380);ui(()->{check(!activity.talentDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled(),"locked capstone cannot be learned");activity.talentDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();});
         screenshot("06-talent-tree.png");tap(900,38);screenshot("07-custom-camp.png");
-        ui(()->{try{SaveStore store=new SaveStore(activity);store.write(2,activity.world.game);ActionGame loaded=store.read(2);check(loaded.custom==0&&loaded.hero==1&&loaded.skillStyle()==0&&loaded.rank(0)==1&&loaded.heroName().equals("暮灯艾文"),"custom manual snapshot roundtrip");activity.world.replace(loaded);}catch(IOException e){throw new RuntimeException(e);}});
+        ui(()->{try{SaveStore store=new SaveStore(activity);store.write(2,activity.world.game);ActionGame loaded=store.read(2);check(loaded.custom==0&&loaded.hero==1&&loaded.skillStyle()==0&&loaded.rank(0)==1&&loaded.heroName().equals("暮灯艾文"),"custom manual snapshot roundtrip");activity.world.replace(loaded);check(new WorldView(activity,loaded,activity).customRoster,"restored custom profile opens custom roster");}catch(IOException e){throw new RuntimeException(e);}});
         tap(785,405);tap(855,298);ui(()->check(activity.world.game.skillCd>0&&activity.world.game.shots.isEmpty(),"bow user casts selected radial skill"));
         screenshot("08-custom-dungeon.png");
     }
