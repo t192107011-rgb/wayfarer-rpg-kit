@@ -61,7 +61,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         }
         game.signals.clear();while(effects.size()>140)effects.remove(0);
     }
-    private void color(int v){p.setColor(v);p.setAlpha(255);p.setShader(null);p.setStyle(Paint.Style.FILL);}
+    private void color(int v){p.setColor(v);p.setShader(null);p.setStyle(Paint.Style.FILL);}
     private void box(Canvas c,float x,float y,float w,float h,int color){color(color);c.drawRect(x,y,x+w,y+h,p);}
     private void rounded(Canvas c,float x,float y,float w,float h,float radius,int color){color(color);rect.set(x,y,x+w,y+h);c.drawRoundRect(rect,radius,radius,p);}
     private void circle(Canvas c,float x,float y,float r,int color){color(color);c.drawCircle(x,y,r,p);}
@@ -165,7 +165,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         for(int i=0;i<4;i++){float tx=i%2==0?80:1040,ty=160+(i/2)*380;glow(c,tx,ty,100,0x32FFC56D);box(c,tx-3,ty-3,6,16,0xFF5C5041);circle(c,tx,ty-7,4+(float)Math.sin(visualTime*5+i),0xFFFFD18B);}
         for(ActionGame.SoulField f:game.soulFields){
             int tint=f.type==1?0xFFE6D78F:0xFFB292DD;float radius=f.type==1?175:185;
-            circle(c,f.x,f.y,radius,f.type==1?0x225BD8B1:0x333E245E);ring(c,f.x,f.y,radius,tint,2);
+            circle(c,f.x,f.y,radius,f.type==1?0x22E8D391:0x333E245E);ring(c,f.x,f.y,radius,tint,2);
             ring(c,f.x,f.y,radius*.78f,tint,1);
             for(int i=0;i<8;i++){double angle=i*Math.PI/4+visualTime*(f.type==1?.15:-.2);float dx=(float)Math.cos(angle),dy=(float)Math.sin(angle);line(c,f.x+dx*(radius-10),f.y+dy*(radius-10),f.x+dx*(radius+6),f.y+dy*(radius+6),tint,3);}
             text(c,f.type==1?"曙光圣域":"裂隙之井",f.x,f.y-radius-10,14,tint,true);
