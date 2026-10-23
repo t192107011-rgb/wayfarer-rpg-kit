@@ -7,7 +7,7 @@ import java.util.*;
 public final class ActionSave {
     private ActionSave(){}
     public static byte[] encode(ActionGame g) throws IOException {
-        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",2);
+        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",3);
         p.setProperty("mode",g.mode.name());p.setProperty("rng",Long.toString(g.rngState));p.setProperty("won",Boolean.toString(g.won));p.setProperty("cleared",Boolean.toString(g.roomCleared));
         String[] ik={"hero","bank","power","vitality","runs","wins","room","loot","kills","potions","damageBonus","healthBonus","speedBonus","combo","nextId"};
         int[] iv={g.hero,g.bank,g.power,g.vitality,g.runs,g.wins,g.room,g.loot,g.kills,g.potions,g.damageBonus,g.healthBonus,g.speedBonus,g.combo,g.nextId};
@@ -15,18 +15,21 @@ public final class ActionSave {
         put(p,"custom",g.custom);put(p,"shield",g.shield);put(p,"dodgeCharge",g.dodgeCharge);
         for(int i=0;i<3;i++){BuildSystem.Profile b=g.profiles[i];String k="profile"+i+".";p.setProperty(k+"name",b.name);p.setProperty(k+"data",csv(b.weapon,b.skill,b.origin,b.trait,b.color,b.skin,b.hair,b.xp));}
         for(int b=0;b<6;b++)for(int t=0;t<12;t++)put(p,"talent"+b+"."+t,g.talents[b][t]);
+        for(int j=0;j<3;j++){put(p,"presetSoul"+j,g.presetSouls[j]);put(p,"presetArt"+j,g.presetArts[j]);put(p,"profile"+j+".soul",g.profiles[j].soul);put(p,"profile"+j+".art",g.profiles[j].soulArt);}
+        put(p,"soulEnergy",g.soulEnergy);put(p,"soulCd",g.soulCd);put(p,"soulWard",g.soulWard);put(p,"corruption",g.corruption);put(p,"soulQuiet",g.soulQuiet);put(p,"soulBuff",g.soulBuff);
+        put(p,"soulFields",g.soulFields.size());int fieldIndex=0;for(ActionGame.SoulField f:g.soulFields)p.setProperty("field"+fieldIndex++,csv(f.type,f.x,f.y,f.life,f.tick,f.power));
         String[] fk={"x","y","hp","faceX","faceY","time","attackCd","rollTime","rollCd","skillCd","invulnerable","comboWindow","rollX","rollY"};
         float[] fv={g.x,g.y,g.hp,g.faceX,g.faceY,g.time,g.attackCd,g.rollTime,g.rollCd,g.skillCd,g.invulnerable,g.comboWindow,g.rollX,g.rollY};
         for(int i=0;i<fk.length;i++)put(p,fk[i],fv[i]);
         put(p,"enemies",g.enemies.size());int i=0;
-        for(ActionGame.Enemy e:g.enemies)p.setProperty("e"+i++,csv(e.id,e.type,e.state,e.x,e.y,e.hp,e.maxHp,e.timer,e.aimX,e.aimY,e.stun,e.flash,e.struck?1:0));
+        for(ActionGame.Enemy e:g.enemies){put(p,"hex"+i,e.hex);p.setProperty("e"+i++,csv(e.id,e.type,e.state,e.x,e.y,e.hp,e.maxHp,e.timer,e.aimX,e.aimY,e.stun,e.flash,e.struck?1:0));}
         put(p,"shots",g.shots.size());i=0;
-        for(ActionGame.Shot s:g.shots)p.setProperty("s"+i++,csv(s.x,s.y,s.vx,s.vy,s.life,s.damage,s.radius,s.friendly?1:0));
+        for(ActionGame.Shot s:g.shots){put(p,"shotEffect"+i,s.effect);put(p,"shotPierce"+i,s.pierce);StringJoiner hits=new StringJoiner(",");for(int id:s.hitIds)hits.add(Integer.toString(id));p.setProperty("shotHits"+i,hits.toString());p.setProperty("s"+i++,csv(s.x,s.y,s.vx,s.vy,s.life,s.damage,s.radius,s.friendly?1:0));}
         put(p,"blocks",g.blocks.size());i=0;
         for(ActionGame.Block b:g.blocks)p.setProperty("b"+i++,csv(b.x,b.y,b.w,b.h,b.style));
         put(p,"drops",g.drops.size());i=0;
         for(ActionGame.Drop d:g.drops)p.setProperty("d"+i++,csv(d.x,d.y,d.amount,d.heal?1:0));
-        ByteArrayOutputStream out=new ByteArrayOutputStream();p.store(out,"Wayfarer Action save v2");return out.toByteArray();
+        ByteArrayOutputStream out=new ByteArrayOutputStream();p.store(out,"Wayfarer Action save v3");return out.toByteArray();
     }
     private static void put(Properties p,String k,Number value){p.setProperty(k,value.toString());}
     private static String csv(Number... values){StringJoiner j=new StringJoiner(",");for(Number n:values)j.add(n.toString());return j.toString();}
@@ -34,7 +37,7 @@ public final class ActionSave {
         if(data==null||data.length==0||data.length>131072)throw new IOException("存档大小不正确");
         try{
             Properties p=new Properties();p.load(new ByteArrayInputStream(data));
-            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,2);
+            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,3);
             ActionGame g=new ActionGame();g.mode=ActionGame.Mode.valueOf(required(p,"mode"));g.rngState=Long.parseLong(required(p,"rng"));if(g.rngState==0)throw new IllegalArgumentException("随机状态无效");
             g.won=bool(p,"won");g.roomCleared=bool(p,"cleared");g.hero=n(p,"hero",0,2);g.bank=n(p,"bank",0,999999);g.power=n(p,"power",0,10);g.vitality=n(p,"vitality",0,10);g.runs=n(p,"runs",0,999999);g.wins=n(p,"wins",0,g.runs);
             g.room=n(p,"room",0,5);g.loot=n(p,"loot",0,99999);g.kills=n(p,"kills",0,99999);g.potions=n(p,"potions",0,2);g.damageBonus=n(p,"damageBonus",0,16);g.healthBonus=n(p,"healthBonus",0,80);g.speedBonus=n(p,"speedBonus",0,4);g.combo=n(p,"combo",0,2);g.nextId=n(p,"nextId",1,Integer.MAX_VALUE-1);
@@ -48,19 +51,37 @@ public final class ActionSave {
                 if(g.custom>=0&&g.hero!=g.profile().weapon)throw new IllegalArgumentException("角色与武器不一致");
                 if(g.shield>g.rank(9)*6+(g.rank(11)>0?12:0)||g.dodgeCharge>0&&g.rank(5)==0)throw new IllegalArgumentException("天赋状态无效");
             }
+            // v1/v2 migration leaves every soul unbound and adds no combat debt or resource.
+            if(version>=3){
+                for(int j=0;j<3;j++){
+                    g.presetSouls[j]=n(p,"presetSoul"+j,0,2);g.presetArts[j]=n(p,"presetArt"+j,0,1);SoulSystem.validate(g.presetSouls[j],g.presetArts[j]);
+                    g.profiles[j].soul=n(p,"profile"+j+".soul",0,2);g.profiles[j].soulArt=n(p,"profile"+j+".art",0,1);BuildSystem.validate(g.profiles[j]);
+                }
+                g.soulEnergy=f(p,"soulEnergy",0,100);g.soulCd=f(p,"soulCd",0,SoulSystem.COOLDOWNS[g.soulKind()][g.soulArt()]);g.soulWard=f(p,"soulWard",0,30);g.corruption=f(p,"corruption",0,100);g.soulQuiet=f(p,"soulQuiet",0,3);g.soulBuff=f(p,"soulBuff",0,6);
+                int fields=n(p,"soulFields",0,1);for(int j=0;j<fields;j++){float[] a=array(p,"field"+j,6);int type=integer(a[0],1,2);ActionGame.SoulField f=new ActionGame.SoulField(type,range(a[1],48,1072),range(a[2],48,712),range(a[5],1,300));f.life=range(a[3],0,type==1?5:4);f.tick=range(a[4],0,type==1?1:.5f);
+                    if(type!=g.soulKind()||g.soulArt()!=0||f.life<=0)throw new IllegalArgumentException("领域与灵魂配置不符");g.soulFields.add(f);}
+                if(g.soulKind()!=1&&g.soulWard>0||g.soulKind()!=2&&(g.corruption>0||g.soulQuiet>0||g.soulBuff>0)||g.soulBuff>0&&g.soulArt()!=1||g.soulKind()==0&&g.soulEnergy>0)throw new IllegalArgumentException("灵魂状态无效");
+                if(g.mode==ActionGame.Mode.CAMP&&(g.soulEnergy>0||g.soulCd>0||g.soulWard>0||g.corruption>0||g.soulQuiet>0||g.soulBuff>0||fields>0))throw new IllegalArgumentException("营地灵魂状态无效");
+            }
             g.x=f(p,"x",48,1072);g.y=f(p,"y",48,712);g.hp=f(p,"hp",0,g.maxHp());g.faceX=f(p,"faceX",-1,1);g.faceY=f(p,"faceY",-1,1);g.time=f(p,"time",0,10000000);
-            g.attackCd=f(p,"attackCd",0,1);g.rollTime=f(p,"rollTime",0,.3f);g.rollCd=f(p,"rollCd",0,1.2f);g.skillCd=f(p,"skillCd",0,7);g.invulnerable=f(p,"invulnerable",0,1);g.comboWindow=f(p,"comboWindow",0,1);g.rollX=f(p,"rollX",-1,1);g.rollY=f(p,"rollY",-1,1);
+            g.attackCd=f(p,"attackCd",0,1);g.rollTime=f(p,"rollTime",0,.3f);g.rollCd=f(p,"rollCd",0,1.2f);g.skillCd=f(p,"skillCd",0,7.5f);g.invulnerable=f(p,"invulnerable",0,1);g.comboWindow=f(p,"comboWindow",0,1);g.rollX=f(p,"rollX",-1,1);g.rollY=f(p,"rollY",-1,1);
             int count=n(p,"blocks",0,32);for(int i=0;i<count;i++){float[] a=array(p,"b"+i,5);g.blocks.add(new ActionGame.Block(range(a[0],48,1072),range(a[1],48,712),range(a[2],1,200),range(a[3],1,200),integer(a[4],0,1)));}
             count=n(p,"enemies",0,40);Set<Integer> ids=new HashSet<>();
             for(int i=0;i<count;i++){
                 float[] a=array(p,"e"+i,13);int id=integer(a[0],1,g.nextId-1);if(!ids.add(id))throw new IllegalArgumentException("重复敌人ID");
                 ActionGame.Enemy e=new ActionGame.Enemy(id,integer(a[1],0,3),range(a[3],48,1072),range(a[4],48,712),range(a[6],1,1000));
                 e.hp=range(a[5],0,e.maxHp);e.state=integer(a[2],0,2);e.timer=range(a[7],-.1f,2);e.aimX=range(a[8],-1,1);e.aimY=range(a[9],-1,1);e.stun=range(a[10],0,1);e.flash=range(a[11],0,1);e.struck=integer(a[12],0,1)==1;
+                if(version>=3)e.hex=f(p,"hex"+i,0,3);
                 if(!g.free(e.x,e.y,e.radius()))throw new IllegalArgumentException("敌人位置无效");g.enemies.add(e);
             }
             count=n(p,"shots",0,160);for(int i=0;i<count;i++){
                 float[] a=array(p,"s"+i,8);ActionGame.Shot s=new ActionGame.Shot(range(a[0],0,1120),range(a[1],0,760),range(a[2],-1000,1000),range(a[3],-1000,1000),range(a[5],1,500),integer(a[7],0,1)==1);
-                s.life=range(a[4],0,3);s.radius=range(a[6],1,10);g.shots.add(s);
+                s.life=range(a[4],0,3);s.radius=range(a[6],1,10);
+                if(version>=3){s.effect=n(p,"shotEffect"+i,0,2);s.pierce=n(p,"shotPierce"+i,0,2);String text=required(p,"shotHits"+i);
+                    if(!text.isEmpty()){String[] hits=text.split(",",-1);if(hits.length>2)throw new IllegalArgumentException("穿透命中记录过多");for(String h:hits){int id=Integer.parseInt(h);if(id<1||id>=g.nextId||!s.hitIds.add(id))throw new IllegalArgumentException("穿透命中ID无效");}}
+                    if(s.effect>0&&(!s.friendly||s.effect!=g.soulKind())||s.effect!=1&&(s.pierce!=0||!s.hitIds.isEmpty())||s.effect==1&&s.pierce+s.hitIds.size()!=2)throw new IllegalArgumentException("箭矢灵魂状态无效");
+                }
+                g.shots.add(s);
             }
             count=n(p,"drops",0,80);for(int i=0;i<count;i++){float[] a=array(p,"d"+i,4);g.drops.add(new ActionGame.Drop(range(a[0],0,1120),range(a[1],0,760),integer(a[2],1,100),integer(a[3],0,1)==1));}
             if(!g.free(g.x,g.y,ActionGame.PLAYER_RADIUS))throw new IllegalArgumentException("角色位置无效");

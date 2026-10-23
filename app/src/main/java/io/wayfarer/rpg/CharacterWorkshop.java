@@ -23,11 +23,17 @@ public final class CharacterWorkshop {
         View preview=new View(a){@Override protected void onDraw(Canvas c){super.onDraw(c);c.drawColor(0xFF183235);a.world.drawPortrait(c,getWidth()/2f,getHeight()*.78f,Math.min(getWidth()/64f,getHeight()/60f),draft);}};
         left.addView(preview,new LinearLayout.LayoutParams(-1,dp(a,90)));
         Runnable refresh=()->{ActionGame sample=new ActionGame();sample.profiles[0]=draft.copy();sample.selectCustom(0);
-            summary.setText("生命 "+(int)sample.maxHp()+" · 伤害 "+(int)sample.damage()+" · 移速 "+(int)sample.speed()+"\n技能 "+String.format(java.util.Locale.ROOT,"%.1f",sample.skillPeriod())+"秒 · 闪避 "+String.format(java.util.Locale.ROOT,"%.2f",sample.dodgePeriod())+"秒\n含角色等级，不含营地与天赋");preview.invalidate();};
+            summary.setText("生命 "+(int)sample.maxHp()+" · 伤害 "+(int)sample.damage()+" · 移速 "+(int)sample.speed()+"\n技能 "+String.format(java.util.Locale.ROOT,"%.1f",sample.skillPeriod())+"秒 · 闪避 "+String.format(java.util.Locale.ROOT,"%.2f",sample.dodgePeriod())+"秒\n"+SoulSystem.NAMES[draft.soul]+" · "+sample.skillName()+"\n含角色等级，不含营地与天赋");preview.invalidate();};
         left.addView(summary);label(a,left,"名字 · 1至10个字符");EditText name=new EditText(a);name.setSingleLine(true);name.setTextSize(16);name.setFilters(new InputFilter[]{new InputFilter.LengthFilter(20)});name.setText(draft.name);name.setContentDescription("自定义角色名字");name.setTag("profile-name");left.addView(name);
         name.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int count,int after){}public void onTextChanged(CharSequence s,int st,int before,int count){draft.name=s.toString();refresh.run();}public void afterTextChanged(Editable e){}});
         choose(a,body,"武器 · 决定普攻",BuildSystem.WEAPONS,draft.weapon,"profile-weapon",v->{draft.weapon=v;refresh.run();});
         choose(a,body,"主动技能 · 可跨武器搭配",BuildSystem.SKILLS,draft.skill,"profile-skill",v->{draft.skill=v;refresh.run();});
+        Spinner[] soulArtPicker={null};
+        choose(a,body,"灵魂归属 · 祭坛可查看完整效果",SoulSystem.NAMES,draft.soul,"profile-soul",v->{
+            if(draft.soul!=v){draft.soul=v;draft.soulArt=0;if(soulArtPicker[0]!=null){ArrayAdapter<String> ad=new ArrayAdapter<>(a,android.R.layout.simple_spinner_item,SoulSystem.ARTS[v]);ad.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);soulArtPicker[0].setAdapter(ad);soulArtPicker[0].setSelection(0);}}
+            if(soulArtPicker[0]!=null)soulArtPicker[0].setEnabled(v!=0);refresh.run();
+        });
+        soulArtPicker[0]=choose(a,body,"专属技能",SoulSystem.ARTS[draft.soul],draft.soulArt,"profile-soul-art",v->{draft.soulArt=draft.soul==0?0:v;refresh.run();});soulArtPicker[0].setEnabled(draft.soul!=0);
         choose(a,body,"出身",BuildSystem.ORIGINS,draft.origin,"profile-origin",v->{draft.origin=v;refresh.run();});
         choose(a,body,"特质",BuildSystem.TRAITS,draft.trait,"profile-trait",v->{draft.trait=v;refresh.run();});
         choose(a,body,"衣装颜色",BuildSystem.COLORS,draft.color,"profile-color",v->{draft.color=v;refresh.run();});
@@ -44,12 +50,12 @@ public final class CharacterWorkshop {
     private static int dp(MainActivity a,int value){return Math.round(value*a.getResources().getDisplayMetrics().density);}
     private interface Pick {void set(int value);}
     private static void label(MainActivity a,LinearLayout body,String text){TextView t=new TextView(a);t.setText(text);t.setTextSize(13);t.setPadding(0,dp(a,8),0,dp(a,2));body.addView(t);}
-    private static void choose(MainActivity a,LinearLayout body,String title,String[] options,int selected,String tag,Pick callback){
+    private static Spinner choose(MainActivity a,LinearLayout body,String title,String[] options,int selected,String tag,Pick callback){
         label(a,body,title);Spinner s=new Spinner(a);s.setTag(tag);s.setContentDescription(title);
         ArrayAdapter<String> adapter=new ArrayAdapter<String>(a,android.R.layout.simple_spinner_item,options){
             @Override public View getView(int position,View recycled,ViewGroup parent){TextView t=(TextView)super.getView(position,recycled,parent);t.setTextSize(14);t.setSingleLine(false);t.setMaxLines(2);return t;}
             @Override public View getDropDownView(int position,View recycled,ViewGroup parent){TextView t=(TextView)super.getDropDownView(position,recycled,parent);t.setTextSize(14);t.setSingleLine(false);t.setMaxLines(2);t.setPadding(dp(a,12),dp(a,10),dp(a,12),dp(a,10));return t;}
         };adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);s.setAdapter(adapter);s.setSelection(selected);body.addView(s,new LinearLayout.LayoutParams(-1,dp(a,52)));
-        s.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onItemSelected(AdapterView<?> parent,View view,int pos,long id){callback.set(pos);}public void onNothingSelected(AdapterView<?> parent){}});
+        s.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onItemSelected(AdapterView<?> parent,View view,int pos,long id){callback.set(pos);}public void onNothingSelected(AdapterView<?> parent){}});return s;
     }
 }

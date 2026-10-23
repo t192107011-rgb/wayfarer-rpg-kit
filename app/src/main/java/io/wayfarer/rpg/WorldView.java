@@ -8,7 +8,7 @@ import java.util.*;
 
 /** Native landscape canvas with fixed-step simulation and independent multi-touch pointers. */
 public final class WorldView extends View implements Choreographer.FrameCallback {
-    public interface Host {void save();void slots();void help();void confirmAbandon();void sound(String event);void editCharacter();void talent(int id);void resetTalents();}
+    public interface Host {void save();void slots();void help();void confirmAbandon();void sound(String event);void editCharacter();void talent(int id);void resetTalents();void souls();}
     private final Host host;
     public ActionGame game;
     private final ActionGame.Input input=new ActionGame.Input();
@@ -19,7 +19,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     private int movePointer=-1,attackPointer=-1;
     private float joyX=0,joyY=0,scale=1,offsetX=0,offsetY=0,cameraX=0,cameraY=0;
     private long lastFrame=0;
-    private float accumulator=0,saveElapsed=0,visualTime=0,shake=0;
+    private float accumulator=0,saveElapsed=0,visualTime=0,shake=0,soulMessageTime=0;
     private boolean running=false;
     public boolean soundOn=true,showTalents=false,customRoster=false;
     private int bg=Color.rgb(13,24,29),cream=Color.rgb(232,228,202),muted=Color.rgb(155,180,171),gold=Color.rgb(222,186,111);
@@ -32,7 +32,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     @Override public void onWindowFocusChanged(boolean hasFocus){super.onWindowFocusChanged(hasFocus);if(!hasFocus){resetInput();game.pause();host.save();}lastFrame=0;}
     @Override public void doFrame(long now){
         if(!running)return;
-        float elapsed=lastFrame==0?0:Math.min(.0833f,(now-lastFrame)/1_000_000_000f);lastFrame=now;visualTime+=elapsed;
+        float elapsed=lastFrame==0?0:Math.min(.0833f,(now-lastFrame)/1_000_000_000f);lastFrame=now;visualTime+=elapsed;soulMessageTime=Math.max(0,soulMessageTime-elapsed);
         ActionGame.Mode old=game.mode;int room=game.room;
         accumulator+=elapsed;int steps=0;
         while(accumulator>=1f/60f&&steps++<5){game.update(1f/60f,input);accumulator-=1f/60f;}
@@ -53,6 +53,10 @@ public final class WorldView extends View implements Choreographer.FrameCallback
                 if(s.kind.equals("hurt"))shake=5;
                 for(int i=0;i<6;i++){Fx spark=new Fx("spark",s.x,s.y,.2f+cosmetic.nextFloat()*.2f,0,s.kind.equals("hurt")?0xFFCE705C:gold);spark.vx=(cosmetic.nextFloat()-.5f)*180;spark.vy=(cosmetic.nextFloat()-.5f)*180;effects.add(spark);}
             }else if(s.kind.equals("skill")||s.kind.equals("slam")||s.kind.equals("clear")||s.kind.equals("echo")||s.kind.equals("shield"))effects.add(new Fx("ring",s.x,s.y,.45f,s.kind.equals("slam")?185:s.kind.equals("echo")?s.value:s.kind.equals("shield")?45:140,s.kind.equals("slam")?0xFFDC7053:0xFFBCE8C5));
+            else if(s.kind.equals("radiant")||s.kind.equals("forbidden"))effects.add(new Fx("ring",s.x,s.y,.55f,s.value>3?s.value:160,s.kind.equals("radiant")?0xFFF2DD9B:0xFFB991DF));
+            else if(s.kind.equals("lance"))effects.add(new Fx("lance",s.x,s.y,.35f,s.value,0xFFFFE8AD));
+            else if(s.kind.equals("soulLow"))soulMessageTime=2;
+            else if(s.kind.equals("sacrifice")){Fx f=new Fx("number",s.x,s.y-45,.7f,-s.value,0xFFD89DCC);f.vy=-20;effects.add(f);}
             else if(s.kind.equals("coin"))effects.add(new Fx("spark",s.x,s.y,.25f,0,gold));
         }
         game.signals.clear();while(effects.size()>140)effects.remove(0);
@@ -97,7 +101,8 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             text(c,look==null?ActionGame.HERO_NAMES[i]:look.name,bx+90,211,look==null?22:17,cream,false);
             text(c,"Lv. "+(1+Math.min(19,(look==null?game.experience[i]:look.xp)/80)),bx+92,239,14,gold,false);
             text(c,look==null?detail[i]:BuildSystem.WEAPONS[look.weapon],bx+20,283,14,muted,false);
-            if(look!=null)text(c,"技能："+BuildSystem.SKILLS[look.skill].split(" · ")[0],bx+20,305,13,gold,false);
+            int soul=look==null?game.presetSouls[i]:look.soul,style=look==null?i:look.skill;
+            text(c,SoulSystem.SKILLS[soul][style]+" · "+SoulSystem.NAMES[soul],bx+20,305,12,soul==2?0xFFCAA9E2:gold,false);
             text(c,selected?"已选择":"点击选择",bx+235,320,12,selected?gold:muted,true);
         }
         button(c,40,365,280,57,"磨刃 +2  ·  "+(game.power>=10?"MAX":game.upgradeCost(game.power)+" 余烬"),false);
@@ -107,7 +112,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         text(c,game.notice.length()>54?game.notice.substring(0,54):game.notice,40,465,12,muted,false);
         button(c,40,480,100,42,"存档",false);button(c,155,480,110,42,"操作说明",false);
         button(c,280,480,155,42,"角色工坊",false);button(c,450,480,175,42,"技能树 · "+game.availablePoints(),true);
-        text(c,"营地可免费改造与重置天赋",650,506,13,muted,false);
+        button(c,650,480,270,42,"灵魂祭坛 · "+SoulSystem.NAMES[game.soulKind()],false);
     }
     public boolean closeWorkshop(){if(showTalents){showTalents=false;invalidate();return true;}return false;}
     public void drawPortrait(Canvas c,float x,float y,float size,BuildSystem.Profile profile){sprite(c,x,y,profile.weapon,0,1,false,size,0,profile);}
@@ -117,6 +122,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         text(c,game.heroName()+" · 天赋星图",40,48,27,cream,false);
         text(c,"Lv."+game.heroLevel()+"  ·  经验 "+game.heroXp()+"  ·  可用 "+game.availablePoints()+" / 总点数 "+BuildSystem.points(game.heroXp()),40,80,15,gold,false);
         button(c,855,15,88,45,"返回",false);
+        text(c,SoulSystem.NAMES[game.soulKind()]+" · 共鸣见节点详情",600,79,13,game.soulKind()==2?0xFFCAA9E2:gold,false);
         for(int b=0;b<3;b++){
             float x=50+b*305;int tint=new int[]{0xFFE3B17D,0xFF99CEC8,0xFFC4B5DC}[b];
             text(c,BuildSystem.BRANCHES[b],x+125,119,17,tint,true);
@@ -128,7 +134,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
                 String reason=BuildSystem.lockReason(game.talents[game.buildId()],game.heroXp(),id);
                 rounded(c,a[0],a[1],a[2],a[3],9,r>0?0xFF36554F:reason.isEmpty()?0xFF2F4148:0xFF1D3037);
                 if(r>0)box(c,a[0],a[1]+9,3,a[3]-18,tint);
-                text(c,n.name,a[0]+a[2]/2,a[1]+27,k<2?20:17,r>0?tint:cream,true);
+                text(c,n.name+(SoulSystem.talentExtra(game.soulKind(),id).isEmpty()?"":" ✦"),a[0]+a[2]/2,a[1]+27,k<2?20:17,r>0?tint:cream,true);
                 text(c,r+" / "+n.maxRank+(k<2?"  ·  "+(reason.isEmpty()?"可学习":r==n.maxRank?"已满级":"需前置或点数"):""),a[0]+a[2]/2,a[1]+50,12,muted,true);
                 if(k>=2)text(c,r>0?"已定型":"终阶 · 择一",a[0]+a[2]/2,a[1]+70,12,r>0?tint:muted,true);
             }
@@ -157,6 +163,13 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             else {box(c,b.x,b.y,b.w,b.h,0xFF536063);box(c,b.x+4,b.y+3,b.w-8,8,0xFF84908A);line(c,b.x+2,b.y+b.h/2,b.x+b.w,b.y+b.h/2,0xFF33464B,2);}
         }
         for(int i=0;i<4;i++){float tx=i%2==0?80:1040,ty=160+(i/2)*380;glow(c,tx,ty,100,0x32FFC56D);box(c,tx-3,ty-3,6,16,0xFF5C5041);circle(c,tx,ty-7,4+(float)Math.sin(visualTime*5+i),0xFFFFD18B);}
+        for(ActionGame.SoulField f:game.soulFields){
+            int tint=f.type==1?0xFFE6D78F:0xFFB292DD;float radius=f.type==1?175:185;
+            circle(c,f.x,f.y,radius,f.type==1?0x225BD8B1:0x333E245E);ring(c,f.x,f.y,radius,tint,2);
+            ring(c,f.x,f.y,radius*.78f,tint,1);
+            for(int i=0;i<8;i++){double angle=i*Math.PI/4+visualTime*(f.type==1?.15:-.2);float dx=(float)Math.cos(angle),dy=(float)Math.sin(angle);line(c,f.x+dx*(radius-10),f.y+dy*(radius-10),f.x+dx*(radius+6),f.y+dy*(radius+6),tint,3);}
+            text(c,f.type==1?"曙光圣域":"裂隙之井",f.x,f.y-radius-10,14,tint,true);
+        }
         for(ActionGame.Enemy e:game.enemies){
             if(e.state==1){float alpha=.6f+.3f*(float)Math.sin(visualTime*12);
                 if(e.type==3){circle(c,e.x,e.y,185,((int)(alpha*48)<<24)|0xD86E51);ring(c,e.x,e.y,185,0xCCEC9A75,3);}
@@ -168,8 +181,8 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         for(ActionGame.Drop d:game.drops){glow(c,d.x,d.y,18,d.heal?0x556BCAB7:0x55EFC16A);box(c,d.x-4,d.y-5,8,8,d.heal?0xFFAAE1B3:gold);}
         ArrayList<ActionGame.Enemy> sorted=new ArrayList<>(game.enemies);sorted.sort(Comparator.comparingDouble(a->a.y));boolean drawn=false;
         for(ActionGame.Enemy e:sorted){if(!drawn&&e.y>game.y){player(c);drawn=true;}enemy(c,e);}if(!drawn)player(c);
-        for(ActionGame.Shot s:game.shots){line(c,s.x-s.vx*.025f,s.y-s.vy*.025f,s.x,s.y,s.friendly?0xFFF3DDA5:0xFFDB8273,s.friendly?3:5);circle(c,s.x,s.y,s.radius,s.friendly?0xFFFFEBC3:0xFFF5BA8B);}
-        for(Fx f:effects){color(f.color);p.setAlpha((int)(255*f.life/f.max));if(f.kind.equals("number")){p.setTextSize(18);p.setTextAlign(Paint.Align.CENTER);c.drawText(Integer.toString(f.value),f.x,f.y,p);}else if(f.kind.equals("ring")){p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(3);c.drawCircle(f.x,f.y,f.value*(1-f.life/f.max),p);p.setStyle(Paint.Style.FILL);}else c.drawRect(f.x-2,f.y-2,f.x+2,f.y+2,p);}
+        for(ActionGame.Shot s:game.shots){line(c,s.x-s.vx*.025f,s.y-s.vy*.025f,s.x,s.y,s.effect==2?0xFFC48DE5:s.friendly?0xFFF3DDA5:0xFFDB8273,s.friendly?3:5);circle(c,s.x,s.y,s.radius,s.effect==2?0xFFE4B9FF:s.friendly?0xFFFFEBC3:0xFFF5BA8B);}
+        for(Fx f:effects){color(f.color);p.setAlpha((int)(255*f.life/f.max));if(f.kind.equals("number")){p.setTextSize(18);p.setTextAlign(Paint.Align.CENTER);c.drawText(Integer.toString(f.value),f.x,f.y,p);}else if(f.kind.equals("lance")){p.setStrokeWidth(12*f.life/f.max);double a=Math.toRadians(f.value);c.drawLine(f.x,f.y,f.x+(float)Math.cos(a)*520,f.y+(float)Math.sin(a)*520,p);}else if(f.kind.equals("ring")){p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(3);c.drawCircle(f.x,f.y,f.value*(1-f.life/f.max),p);p.setStyle(Paint.Style.FILL);}else c.drawRect(f.x-2,f.y-2,f.x+2,f.y+2,p);}
         p.setAlpha(255);c.restore();
         // Restrained vignette keeps combat silhouettes and warnings readable.
         p.setShader(new RadialGradient(480,270,570,new int[]{0x000B1720,0x000B1720,0xBB0B1720},new float[]{0,.58f,1},Shader.TileMode.CLAMP));c.drawRect(0,0,960,540,p);p.setShader(null);
@@ -180,6 +193,8 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         box(c,x-32,y-18,64,46,open?0x885AA899:0xFF15262C);if(open){glow(c,x,y,80,0x554DCEAB);text(c,name,x,y+57,14,tint,true);}else for(int i=-2;i<=2;i++)box(c,x+i*12-2,y-18,4,46,0xFF687575);
     }
     private void player(Canvas c){
+        if(game.soulWard>0)ring(c,game.x,game.y-10,31,0xFFEFDC9D,3);
+        if(game.soulBuff>0)ring(c,game.x,game.y-10,32,0xFFD994E0,3);
         if(game.shield>0)ring(c,game.x,game.y-10,27,0xCC8ACEDD,2);
         if(game.dodgeCharge>0)ring(c,game.x,game.y,21,0xCCEACB7E,2);
         if(game.rollTime>0)for(int i=1;i<=3;i++){circle(c,game.x-game.rollX*i*12,game.y-game.rollY*i*12,13,0x223FCAA7);}
@@ -192,6 +207,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     }
     private void sprite(Canvas c,float x,float y,int kind,float dx,float dy,boolean flash,float size,float walk,BuildSystem.Profile look){
         c.save();c.translate(x,y);c.scale(size,size);float step=(float)Math.sin(walk*11)*(Math.abs(input.mx)+Math.abs(input.my)>.1?2:0);
+        if(look!=null&&look.soul>0)ring(c,0,-42,9,look.soul==1?0xFFE8D493:0xFFBE8FDC,2);
         color(0x7708131A);c.drawOval(-19,-3,19,9,p);
         int cloth=kind==0?0xFFA9C59A:kind==1?0xFFC39C70:0xFF9A9FCE;if(look!=null)cloth=BuildSystem.PALETTE[look.color];if(flash)cloth=0xFFEBF5CD;
         box(c,-10,-19,20,21,0xFF172B31);box(c,-8,-22,16,21,cloth);box(c,-11,-12,6,16,cloth-0x202020);box(c,5,-12,6,16,cloth-0x202020);
@@ -207,6 +223,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         c.restore();
     }
     private void enemy(Canvas c,ActionGame.Enemy e){
+        if(e.hex>0){ring(c,e.x,e.y,22,0xFFBA7CD9,2);text(c,"咒",e.x,e.y-52,12,0xFFDAACEE,true);}
         c.save();c.translate(e.x,e.y);float s=e.type==3?2.1f:1;c.scale(s,s);color(0x880B151B);c.drawOval(-19,-2,19,11,p);
         int tint=e.flash>0?0xFFF4E4BD:e.type==0?0xFF936C65:e.type==1?0xFF6F8B91:e.type==2?0xFFA18A60:0xFF967967;
         box(c,-14,-27,28,30,0xFF1C292E);box(c,-11,-25,22,26,tint);box(c,-8,-37,16,16,tint-0x101010);
@@ -222,7 +239,16 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         box(c,30,47,220,10,0xFF37464A);box(c,30,47,220*Math.max(0,game.hp/game.maxHp()),10,0xFFBA705D);text(c,(int)game.hp+" / "+(int)game.maxHp(),263,57,12,cream,false);
         text(c,"第 "+game.room+" / 5 庭院  ·  "+(game.room>0?ActionGame.ROOM_NAMES[game.room-1]:""),480,28,16,cream,true);
         text(c,"余烬 "+game.loot+"   ·   敌人 "+game.enemies.size(),480,50,13,gold,true);
-        if(game.shield>0||game.dodgeCharge>0)text(c,"护盾 "+(int)game.shield+(game.dodgeCharge>0?"  · 借势就绪":""),30,98,13,gold,false);
+        if(game.soulKind()>0){
+            int tint=game.soulKind()==1?0xFFE8D493:0xFFBE8FDC;
+            rounded(c,17,81,308,70,8,0xD912242B);
+            text(c,SoulSystem.NAMES[game.soulKind()]+" · 魂能 "+(int)game.soulEnergy+"/100",30,101,13,tint,false);
+            box(c,30,109,180,5,0xFF3D454E);box(c,30,109,180*game.soulEnergy/100,5,tint);
+            text(c,game.soulKind()==2?"侵蚀 "+(int)game.corruption+" · 受伤+"+(int)(game.corruption*.4f)+"% / 治疗-"+(int)(game.corruption*.3f)+"%":"辉盾 "+(int)game.soulWard+" · 治疗 +15%",30,134,12,tint,false);
+            text(c,game.skillName(),855,248,12,tint,true);
+        }
+        if(game.shield>0||game.dodgeCharge>0)text(c,"天赋护盾 "+(int)game.shield+(game.dodgeCharge>0?"  · 借势就绪":""),30,game.soulKind()>0?170:98,13,gold,false);
+        if(soulMessageTime>0)text(c,"魂能不足，需要40点",480,170,17,gold,true);
         button(c,855,15,88,45,"Ⅱ 暂停",false);
         if(game.roomCleared){rounded(c,280,82,400,35,8,0xDF18372F);text(c,"出口已开启：向上走，选择泉径或余烬之门",480,105,14,0xFFCADEB0,true);}
         for(ActionGame.Enemy e:game.enemies)if(e.type==3){text(c,e.hp<e.maxHp*.5f?"失灯守卫 · 狂怒":"失灯守卫",480,87,14,gold,true);box(c,340,97,280,7,0xFF273239);box(c,340,97,280*e.hp/e.maxHp,7,0xFFB36C5B);}
@@ -233,15 +259,17 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         text(c,"移动",117,519,12,muted,true);
         control(c,850,420,58,"攻击",0,input.attack);control(c,737,456,37,"闪避",game.rollCd,false);control(c,855,298,38,"技能",game.skillCd,false);
         control(c,648,456,29,"药×"+game.potions,0,false);
+        if(game.soulKind()>0){control(c,735,332,40,game.soulEnergy<40?"蓄能":"魂技",game.soulCd,false);ring(c,735,332,43,game.soulKind()==1?0xFFE8D493:0xFFBE8FDC,2);text(c,game.soulArtName(),735,389,12,game.soulKind()==1?gold:0xFFCAA9E2,true);}
     }
     private void shade(Canvas c){box(c,0,0,960,540,0xD50C1820);}
     private void rewards(Canvas c){
         shade(c);text(c,"余 火 的 馈 赠",480,126,29,cream,true);text(c,"选择一项本轮增益，再选择出口继续前进",480,160,16,muted,true);
-        String[] titles={"锋芒","生息","轻羽"};String[] body={"所有攻击伤害 +4","生命上限 +20，恢复 35","移动速度 +8%，技能就绪"};
+        String[] titles={"锋芒","生息","轻羽"};String[] body={"所有攻击伤害 +4","生命上限 +20，基础恢复35","移动速度 +8%，技能就绪"};
         for(int i=0;i<3;i++){rounded(c,45+i*300,211,270,165,12,0xFF2D4545);text(c,titles[i],180+i*300,266,26,gold,true);text(c,body[i],180+i*300,311,15,cream,true);text(c,"点击获取",180+i*300,351,13,muted,true);}
         text(c,"局内增益在下一次远征时重置",480,421,14,muted,true);
     }
     private void pausePanel(Canvas c){shade(c);text(c,"灯火暂歇",480,125,30,cream,true);text(c,"暂停期间，战斗与冷却均停止",480,162,15,muted,true);
+        if(game.soulKind()>0)text(c,SoulSystem.NAMES[game.soulKind()]+" · "+game.skillName()+" / "+game.soulArtName(),480,187,13,gold,true);
         button(c,330,205,300,53,"继续冒险",true);button(c,330,272,140,50,"存档",false);button(c,490,272,140,50,soundOn?"音效：开":"音效：关",false);
         button(c,330,337,300,50,"结束本轮并返回营地",false);button(c,330,403,300,45,"操作说明",false);
     }
@@ -266,6 +294,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             else if(inside(x,y,660,365,260,80)){game.start(System.nanoTime());resetInput();host.save();}
             else if(inside(x,y,40,480,100,42))host.slots();else if(inside(x,y,155,480,110,42))host.help();
             else if(inside(x,y,280,480,155,42))host.editCharacter();else if(inside(x,y,450,480,175,42)){showTalents=true;resetInput();}
+            else if(inside(x,y,650,480,270,42))host.souls();
         }else if(game.mode==ActionGame.Mode.REWARD){for(int i=0;i<3;i++)if(inside(x,y,45+i*300,211,270,165)){game.chooseReward(i);host.save();break;}}
         else if(game.mode==ActionGame.Mode.PAUSED){
             if(inside(x,y,330,205,300,53)){game.resume();resetInput();}
@@ -286,6 +315,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             else if(ActionGame.len(x-737,y-456)<45)game.dodge(input.mx,input.my);
             else if(ActionGame.len(x-855,y-298)<46)game.skill();
             else if(ActionGame.len(x-648,y-456)<35)game.potion();
+            else if(game.soulKind()>0&&ActionGame.len(x-735,y-332)<47)game.soulSkill();
         }else if(action==MotionEvent.ACTION_MOVE){
             int mi=event.findPointerIndex(movePointer);if(mi>=0)joystick((event.getX(mi)-offsetX)/scale,(event.getY(mi)-offsetY)/scale);
             int ai=event.findPointerIndex(attackPointer);if(ai>=0)input.attack=ActionGame.len((event.getX(ai)-offsetX)/scale-850,(event.getY(ai)-offsetY)/scale-420)<95;

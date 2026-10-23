@@ -22,6 +22,8 @@ public final class SmokeInstrumentation extends Instrumentation {
             Intent launch=new Intent(getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK);
             activity=(MainActivity)startActivitySync(launch);waitForIdleSync();SystemClock.sleep(700);
             ui(()->{activity.world.replace(new ActionGame());check(activity.world.getWidth()>activity.world.getHeight(),"landscape viewport");});
+            soulFlow();
+            ui(()->activity.world.replace(new ActionGame()));
             workshopFlow();
             ui(()->activity.world.replace(new ActionGame()));
             screenshot("01-camp.png");
@@ -51,10 +53,37 @@ public final class SmokeInstrumentation extends Instrumentation {
                 ActionGame.Enemy s=new ActionGame.Enemy(g.nextId++,1,400,260,80);s.state=1;s.aimX=.78f;s.aimY=.62f;s.timer=.8f;g.enemies.add(s);
                 g.mode=ActionGame.Mode.PLAY;activity.world.stopFrames();});
             screenshot("04-combat-render.png");
-            result.putString("stream","ARPG_SMOKE_OK: launch, landscape, character selection, simultaneous move/attack, dodge, skill, pause, atomic save and resume; custom editor save/cancel, cross-class skill, talent purchase/locks and profile persistence.\n");
+            result.putString("stream","ARPG_SMOKE_OK: launch, landscape, character selection, simultaneous move/attack, dodge, skill, pause, atomic save and resume; custom editor save/cancel, cross-class skill, talent purchase/locks and profile persistence; soul binding/cancel, independent soul button, radiant domain, forbidden pact, corruption costs and soul snapshot persistence.\n");
             finish(Activity.RESULT_OK,result);
         }catch(Throwable t){result.putString("stream","ARPG_SMOKE_FAILED: "+t+"\n");finish(Activity.RESULT_CANCELED,result);}
     }
+    private void soulFlow(){
+        tap(780,500);waitForIdleSync();
+        ui(()->{check(activity.soulDialog.isShowing(),"soul altar opens");((Spinner)activity.soulDialog.getWindow().getDecorView().findViewWithTag("soul-kind")).setSelection(1);});waitForIdleSync();
+        screenshotSoulDialog("09-radiant-altar.png");
+        ui(()->activity.soulDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick());
+        ui(()->check(activity.world.game.soulKind()==1&&activity.world.game.soulArt()==0,"radiant binding committed"));
+        tap(780,500);waitForIdleSync();ui(()->((Spinner)activity.soulDialog.getWindow().getDecorView().findViewWithTag("soul-kind")).setSelection(2));waitForIdleSync();ui(()->activity.soulDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick());
+        ui(()->check(activity.world.game.soulKind()==1,"cancel soul draft preserves binding"));
+        tap(785,405);tap(735,332);ui(()->check(activity.world.game.soulCd>0&&activity.world.game.soulFields.size()==1&&activity.world.game.soulWard==30,"dedicated soul button casts domain"));
+        SystemClock.sleep(150);screenshot("10-radiant-domain.png");tap(900,37);
+        float[] paused={0,0};ui(()->{paused[0]=activity.world.game.soulFields.get(0).life;paused[1]=activity.world.game.soulCd;});SystemClock.sleep(180);
+        ui(()->{check(activity.world.game.soulFields.get(0).life==paused[0]&&activity.world.game.soulCd==paused[1],"pause freezes domain and exclusive cooldown");
+            try{SaveStore store=new SaveStore(activity);store.write(3,activity.world.game);ActionGame loaded=store.read(3);check(loaded.soulKind()==1&&loaded.soulFields.size()==1&&loaded.soulEnergy==activity.world.game.soulEnergy,"soul snapshot restored");}catch(IOException e){throw new RuntimeException(e);}
+            ActionGame g=new ActionGame();g.selectCustom(1);activity.world.replace(g);
+        });
+        tap(350,500);waitForIdleSync();ui(()->((Spinner)activity.workshopDialog.getWindow().getDecorView().findViewWithTag("profile-soul")).setSelection(2));waitForIdleSync();
+        ui(()->((Spinner)activity.workshopDialog.getWindow().getDecorView().findViewWithTag("profile-soul-art")).setSelection(1));waitForIdleSync();
+        ui(()->activity.workshopDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick());
+        ui(()->check(activity.world.game.soulKind()==2&&activity.world.game.soulArt()==1,"workshop selects forbidden pact"));
+        tap(780,500);waitForIdleSync();screenshotSoulDialog("11-forbidden-altar.png");ui(()->activity.soulDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick());
+        ui(()->check(activity.world.game.soulArt()==1,"reopening altar preserves selected second art"));
+        tap(785,405);float[] hp={0};ui(()->hp[0]=activity.world.game.hp);tap(735,332);
+        ui(()->check(activity.world.game.soulBuff>0&&activity.world.game.corruption==30&&activity.world.game.hp<hp[0],"forbidden pact has actual cost and buff"));
+        tap(855,298);SystemClock.sleep(100);screenshot("12-forbidden-pact.png");
+        ui(()->{check(activity.world.game.corruption>=47&&activity.world.game.skillCd>0,"mutated active increases corruption");try{ActionGame g=ActionSave.decode(ActionSave.encode(activity.world.game));check(g.soulBuff>0&&g.soulArt()==1,"forbidden runtime persists");}catch(IOException e){throw new RuntimeException(e);}});
+    }
+    private void screenshotSoulDialog(String name){ui(()->{try{View v=activity.soulDialog.getWindow().getDecorView();Bitmap b=Bitmap.createBitmap(v.getWidth(),v.getHeight(),Bitmap.Config.ARGB_8888);v.draw(new Canvas(b));writeBitmap(b,name);}catch(IOException e){throw new RuntimeException(e);}});}
     private void workshopFlow(){
         tap(250,142);tap(140,230);ui(()->check(activity.world.game.custom==0,"custom roster selects independent slot"));
         tap(350,500);waitForIdleSync();

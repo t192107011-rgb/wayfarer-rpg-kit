@@ -13,8 +13,8 @@ public final class BuildSystem {
     public static final String[] HAIR={"短发","长发","兜帽"};
     public static final class Profile {
         public String name="无名守灯者";
-        public int weapon,skill,origin,trait,color,skin,hair,xp;
-        public Profile copy(){Profile p=new Profile();p.name=name;p.weapon=weapon;p.skill=skill;p.origin=origin;p.trait=trait;p.color=color;p.skin=skin;p.hair=hair;p.xp=xp;return p;}
+        public int weapon,skill,origin,trait,color,skin,hair,xp,soul,soulArt;
+        public Profile copy(){Profile p=new Profile();p.name=name;p.weapon=weapon;p.skill=skill;p.origin=origin;p.trait=trait;p.color=color;p.skin=skin;p.hair=hair;p.xp=xp;p.soul=soul;p.soulArt=soulArt;return p;}
     }
     public static String cleanName(String value){
         if(value==null)throw new IllegalArgumentException("请输入角色名字");String n=value.trim();
@@ -23,6 +23,7 @@ public final class BuildSystem {
         return n;
     }
     public static void validate(Profile p){
+        SoulSystem.validate(p.soul,p.soulArt);
         if(!cleanName(p.name).equals(p.name)||p.weapon<0||p.weapon>2||p.skill<0||p.skill>2||p.origin<0||p.origin>2||p.trait<0||p.trait>2||p.color<0||p.color>5||p.skin<0||p.skin>2||p.hair<0||p.hair>2||p.xp<0||p.xp>1000000)throw new IllegalArgumentException("角色配置无效");
     }
     public static final class Node {
