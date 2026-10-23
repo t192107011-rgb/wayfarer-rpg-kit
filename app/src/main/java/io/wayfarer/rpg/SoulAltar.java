@@ -16,7 +16,7 @@ public final class SoulAltar {
     public static AlertDialog show(MainActivity a){
         ActionGame g=a.world.game;int[] draft={g.soulKind(),g.soulArt()};
         LinearLayout row=new LinearLayout(a);row.setOrientation(LinearLayout.HORIZONTAL);row.setPadding(dp(a,18),0,dp(a,18),0);
-        LinearLayout left=new LinearLayout(a),right=new LinearLayout(a);left.setOrientation(1);right.setOrientation(1);right.setPadding(dp(a,20),0,0,0);
+        LinearLayout left=new LinearLayout(a),right=new LinearLayout(a);left.setOrientation(LinearLayout.VERTICAL);right.setOrientation(LinearLayout.VERTICAL);right.setPadding(dp(a,20),0,0,0);
         ScrollView ls=new ScrollView(a),rs=new ScrollView(a);ls.addView(left);rs.addView(right);row.addView(ls,new LinearLayout.LayoutParams(0,-1,1));row.addView(rs,new LinearLayout.LayoutParams(0,-1,1));
         text(a,left,"灵魂归属 · 当前角色独立保存",14);Spinner kind=new Spinner(a);kind.setTag("soul-kind");kind.setContentDescription("灵魂归属");kind.setAdapter(adapter(a,SoulSystem.NAMES));kind.setSelection(draft[0]);left.addView(kind,new LinearLayout.LayoutParams(-1,dp(a,48)));
         TextView passive=text(a,left,"",14),variant=text(a,left,"",14);
