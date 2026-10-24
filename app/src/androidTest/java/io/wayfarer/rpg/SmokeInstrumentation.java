@@ -22,6 +22,8 @@ public final class SmokeInstrumentation extends Instrumentation {
             Intent launch=new Intent(getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK);
             activity=(MainActivity)startActivitySync(launch);waitForIdleSync();SystemClock.sleep(700);
             ui(()->{activity.world.replace(new ActionGame());check(activity.world.getWidth()>activity.world.getHeight(),"landscape viewport");});
+            pactFlow();
+            ui(()->activity.world.replace(new ActionGame()));
             ordinaryCareerFlow();
             ui(()->activity.world.replace(new ActionGame()));
             careerFlow();
@@ -59,9 +61,29 @@ public final class SmokeInstrumentation extends Instrumentation {
                 ActionGame.Enemy s=new ActionGame.Enemy(g.nextId++,1,400,260,80);s.state=1;s.aimX=.78f;s.aimY=.62f;s.timer=.8f;g.enemies.add(s);
                 g.mode=ActionGame.Mode.PLAY;activity.world.stopFrames();});
             screenshot("04-combat-render.png");
-            result.putString("stream","ARPG_SMOKE_OK: launch, landscape, character selection, simultaneous move/attack, dodge, skill, pause, atomic save and resume; custom editor save/cancel, cross-class skill, talent purchase/locks and profile persistence; soul binding/cancel, independent soul button, radiant domain, forbidden pact, corruption costs and soul snapshot persistence; relic cabinet equip/cancel, duplicate guard, character isolation, checkpoint discovery and relic manual save; career level gate, save/cancel, specialization persistence, class-independent weapon, background/skill shields, dodge charge and atomic snapshot; 1887 setting dossier; all eight ordinary career selections, doctor treatment and potion, merchant actual upgrade price, miner protection and v6 manual save.\n");
+            result.putString("stream","ARPG_SMOKE_OK: launch, landscape, character selection, simultaneous move/attack, dodge, skill, pause, atomic save and resume; custom editor save/cancel, cross-class skill, talent purchase/locks and profile persistence; soul binding/cancel, independent soul button, radiant domain, forbidden pact, corruption costs and soul snapshot persistence; relic cabinet equip/cancel, duplicate guard, character isolation, checkpoint discovery and relic manual save; career level gate, save/cancel, specialization persistence, class-independent weapon, background/skill shields, dodge charge and atomic snapshot; 1887 setting dossier; all eight ordinary career selections, doctor treatment and potion, merchant actual upgrade price, miner protection and v6 manual save; optional pact cancel/confirm, job-change opt-out, separate pact/soul touch buttons, healing lock, frozen penalty, AtomicFile persistence and local-only merchant payment.\n");
             finish(Activity.RESULT_OK,result);
         }catch(Throwable t){result.putString("stream","ARPG_SMOKE_FAILED: "+t+"\n");finish(Activity.RESULT_CANCELED,result);}
+    }
+    private void pactFlow(){
+        ui(()->{activity.world.game.experience[0]=160;activity.world.game.hp=activity.world.game.maxHp();});
+        pickCareer(CareerSystem.DOCTOR,1,4);tap(510,142);waitForIdleSync();
+        ui(()->{View root=activity.careerDialog.getWindow().getDecorView();CheckBox pact=root.findViewWithTag("career-pact");check(!pact.isChecked()&&pact.isEnabled(),"occupational forbidden art defaults off");check(((TextView)root.findViewWithTag("career-temperament")).getText().toString().contains("同情心"),"doctor has distinctive temperament");pact.setChecked(true);activity.careerDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();});waitForIdleSync();
+        ui(()->check(!activity.world.game.pactEnabled(),"cancel never accepts forbidden cost"));
+        tap(510,142);waitForIdleSync();ui(()->((CheckBox)activity.careerDialog.getWindow().getDecorView().findViewWithTag("career-pact")).setChecked(true));waitForIdleSync();
+        screenshotNativeDialog("19-doctor-pact-choice.png",activity.careerDialog);
+        ui(()->activity.careerDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick());waitForIdleSync();ui(()->check(activity.world.game.pactEnabled(),"explicit confirmation enables occupational art"));
+        tap(510,142);waitForIdleSync();ui(()->((Spinner)activity.careerDialog.getWindow().getDecorView().findViewWithTag("career-job")).setSelection(CareerSystem.SOLDIER));waitForIdleSync();
+        ui(()->{check(!((CheckBox)activity.careerDialog.getWindow().getDecorView().findViewWithTag("career-pact")).isChecked(),"changing job resets forbidden consent draft");activity.careerDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();});waitForIdleSync();
+        ui(()->{check(activity.world.game.job()==CareerSystem.DOCTOR&&activity.world.game.pactEnabled(),"cancel preserves doctor choice");activity.world.game.bindSoul(1,0);});
+        tap(785,405);float[] expected={0};ui(()->{ActionGame g=activity.world.game;g.hp=10;expected[0]=10+g.maxHp()*.55f*g.healingFactor();});tap(648,332);
+        ui(()->check(activity.world.game.pactTime>0&&Math.abs(activity.world.game.hp-expected[0])<.05f,"dedicated forbidden button performs treatment"));tap(648,456);
+        ui(()->check(activity.world.game.potions==2&&activity.world.game.healingFactor()==0,"forbidden treatment blocks potion consumption and healing"));tap(735,332);
+        ui(()->check(activity.world.game.soulCd>0&&activity.world.game.pactCd>0,"soul and occupational buttons remain independent"));
+        screenshot("20-doctor-pact-combat.png");tap(900,37);float[] paused={0,0};ui(()->{paused[0]=activity.world.game.pactTime;paused[1]=activity.world.game.pactCd;});SystemClock.sleep(180);
+        ui(()->{ActionGame g=activity.world.game;check(g.pactTime==paused[0]&&g.pactCd==paused[1],"paused forbidden cost freezes");try{SaveStore store=new SaveStore(activity);store.write(3,g);ActionGame a=store.read(3);check(a.pactEnabled()&&a.pactTime==g.pactTime&&a.hp==g.hp&&a.healingFactor()==0,"pact and healing debt survive AtomicFile without replay");}catch(IOException e){throw new RuntimeException(e);}ActionGame merchant=new ActionGame();merchant.experience[0]=160;merchant.chooseCareer(CareerSystem.MERCHANT,2,0,true);merchant.bank=500;activity.world.replace(merchant);});
+        tap(785,405);ui(()->activity.world.game.loot=29);tap(648,332);ui(()->check(activity.world.game.pactCd==0&&activity.world.game.bank==500,"merchant cannot spend camp bank"));ui(()->activity.world.game.loot=30);tap(648,332);
+        ui(()->check(activity.world.game.pactTime>0&&activity.world.game.loot==0&&activity.world.game.bank==500,"merchant pays only run tickets"));
     }
     private void pickCareer(int job,int spec,int background){
         tap(510,142);waitForIdleSync();
