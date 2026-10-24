@@ -7,7 +7,7 @@ import java.util.*;
 public final class ActionSave {
     private ActionSave(){}
     public static byte[] encode(ActionGame g) throws IOException {
-        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",5);
+        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",6);
         p.setProperty("mode",g.mode.name());p.setProperty("rng",Long.toString(g.rngState));p.setProperty("won",Boolean.toString(g.won));p.setProperty("cleared",Boolean.toString(g.roomCleared));
         String[] ik={"hero","bank","power","vitality","runs","wins","room","loot","kills","potions","damageBonus","healthBonus","speedBonus","combo","nextId"};
         int[] iv={g.hero,g.bank,g.power,g.vitality,g.runs,g.wins,g.room,g.loot,g.kills,g.potions,g.damageBonus,g.healthBonus,g.speedBonus,g.combo,g.nextId};
@@ -33,7 +33,7 @@ public final class ActionSave {
         for(ActionGame.Block b:g.blocks)p.setProperty("b"+i++,csv(b.x,b.y,b.w,b.h,b.style));
         put(p,"drops",g.drops.size());i=0;
         for(ActionGame.Drop d:g.drops)p.setProperty("d"+i++,csv(d.x,d.y,d.amount,d.heal?1:0));
-        ByteArrayOutputStream out=new ByteArrayOutputStream();p.store(out,"Wayfarer Action save v5");return out.toByteArray();
+        ByteArrayOutputStream out=new ByteArrayOutputStream();p.store(out,"Wayfarer Action save v6");return out.toByteArray();
     }
     private static void put(Properties p,String k,Number value){p.setProperty(k,value.toString());}
     private static String csv(Number... values){StringJoiner j=new StringJoiner(",");for(Number n:values)j.add(n.toString());return j.toString();}
@@ -41,7 +41,7 @@ public final class ActionSave {
         if(data==null||data.length==0||data.length>131072)throw new IOException("存档大小不正确");
         try{
             Properties p=new Properties();p.load(new ByteArrayInputStream(data));
-            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,5);
+            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,6);
             ActionGame g=new ActionGame();g.mode=ActionGame.Mode.valueOf(required(p,"mode"));g.rngState=Long.parseLong(required(p,"rng"));if(g.rngState==0)throw new IllegalArgumentException("随机状态无效");
             g.won=bool(p,"won");g.roomCleared=bool(p,"cleared");g.hero=n(p,"hero",0,2);g.bank=n(p,"bank",0,999999);g.power=n(p,"power",0,10);g.vitality=n(p,"vitality",0,10);g.runs=n(p,"runs",0,999999);g.wins=n(p,"wins",0,g.runs);
             g.room=n(p,"room",0,5);g.loot=n(p,"loot",0,99999);g.kills=n(p,"kills",0,99999);g.potions=n(p,"potions",0,2);g.damageBonus=n(p,"damageBonus",0,16);g.healthBonus=n(p,"healthBonus",0,80);g.speedBonus=n(p,"speedBonus",0,4);g.combo=n(p,"combo",0,2);g.nextId=n(p,"nextId",1,Integer.MAX_VALUE-1);
@@ -84,7 +84,7 @@ public final class ActionSave {
             // v1-v4: keep all original combat values; opt in to careers in camp.
             if(version>=5){
                 for(int b=0;b<6;b++){
-                    g.careers[b][0]=n(p,"career"+b+".0",0,3);g.careers[b][1]=n(p,"career"+b+".1",0,2);g.careers[b][2]=n(p,"career"+b+".2",0,6);
+                    g.careers[b][0]=n(p,"career"+b+".0",0,version>=6?CareerSystem.CLASSES.length-1:3);g.careers[b][1]=n(p,"career"+b+".1",0,2);g.careers[b][2]=n(p,"career"+b+".2",0,6);
                     String error=CareerSystem.invalid(g.careers[b][0],g.careers[b][1],g.careers[b][2],b<3?g.experience[b]:g.profiles[b-3].xp);if(!error.isEmpty())throw new IllegalArgumentException(error);
                 }
                 g.careerWard=f(p,"careerWard",0,g.careerWardLimit());g.careerCharge=f(p,"careerCharge",0,g.careerChargeLimit());

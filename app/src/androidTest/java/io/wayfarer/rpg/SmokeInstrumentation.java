@@ -22,6 +22,8 @@ public final class SmokeInstrumentation extends Instrumentation {
             Intent launch=new Intent(getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK);
             activity=(MainActivity)startActivitySync(launch);waitForIdleSync();SystemClock.sleep(700);
             ui(()->{activity.world.replace(new ActionGame());check(activity.world.getWidth()>activity.world.getHeight(),"landscape viewport");});
+            ordinaryCareerFlow();
+            ui(()->activity.world.replace(new ActionGame()));
             careerFlow();
             ui(()->activity.world.replace(new ActionGame()));
             relicFlow();
@@ -57,9 +59,31 @@ public final class SmokeInstrumentation extends Instrumentation {
                 ActionGame.Enemy s=new ActionGame.Enemy(g.nextId++,1,400,260,80);s.state=1;s.aimX=.78f;s.aimY=.62f;s.timer=.8f;g.enemies.add(s);
                 g.mode=ActionGame.Mode.PLAY;activity.world.stopFrames();});
             screenshot("04-combat-render.png");
-            result.putString("stream","ARPG_SMOKE_OK: launch, landscape, character selection, simultaneous move/attack, dodge, skill, pause, atomic save and resume; custom editor save/cancel, cross-class skill, talent purchase/locks and profile persistence; soul binding/cancel, independent soul button, radiant domain, forbidden pact, corruption costs and soul snapshot persistence; relic cabinet equip/cancel, duplicate guard, character isolation, checkpoint discovery and relic manual save; career level gate, save/cancel, specialization persistence, class-independent weapon, background/skill shields, dodge charge and atomic snapshot; 1887 setting dossier.\n");
+            result.putString("stream","ARPG_SMOKE_OK: launch, landscape, character selection, simultaneous move/attack, dodge, skill, pause, atomic save and resume; custom editor save/cancel, cross-class skill, talent purchase/locks and profile persistence; soul binding/cancel, independent soul button, radiant domain, forbidden pact, corruption costs and soul snapshot persistence; relic cabinet equip/cancel, duplicate guard, character isolation, checkpoint discovery and relic manual save; career level gate, save/cancel, specialization persistence, class-independent weapon, background/skill shields, dodge charge and atomic snapshot; 1887 setting dossier; all eight ordinary career selections, doctor treatment and potion, merchant actual upgrade price, miner protection and v6 manual save.\n");
             finish(Activity.RESULT_OK,result);
         }catch(Throwable t){result.putString("stream","ARPG_SMOKE_FAILED: "+t+"\n");finish(Activity.RESULT_CANCELED,result);}
+    }
+    private void pickCareer(int job,int spec,int background){
+        tap(510,142);waitForIdleSync();
+        ui(()->{Spinner jobs=activity.careerDialog.getWindow().getDecorView().findViewWithTag("career-job");check(jobs.getCount()==12,"all eleven careers present");jobs.setSelection(job);});waitForIdleSync();
+        ui(()->{View root=activity.careerDialog.getWindow().getDecorView();((Spinner)root.findViewWithTag("career-spec")).setSelection(spec);((Spinner)root.findViewWithTag("career-background")).setSelection(background);});waitForIdleSync();
+        ui(()->activity.careerDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick());waitForIdleSync();
+        ui(()->check(activity.world.game.isSpec(job,spec)&&activity.world.game.background()==background,"ordinary career commits without soul: "+job));
+    }
+    private void ordinaryCareerFlow(){
+        ui(()->{activity.world.game.experience[0]=160;activity.world.game.hp=activity.world.game.maxHp();});
+        for(int job=CareerSystem.POLICE;job<=CareerSystem.REPORTER;job++)pickCareer(job,2,0);
+        pickCareer(CareerSystem.DOCTOR,1,4);
+        tap(510,142);waitForIdleSync();screenshotNativeDialog("18-ordinary-doctor.png",activity.careerDialog);
+        ui(()->activity.careerDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick());waitForIdleSync();
+        tap(785,405);float[] expected={0};ui(()->{ActionGame g=activity.world.game;g.hp=20;expected[0]=20+g.maxHp()*.04f;});tap(855,298);
+        ui(()->check(Math.abs(activity.world.game.hp-expected[0])<.05f,"ordinary first aid actually heals without soul"));
+        ui(()->{ActionGame g=activity.world.game;expected[0]+=g.maxHp()*.45f+8+6;});tap(648,456);tap(900,37);
+        ui(()->{ActionGame g=activity.world.game;check(Math.abs(g.hp-expected[0])<.05f&&g.potions==1,"doctor and medic background actual potion bonus");try{SaveStore store=new SaveStore(activity);store.write(3,g);ActionGame loaded=store.read(3);check(loaded.isSpec(CareerSystem.DOCTOR,1)&&loaded.background()==4&&loaded.hp==g.hp&&loaded.potions==1,"ordinary career v6 AtomicFile snapshot");loaded.abandon();loaded.returnCamp();activity.world.replace(loaded);}catch(IOException e){throw new RuntimeException(e);}});
+        pickCareer(CareerSystem.MERCHANT,2,0);ui(()->activity.world.game.bank=100);tap(180,393);
+        ui(()->check(activity.world.game.bank==74&&activity.world.game.power==1,"merchant UI charges discounted 26 tickets"));
+        pickCareer(CareerSystem.MINER,2,1);tap(785,405);
+        ui(()->check(activity.world.game.careerWard==12,"miner protective equipment combines with background using max"));
     }
     private void careerFlow(){
         tap(350,108);waitForIdleSync();

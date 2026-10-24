@@ -1,6 +1,7 @@
 import io.wayfarer.rpg.core.*;
 import java.io.*;
 import java.util.*;
+import static io.wayfarer.rpg.core.CareerSystem.*;
 
 public final class CareerTests {
     private static int count;
@@ -16,7 +17,7 @@ public final class CareerTests {
     private static void selection()throws Exception{
         ActionGame g=new ActionGame();check(!g.chooseCareer(1,1,1)&&g.job()==0,"spec locked before level three");check(g.chooseCareer(1,0,1),"class and background available at level one");near(g.maxHp(),126,"guardian base health");g.selectHero(1);check(g.job()==0&&g.background()==0,"preset career independent");g.selectCustom(1);g.profile().xp=160;check(g.chooseCareer(3,2,4),"custom chooses career");g.selectHero(0);check(g.job()==1&&g.background()==1,"original configuration retained");
         g.experience[0]=160;check(g.chooseCareer(2,2,3),"level three unlock");g.start(1);check(!g.chooseCareer(1,1,6),"cannot respec in combat");g.pause();check(!g.chooseCareer(1,1,6),"cannot respec paused");ActionGame a=ActionSave.decode(ActionSave.encode(g));a.abandon();a.returnCamp();a.selectCustom(1);check(a.job()==3&&a.specialization()==2&&a.background()==4,"all character configurations persist");BuildSystem.Profile draft=a.profile().copy();draft.weapon=0;a.customize(1,draft);check(a.job()==3&&a.specialization()==2&&a.hero==0,"changing weapon preserves independent career");
-        for(int[] v:new int[][]{{0,1,0},{4,0,0},{-1,0,0},{2,3,0},{1,0,7}})check(!a.chooseCareer(v[0],v[1],v[2]),"invalid class/spec/background rejected");
+        for(int[] v:new int[][]{{0,1,0},{CareerSystem.CLASSES.length,0,0},{-1,0,0},{2,3,0},{1,0,7}})check(!a.chooseCareer(v[0],v[1],v[2]),"invalid class/spec/background rejected");
         System.out.println("PASS class selection, specialization level gate, camp-only respec, independent builds and unrestricted weapon changes");
     }
     private static void specializations()throws Exception{
@@ -51,14 +52,46 @@ public final class CareerTests {
     private static void reject(byte[] bytes,String key,String value)throws Exception{boolean bad=false;try{ActionSave.decode(edit(bytes,key,value));}catch(IOException e){bad=true;}check(bad,"reject "+key+"="+value);}
     private static void saves()throws Exception{
         ActionGame g=new ActionGame();g.selectCustom(1);g.profile().xp=160;g.bindSoul(2,1);g.equipRelics(1,2);g.start(1);g.soulSkill();g.pause();byte[] bytes=ActionSave.encode(g);ActionGame old=ActionSave.decode(edit(bytes,"version","4"));check(old.custom==1&&old.soulBuff>0&&old.soulKind()==2&&old.hasRelic(1)&&old.heroXp()==160&&old.job()==0&&old.background()==0,"v4 migration preserves soul/relic snapshot with no invented career");
-        reject(bytes,"career4.0","4");reject(bytes,"career4.1","1");reject(bytes,"career4.2","7");reject(bytes,"careerWard","1");reject(bytes,"careerCharge","1");reject(bytes,"careerCharge","NaN");
+        reject(bytes,"career4.0",Integer.toString(CareerSystem.CLASSES.length));reject(bytes,"career4.1","1");reject(bytes,"career4.2","7");reject(bytes,"careerWard","1");reject(bytes,"careerCharge","1");reject(bytes,"careerCharge","NaN");
         g=new ActionGame();g.chooseCareer(1,0,1);bytes=ActionSave.encode(g);reject(bytes,"career0.1","1");reject(bytes,"careerWard","10");g=game(1,1,1);g.skill();g.pause();bytes=ActionSave.encode(g);ActionGame a=ActionSave.decode(bytes);near(a.careerWard,14,"profession shield persists exactly");reject(bytes,"careerWard","15");reject(bytes,"careerCharge","1");
         g=game(3,2,0);g.mode=ActionGame.Mode.CAMP;g.bindSoul(1,1);g.start(1);g.soulSkill();bytes=ActionSave.encode(g);ActionSave.decode(bytes);reject(bytes,"soulCd","12");
         System.out.println("PASS v4 migration, all-career persistence, level/provenance checks and modified cooldown validation");
     }
+    private static void ordinaryCareers()throws Exception{
+        for(int job=POLICE;job<=REPORTER;job++){
+            ActionGame a=new ActionGame();check(a.chooseCareer(job,0,0),"ordinary career available without soul");check(!a.chooseCareer(job,1,0),"ordinary specialization level gate");a.experience[0]=160;
+            for(int spec=1;spec<=2;spec++){check(a.chooseCareer(job,spec,4),"ordinary specialization choice");ActionGame loaded=ActionSave.decode(ActionSave.encode(a));check(loaded.job()==job&&loaded.specialization()==spec&&loaded.background()==4&&loaded.soulKind()==0,"ordinary career snapshot and unbound operation");}
+        }
+        ActionGame g=game(POLICE,0,0);float hp=g.hp;hit(g,20);near(hp-g.hp,19,"police reduces actual enemy damage");
+        g=game(POLICE,1,0);near(g.speed(),205*1.05f,"patrol movement");g.dodge(0,-1);near(g.rollCd,1.05f,"patrol actual dodge cooldown");
+        g=game(POLICE,2,0);g.enemies.get(0).hp=500;shot(g,20);near(g.enemies.get(0).hp,480,"detective strict half-health threshold");shot(g,20);near(g.enemies.get(0).hp,456.4f,"detective wounded hit");
+        g=game(SOLDIER,0,0);near(g.damage(),27,"veteran adds three base damage at level three");
+        g=game(SOLDIER,1,0);shot(g,20);near(g.enemies.get(0).hp,977.6f,"assault close hit");g.enemies.get(0).x=700;shot(g,20);near(g.enemies.get(0).hp,957.6f,"assault strict range boundary");
+        g=game(SOLDIER,2,0);near(g.attackPeriod(),.48f,"rifle instructor does not accelerate saber");g.pause();g.abandon();g.returnCamp();g.selectHero(1);g.experience[1]=160;g.chooseCareer(SOLDIER,2,0);g.start(1);near(g.attackPeriod(),.36f,"rifle instructor accelerates carbine");near(g.skillPeriod(),7,"rifle instructor leaves skill cooldown");
+        g=game(DOCTOR,0,0);g.hp=10;g.potion();near(g.hp,10+g.maxHp()*.45f+8,"doctor actual potion bonus");
+        g=game(DOCTOR,1,0);g.hp=10;g.skill();near(g.hp,10+g.maxHp()*.04f,"first aid actual skill healing");near(g.careerWard,0,"doctor does not invent magic ward");
+        g=game(DOCTOR,2,4);g.mode=ActionGame.Mode.CAMP;g.relicOwned=RelicSystem.ALL;g.equipRelics(4,0);g.bindSoul(2,0);g.start(1);g.corruption=60;g.soulQuiet=3;g.hp=1;g.potion();near(g.hp,1+(g.maxHp()*.45f+8+6)*.88f*1.1f*1.12f,"nursing composes with doctor, background, chalice and purification");
+        g=game(MECHANIC,0,0);g.skill();near(g.skillCd,6.7f,"mechanic actual base skill cooldown");g=game(MECHANIC,1,0);g.skill();near(g.skillCd,6.2f,"maintenance extra cooldown reduction");
+        g=game(MECHANIC,2,0);near(g.maxHp(),126,"protective equipment health");hp=g.hp;hit(g,20);near(hp-g.hp,19,"protective equipment actual reduction");
+        g=game(MINER,0,0);near(g.maxHp(),128,"miner stamina");g=game(MINER,1,0);shot(g,20);near(g.enemies.get(0).hp,977.6f,"excavation equipped melee weapon bonus");g=game(MINER,2,1);near(g.careerWard,12,"shoring and smith use greater ward");hit(g,5);near(g.careerWard,7,"shoring ward spent");ActionGame loaded=ActionSave.decode(ActionSave.encode(g));near(loaded.careerWard,7,"shoring does not refill on restore");loaded.room=2;loaded.generateRoom();near(loaded.careerWard,12,"shoring refreshes next region");
+        g=game(BOXER,0,0);near(g.attackPeriod(),.48f*.94f,"boxer melee attack interval");g=game(BOXER,1,0);g.combo=1;g.comboWindow=1;ActionGame.Input in=new ActionGame.Input();in.attack=true;float damage=g.damage();g.update(.05f,in);g.update(.05f,in);near(g.enemies.get(0).hp,1000-damage*1.60f,"heavy punch actual third melee hit");
+        g=game(BOXER,2,0);g.dodge(0,-1);near(g.rollCd,.97f,"footwork actual dodge cooldown");
+        for(int job:new int[]{BOXER,MINER}){g=new ActionGame();g.selectHero(1);g.experience[1]=160;g.chooseCareer(job,1,0);g.start(1);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;mob(g,620,600);g.combo=1;g.comboWindow=1;damage=g.damage();g.update(.05f,in);near(g.enemies.get(0).hp,1000-damage*1.35f,"carbine excludes melee training: "+job);near(g.attackPeriod(),.4f,"carbine base cadence preserved");}
+        g=game(MERCHANT,0,6);g.enemies.get(0).hp=0;g.enemies.get(0).x=800;mob(g,900,200);tick(g);check(g.drops.stream().anyMatch(d->!d.heal&&d.amount==9),"merchant and scavenger actual coin stack");
+        g=game(MERCHANT,1,0);near(g.speed(),205*1.05f,"travelling merchant speed");g=new ActionGame();g.experience[0]=160;g.chooseCareer(MERCHANT,2,0);g.bank=100;check(g.upgradeCost(0)==26&&g.upgradeCost(1)==47,"bargain rounds price upward");g.upgrade(false);check(g.bank==74&&g.power==1,"bargain charges actual price");g.chooseCareer(POLICE,0,0);check(g.upgradeCost(1)==55&&g.bank==74,"leaving merchant restores price without refund");
+        g=game(REPORTER,0,0);near(g.speed(),205*1.03f,"reporter mobility");g=game(REPORTER,1,0);g.enemies.get(0).type=3;shot(g,20);near(g.enemies.get(0).hp,977,"war reporter boss attack");g.enemies.get(0).type=0;shot(g,20);near(g.enemies.get(0).hp,957,"war reporter normal enemy unchanged");
+        g=game(REPORTER,1,0);g.mode=ActionGame.Mode.CAMP;g.bindSoul(1,1);g.start(1);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;ActionGame.Enemy boss=mob(g,560,500);boss.type=3;damage=g.damage();g.soulSkill();near(boss.hp,1000-damage*3.6f,"conditional profession hit bonuses exclude soul lance");
+        g=game(REPORTER,2,0);g.kills=3;g.pause();g.abandon();check(g.heroXp()==160+33,"investigation failure XP floors 28 times 1.2");loaded=ActionSave.decode(ActionSave.encode(g));loaded.abandon();check(loaded.heroXp()==193,"loaded result does not repeat XP reward");
+        g=game(REPORTER,2,0);g.room=5;g.enemies.clear();tick(g);check(g.won&&g.heroXp()==220,"investigation victory XP");
+        // Existing v5 careers retain temporary states and never reinterpret IDs.
+        g=game(1,2,0);hit(g,10);g.pause();byte[] v5=edit(ActionSave.encode(g),"version","5");loaded=ActionSave.decode(v5);check(loaded.isSpec(1,2)&&loaded.careerCharge==g.careerCharge,"v5 career migration exact");reject(v5,"career0.0","4");
+        g=game(MINER,2,0);byte[] bytes=ActionSave.encode(g);reject(bytes,"careerWard","13");reject(bytes,"careerCharge","1");reject(bytes,"version","7");
+        g=game(POLICE,2,0);g.mode=ActionGame.Mode.CAMP;g.bindSoul(2,0);g.start(1);hp=g.hp;g.skill();near(hp-g.hp,g.maxHp()*.04f,"police reduction does not reduce sacrifice");
+        System.out.println("PASS eight ordinary careers, sixteen specializations, actual damage/healing/economy/XP, exclusions, unbound play and v5 compatibility");
+    }
     private static void combinations()throws Exception{
         int steps=0;
-        for(int job=0;job<=3;job++)for(int spec=0;spec<(job==0?1:3);spec++)for(int bg=0;bg<=6;bg++)for(int soul=0;soul<=2;soul++){
+        for(int job=0;job<CareerSystem.CLASSES.length;job++)for(int spec=0;spec<(job==0?1:3);spec++)for(int bg=0;bg<=6;bg++)for(int soul=0;soul<=2;soul++){
             ActionGame g=new ActionGame();g.selectCustom(0);BuildSystem.Profile p=g.profile().copy();p.weapon=(job+spec+bg)%3;p.skill=(bg+spec)%3;p.origin=bg%3;p.trait=spec%3;g.customize(0,p);g.profile().xp=1200;g.chooseCareer(job,spec,bg);g.bindSoul(soul,soul==0?0:(job+bg)%2);g.relicOwned=RelicSystem.ALL;g.equipRelics(1+(bg%8),1+((bg+3)%8));
             for(int root:new int[]{0,4,8}){for(int k=0;k<3;k++)g.learn(root);for(int k=0;k<2;k++)g.learn(root+1);}g.learn(new int[]{2,3,6,7,10,11}[(job+spec+bg)%6]);g.start(980+bg*31+spec);ActionGame.Input in=new ActionGame.Input();in.attack=true;
             for(int t=0;t<360;t++){
@@ -67,7 +100,7 @@ public final class CareerTests {
                 if(t%60==0){g=ActionSave.decode(ActionSave.encode(g));check(g.hp>=0&&g.hp<=g.maxHp()&&g.careerWard<=g.careerWardLimit()&&g.careerCharge<=g.careerChargeLimit(),"combined build roundtrip and bounds");}
             }
         }
-        System.out.println("PASS "+steps+" steps across 210 class/spec/background/soul combinations with weapon variation, relic pairs and maxed talents");
+        System.out.println("PASS "+steps+" steps across 714 class/spec/background/soul combinations with weapon variation, relic pairs and maxed talents");
     }
-    public static void main(String[] args)throws Exception{selection();specializations();backgrounds();synergies();saves();combinations();System.out.println("CAREER CHECKS PASSED: "+count);}
+    public static void main(String[] args)throws Exception{selection();specializations();backgrounds();synergies();saves();ordinaryCareers();combinations();System.out.println("CAREER CHECKS PASSED: "+count);}
 }

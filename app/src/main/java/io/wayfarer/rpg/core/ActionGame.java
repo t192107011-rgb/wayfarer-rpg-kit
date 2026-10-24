@@ -1,6 +1,7 @@
 package io.wayfarer.rpg.core;
 
 import java.util.*;
+import static io.wayfarer.rpg.core.CareerSystem.*;
 
 /** Fixed-step, Android-free action simulation. World units are pixels; time is seconds. */
 public final class ActionGame {
@@ -25,7 +26,8 @@ public final class ActionGame {
         String error=CareerSystem.invalid(job,spec,background,heroXp());if(!error.isEmpty()){notice=error;return false;}
         careers[buildId()][0]=job;careers[buildId()][1]=spec;careers[buildId()][2]=background;careerWard=0;careerCharge=0;hp=maxHp();notice="历练已更新："+careerName()+" / "+CareerSystem.BACKGROUNDS[background];return true;
     }
-    public float careerWardLimit(){return Math.max(background()==1?10:0,isSpec(1,1)?14:isSpec(3,1)?8:0);}
+    public float careerWardLimit(){return Math.max(entryCareerWard(),isSpec(1,1)?14:isSpec(3,1)?8:0);}
+    public float entryCareerWard(){return Math.max(background()==1?10:0,isSpec(MINER,2)?12:0);}
     public float careerChargeLimit(){return isSpec(1,2)?4:isSpec(2,2)?3:0;}
     public float soulPeriod(){return SoulSystem.COOLDOWNS[soulKind()][soulArt()]*(isSpec(3,2)?.9f:1);}
     public float springRatio(){return background()==2?.26f:.18f;}
@@ -67,7 +69,7 @@ public final class ActionGame {
     }
     private void clearSoulRuntime(){soulEnergy=0;soulCd=0;soulWard=0;corruption=0;soulQuiet=0;soulBuff=0;soulFields.clear();}
     private void gainSoul(float value){if(soulKind()!=0&&mode==Mode.PLAY)soulEnergy=Math.min(100,soulEnergy+value);}
-    public float healingFactor(){return (soulKind()==1?1.15f:soulKind()==2?1-corruption*.003f:1)*(hasRelic(4)?1.1f:1);}
+    public float healingFactor(){return (soulKind()==1?1.15f:soulKind()==2?1-corruption*.003f:1)*(hasRelic(4)?1.1f:1)*(isSpec(DOCTOR,2)?1.12f:1);}
     private void heal(float amount){float restored=Math.min(maxHp()-hp,Math.max(0,amount)*healingFactor());hp+=restored;if(restored>.01f)signal("heal",x,y,(int)restored);}
     private void payForbidden(float ratio,float debt){if(hasRelic(6))ratio*=.75f;float before=hp;hp=Math.max(Math.min(1,hp),hp-maxHp()*ratio);corruption=Math.min(100,corruption+debt);soulQuiet=3;signal("sacrifice",x,y,(int)(before-hp));}
     private float swingBoost=1;
@@ -86,8 +88,8 @@ public final class ActionGame {
         if(mode!=Mode.CAMP||slot<0||slot>=3)throw new IllegalArgumentException("仅能在营地编辑角色");
         BuildSystem.Profile copy=draft.copy();copy.name=BuildSystem.cleanName(copy.name);copy.xp=profiles[slot].xp;BuildSystem.validate(copy);profiles[slot]=copy;selectCustom(slot);
     }
-    public float skillPeriod(){return 7-rank(9)*.4f-(custom>=0&&profile().trait==2?.8f:0)+(soulKind()==1?.5f:soulKind()==2?-.6f:0)-(job()==3?.4f:0);}
-    public float dodgePeriod(){return 1.15f-rank(4)*.07f-(custom>=0&&profile().trait==1?.12f:0)-(hasRelic(2)?.15f:0);}
+    public float skillPeriod(){return 7-rank(9)*.4f-(custom>=0&&profile().trait==2?.8f:0)+(soulKind()==1?.5f:soulKind()==2?-.6f:0)-(job()==3?.4f:0)-(job()==MECHANIC?.3f:0)-(isSpec(MECHANIC,1)?.5f:0);}
+    public float dodgePeriod(){return 1.15f-rank(4)*.07f-(custom>=0&&profile().trait==1?.12f:0)-(hasRelic(2)?.15f:0)-(isSpec(POLICE,1)?.1f:0)-(isSpec(BOXER,2)?.18f:0);}
     public float potionRatio(){return custom>=0&&profile().trait==0?.55f:.45f;}
     private float originHp(){return custom<0?0:profile().origin==0?18:profile().origin==1?-10:-8;}
     public int room=0,loot=0,kills=0,potions=2,damageBonus=0,healthBonus=0,speedBonus=0,combo=0;
@@ -135,11 +137,11 @@ public final class ActionGame {
         public Signal(String kind,float x,float y,int value){this.kind=kind;this.x=x;this.y=y;this.value=value;}
     }
     public int heroLevel(){return 1+Math.min(19,heroXp()/80);}
-    public float maxHp(){return (hero==0?110:hero==1?85:90)+vitality*10+healthBonus+(heroLevel()-1)*3+rank(8)*(soulKind()==1?10:8)+originHp()-(custom>=0&&profile().trait==2?8:0)+(hasRelic(1)?12:0)+(job()==1?16:0);}
-    public float damage(){float value=(hero==0?22:hero==1?18:15)+power*2+damageBonus+(heroLevel()-1)+rank(0)*2+(custom>=0&&profile().origin==2?2:0);return value*(rank(3)>0&&hp<maxHp()*.4f?1.4f:1)*(soulBuff>0?1.25f:1);}
-    public float speed(){return (hero==2?240:hero==1?215:205)*(1+speedBonus*.08f+rank(4)*.03f)*(custom<0?1:profile().origin==0?.95f:profile().origin==1?1.07f:1)*(job()==2?1.06f:1)*(background()==2?1.03f:1)*(background()==3&&hp<maxHp()*.35f?1.12f:1);}
-    public float attackPeriod(){return (hero==0?.48f:hero==1?.4f:.29f)*(custom>=0&&profile().trait==0?1.06f:1)*(soulBuff>0?.8f:1);}
-    public int upgradeCost(int rank){return 30+rank*25;}
+    public float maxHp(){return (hero==0?110:hero==1?85:90)+vitality*10+healthBonus+(heroLevel()-1)*3+rank(8)*(soulKind()==1?10:8)+originHp()-(custom>=0&&profile().trait==2?8:0)+(hasRelic(1)?12:0)+(job()==1?16:job()==MINER?12:0)+(isSpec(MECHANIC,2)?10:0);}
+    public float damage(){float value=(hero==0?22:hero==1?18:15)+power*2+damageBonus+(heroLevel()-1)+rank(0)*2+(custom>=0&&profile().origin==2?2:0)+(job()==SOLDIER?3:0);return value*(rank(3)>0&&hp<maxHp()*.4f?1.4f:1)*(soulBuff>0?1.25f:1);}
+    public float speed(){return (hero==2?240:hero==1?215:205)*(1+speedBonus*.08f+rank(4)*.03f)*(custom<0?1:profile().origin==0?.95f:profile().origin==1?1.07f:1)*(job()==2?1.06f:job()==REPORTER?1.03f:1)*(isSpec(POLICE,1)||isSpec(MERCHANT,1)?1.05f:1)*(background()==2?1.03f:1)*(background()==3&&hp<maxHp()*.35f?1.12f:1);}
+    public float attackPeriod(){return (hero==0?.48f:hero==1?.4f:.29f)*(custom>=0&&profile().trait==0?1.06f:1)*(soulBuff>0?.8f:1)*(job()==BOXER&&hero!=1?.94f:1)*(isSpec(SOLDIER,2)&&hero==1?.9f:1);}
+    public int upgradeCost(int rank){int base=30+rank*25;return isSpec(MERCHANT,2)?(base*85+99)/100:base;}
     public int random(int bound){rngState^=rngState<<13;rngState^=rngState>>>7;rngState^=rngState<<17;return (int)Long.remainderUnsigned(rngState,bound);}
     public void signal(String kind,float x,float y,int amount){if(signals.size()<64)signals.add(new Signal(kind,x,y,amount));}
     public void selectHero(int value){if(mode==Mode.CAMP && value>=0&&value<3){custom=-1;hero=value;hp=maxHp();}}
@@ -155,7 +157,7 @@ public final class ActionGame {
         generateRoom();
     }
     public void generateRoom(){
-        mode=Mode.PLAY;roomCleared=false;lastRelic=0;relicEcho=0;careerWard=background()==1?10:0;careerCharge=0;x=WIDTH/2;y=HEIGHT-100;faceX=0;faceY=-1;
+        mode=Mode.PLAY;roomCleared=false;lastRelic=0;relicEcho=0;careerWard=entryCareerWard();careerCharge=0;x=WIDTH/2;y=HEIGHT-100;faceX=0;faceY=-1;
         attackCd=0;attackAnim=0;rollTime=0;rollCd=0;skillCd=0;shield=0;dodgeCharge=0;swingBoost=1;soulWard=0;soulBuff=0;soulFields.clear();invulnerable=.8f;comboWindow=0;hitStop=0;
         enemies.clear();shots.clear();blocks.clear();drops.clear();signals.clear();swingHits.clear();
         // Keep the central route and both exits connected in every layout.
@@ -199,7 +201,7 @@ public final class ActionGame {
     }
     public void potion(){
         if(mode!=Mode.PLAY||potions<=0||hp>=maxHp()&&!(hasRelic(4)&&soulKind()==2&&corruption>0))return;
-        potions--;if(hasRelic(4)){if(soulKind()==1)soulWard=Math.max(soulWard,12);if(soulKind()==2)corruption=Math.max(0,corruption-20);}heal(maxHp()*potionRatio()+(background()==4?6:0));
+        potions--;if(hasRelic(4)){if(soulKind()==1)soulWard=Math.max(soulWard,12);if(soulKind()==2)corruption=Math.max(0,corruption-20);}heal(maxHp()*potionRatio()+(background()==4?6:0)+(job()==DOCTOR?8:0));
     }
     public void skill(){
         if(mode!=Mode.PLAY||skillCd>0||rollTime>0)return;
@@ -211,6 +213,7 @@ public final class ActionGame {
         if(rank(10)>0)heal(maxHp()*.08f);
         if(isSpec(1,1))careerWard=Math.max(careerWard,14);
         if(isSpec(3,1)){careerWard=Math.max(careerWard,8);heal(maxHp()*.03f);}
+        if(isSpec(DOCTOR,1))heal(maxHp()*.04f);
         float activeDamage=damage()*(isSpec(3,2)?1.15f:1);
         if(style==1){
             double base=Math.atan2(faceY,faceX);int half=kind==1?1:kind==2?3:2;
@@ -273,7 +276,7 @@ public final class ActionGame {
     private void beginAttack(){
         aimAtNearest(hero==1?500:150);attackCd=attackPeriod();attackAnim=hero==1?.18f:.24f;
         combo=comboWindow>0?(combo+1)%3:0;comboWindow=.85f;swingHits.clear();
-        swingBoost=(dodgeCharge>0?1+rank(5)*(soulKind()==2?.20f:.15f):1)*(combo==2?1.35f+rank(1)*(soulKind()==2?.18f:.12f):1);dodgeCharge=0;
+        swingBoost=(dodgeCharge>0?1+rank(5)*(soulKind()==2?.20f:.15f):1)*(combo==2?1.35f+rank(1)*(soulKind()==2?.18f:.12f)+(isSpec(BOXER,1)&&hero!=1?.25f:0):1);dodgeCharge=0;
         if(combo==2&&rank(2)>0){for(Enemy e:enemies)if(len(e.x-x,e.y-y)<140)hit(e,damage()*.6f);signal("echo",x,y,140);}
         if(hero==1)fire(faceX,faceY,damage()*swingBoost);signal(hero==1?"bow":"swing",x,y,combo);
     }
@@ -311,7 +314,7 @@ public final class ActionGame {
         if(mode!=Mode.PLAY)return;
         updateShots(dt);if(mode!=Mode.PLAY)return;
         Iterator<Enemy> it=enemies.iterator();while(it.hasNext()){
-            Enemy e=it.next();if(e.hp<=0){it.remove();kills=Math.min(99999,kills+1);drops.add(new Drop(e.x,e.y,(e.type==3?55:5+room)+(background()==6?2:0),false));if(background()==5){heal(1);gainSoul(e.type==3?8:2);}if(random(6)==0)drops.add(new Drop(e.x+15,e.y,15,true));signal("defeat",e.x,e.y,e.type);}
+            Enemy e=it.next();if(e.hp<=0){it.remove();kills=Math.min(99999,kills+1);drops.add(new Drop(e.x,e.y,(e.type==3?55:5+room)+(background()==6?2:0)+(job()==MERCHANT?1:0),false));if(background()==5){heal(1);gainSoul(e.type==3?8:2);}if(random(6)==0)drops.add(new Drop(e.x+15,e.y,15,true));signal("defeat",e.x,e.y,e.type);}
         }
         Iterator<Drop> d=drops.iterator();while(d.hasNext()){
             Drop p=d.next();float dist=len(p.x-x,p.y-y);if(dist<100&&dist>1){float speed=270*dt;p.x+=(x-p.x)/dist*Math.min(speed,dist);p.y+=(y-p.y)/dist*Math.min(speed,dist);}
@@ -372,6 +375,12 @@ public final class ActionGame {
     private void hit(Enemy e,float value,boolean charge){hit(e,value,charge,charge);}
     private void hit(Enemy e,float value,boolean charge,boolean echoEligible){
         if(e.hp<=0)return;
+        if(echoEligible){
+            if(isSpec(POLICE,2)&&e.hp<e.maxHp*.5f)value*=1.18f;
+            if(isSpec(SOLDIER,1)&&len(e.x-x,e.y-y)<140)value*=1.12f;
+            if(isSpec(MINER,1)&&hero!=1)value*=1.12f;
+            if(isSpec(REPORTER,1)&&e.type==3)value*=1.15f;
+        }
         if(echoEligible&&isSpec(2,1)&&len(e.x-x,e.y-y)>200)value*=1.18f;
         if(echoEligible&&careerCharge>0&&careerChargeLimit()>0){value*=1.25f;careerCharge=0;signal("echo",e.x,e.y,80);}
         if(echoEligible&&relicEcho>0&&hasRelic(3)){value*=1.35f;relicEcho=0;signal("echo",e.x,e.y,65);}
@@ -381,7 +390,7 @@ public final class ActionGame {
     }
     private void hurt(float value){
         if(invulnerable>0||mode!=Mode.PLAY)return;
-        value*= (custom>=0&&profile().trait==1?1.12f:1)*(rank(3)>0?1.15f:1)*(soulKind()==2?1+corruption*.004f:1)*(job()==1?.92f:1);
+        value*= (custom>=0&&profile().trait==1?1.12f:1)*(rank(3)>0?1.15f:1)*(soulKind()==2?1+corruption*.004f:1)*(job()==1?.92f:job()==POLICE||isSpec(MECHANIC,2)?.95f:1);
         float wardTaken=Math.min(soulWard,value);soulWard-=wardTaken;value-=wardTaken;
         float careerTaken=Math.min(careerWard,value);careerWard-=careerTaken;value-=careerTaken;
         float talentTaken=Math.min(shield,value);shield-=talentTaken;value-=talentTaken;float absorbed=talentTaken+wardTaken+careerTaken;
@@ -396,7 +405,7 @@ public final class ActionGame {
     private void finish(boolean victory){
         if(mode==Mode.RESULT||mode==Mode.CAMP)return;
         won=victory;int reward=victory?loot+40:(int)(loot*.7f);bank=Math.min(999999,bank+reward);
-        int gained=kills*6+(victory?50:10);
+        int gained=kills*6+(victory?50:10);if(isSpec(REPORTER,2))gained=gained*120/100;
         if(custom<0)experience[hero]=Math.min(1000000,experience[hero]+gained);else profile().xp=Math.min(1000000,profile().xp+gained);
         if(victory)wins=Math.min(999999,wins+1);mode=Mode.RESULT;notice=(victory?"长夜已尽":"灯火尚存")+" · 带回 "+reward+" 票券";signal(victory?"victory":"death",x,y,reward);
     }
