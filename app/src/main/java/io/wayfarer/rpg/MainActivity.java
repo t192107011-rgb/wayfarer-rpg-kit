@@ -12,7 +12,7 @@ public final class MainActivity extends Activity implements WorldView.Host {
     private SaveStore store;
     private GameAudio audio;
     private boolean ready=false,saveFailed=false;
-    public AlertDialog workshopDialog,talentDialog,soulDialog,relicDialog;
+    public AlertDialog workshopDialog,talentDialog,soulDialog,relicDialog,careerDialog,settingDialog;
     @Override public void onCreate(Bundle state){
         super.onCreate(state);getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY|View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
@@ -45,18 +45,20 @@ public final class MainActivity extends Activity implements WorldView.Host {
     }
     private void writeSlot(int i){try{store.write(i,world.game);Toast.makeText(this,"已保存到存档 "+i,Toast.LENGTH_SHORT).show();}catch(IOException e){Toast.makeText(this,"保存失败："+e.getMessage(),Toast.LENGTH_LONG).show();}}
     private void blocked(){new AlertDialog.Builder(this).setTitle("先恢复进度或建立新档").setPositiveButton("存档",(d,w)->slots()).setNegativeButton("新档",(d,w)->newProfile()).setCancelable(false).show();}
-    private void newProfile(){new AlertDialog.Builder(this).setTitle("建立全新档案？").setMessage("营地升级、自定义角色、全部角色经验、技能树、灵魂、圣遗物收藏和当前远征将重置。三个手动存档保留。")
+    private void newProfile(){new AlertDialog.Builder(this).setTitle("建立全新档案？").setMessage("营地升级、自定义角色、全部角色经验、技能树、灵魂、圣遗物收藏、职业、专精、背景经历和当前远征将重置。三个手动存档保留。")
         .setPositiveButton("建立新档",(d,w)->{world.replace(new ActionGame());world.setEnabled(true);ready=true;save();}).setNegativeButton("取消",(d,w)->{if(!ready)blocked();}).show();}
-    @Override public void help(){world.resetInput();world.game.pause();new AlertDialog.Builder(this).setTitle("守灯者手册")
-        .setMessage("左侧摇杆移动；按住右侧攻击连续出招，可边移动边攻击。攻击优先瞄准附近视线内敌人。\n\n闪避按当前移动方向发动，未移动时沿朝向闪避；带短暂无敌，基础冷却 1.15 秒。技能基础冷却 7 秒。每轮有两瓶基础恢复 45% 生命的药水；出身、特质与天赋会改变这些数值。\n\n地面红圈或直线表示敌人即将攻击，请及时离开。攻击和闪避可同时用不同手指操作。\n\n清空房间后选择一项本轮增益；向上进入左侧泉径恢复生命，或右侧余烬门获得额外资源。第五庭院有首领，半血后弹幕变密。\n\n胜利带回全部余烬与 40 奖励；失败或主动结束带回已拾取余烬的 70%。角色经验和营地升级永久保留。\n\n每 15 秒、换房、暂停与切后台自动存档。读取战斗存档后先暂停，点击继续。卸载会删除本地存档。\n\n营地的角色工坊可改造三个独立角色：武器、主动技能、出身、特质与外观自由组合。技能树初始2点，每80经验增加1点，最多16点。三个分支的六个终阶天赋只能选一个，营地可免费重置。\n\n灵魂祭坛可为每个角色缔结光辉或禁忌灵魂，并选择专属技能。光辉强化护盾、治疗与穿透；禁忌改造牵引、诅咒与血契，但消耗生命并增加侵蚀。右侧魂技键消耗40魂能，命中可充能；魂技和领域造成的伤害不回充。侵蚀提高受伤、降低治疗，停用禁忌技能3秒后逐渐消退。\n\n营地右上方圣遗物入口可查看图鉴与装备。每个角色可携带两件，初始赠予灯芯和罗盘；第2、4庭院及首领清场发现新圣遗物，失败也保留。回营后装备生效。逆命沙漏每轮仅触发一次，读档不补充。")
-        .setPositiveButton("知道了",null).show();}
-    @Override public void confirmAbandon(){new AlertDialog.Builder(this).setTitle("结束本轮远征？").setMessage("按失败规则结算：带回已拾取余烬的 70%，保留本轮获得的角色经验。")
+    @Override public void help(){world.resetInput();world.game.pause();new AlertDialog.Builder(this).setTitle("灰桥行路手册")
+        .setMessage("左侧摇杆移动；按住右侧攻击连续出招，可边移动边攻击。攻击优先瞄准附近视线内敌人。\n\n闪避按当前移动方向发动，未移动时沿朝向闪避；带短暂无敌，基础冷却 1.15 秒。技能基础冷却 7 秒。每轮有两瓶基础恢复 45% 生命的药水；出身、特质与天赋会改变这些数值。\n\n地面红圈或直线表示敌人即将攻击，请及时离开。攻击和闪避可同时用不同手指操作。\n\n清空房间后选择一项本轮增益；向上进入左侧补给所恢复生命，或右侧货栈获得额外资源。第五区域有首领，半血后弹幕变密。\n\n胜利带回全部票券与 40 奖励；失败或主动结束带回已拾取票券的 70%。角色经验和营地升级永久保留。\n\n每 15 秒、换房、暂停与切后台自动存档。读取战斗存档后先暂停，点击继续。卸载会删除本地存档。\n\n营地的角色工坊可改造三个独立角色：武器、主动技能、出身、特质与外观自由组合。技能树初始2点，每80经验增加1点，最多16点。三个分支的六个终阶天赋只能选一个，营地可免费重置。\n\n灵魂祭坛可为每个角色缔结光辉或禁忌灵魂，并选择专属技能。光辉强化护盾、治疗与穿透；禁忌改造牵引、诅咒与血契，但消耗生命并增加侵蚀。右侧魂技键消耗40魂能，命中可充能；魂技和领域造成的伤害本身不回充；墓园看守的每敌一次击杀奖励仍可回能。侵蚀提高受伤、降低治疗，停用禁忌技能3秒后逐渐消退。\n\n营地右上方圣遗物入口可查看图鉴与装备。每个角色可携带两件，初始赠予灯芯和罗盘；第2、4区域及首领清场发现新圣遗物，失败也保留。回营后装备生效。逆命沙漏每轮仅触发一次，读档不补充。\n\n营地「职业与历练」为每个角色设置职业、专精和背景被动。护路卫士偏防护，边地猎人偏机动，秘仪学者偏技能；职业不限制武器。Lv.3（160经验）开放两个专精择一，背景从开始即可选择。职能护盾、反击准备和击杀被动都实际参与战斗，暂停冻结倒计时。")
+        .setNeutralButton("时代档案",(d,w)->setting()).setPositiveButton("知道了",null).show();}
+    @Override public void setting(){world.resetInput();world.game.pause();ScrollView scroll=new ScrollView(this);TextView body=new TextView(this);body.setText(WorldSetting.DOSSIER);body.setTextSize(16);int pad=Math.round(20*getResources().getDisplayMetrics().density);body.setPadding(pad,pad,pad,pad);scroll.addView(body);settingDialog=new AlertDialog.Builder(this).setTitle("灰桥事件档案 · 1887").setView(scroll).setPositiveButton("返回",null).show();}
+    @Override public void confirmAbandon(){new AlertDialog.Builder(this).setTitle("结束本轮远征？").setMessage("按失败规则结算：带回已拾取票券的 70%，保留本轮获得的角色经验。")
         .setPositiveButton("结算",(d,w)->{world.game.abandon();world.resetInput();save();}).setNegativeButton("继续休息",null).show();}
     @Override public void editCharacter(){
         if(world.game.mode!=ActionGame.Mode.CAMP)return;world.resetInput();
         if(world.game.custom>=0)workshopDialog=CharacterWorkshop.show(this,world.game.custom);
         else new AlertDialog.Builder(this).setTitle("选择要编辑的独立角色槽").setItems(new String[]{world.game.profiles[0].name,world.game.profiles[1].name,world.game.profiles[2].name},(d,w)->{workshopDialog=CharacterWorkshop.show(this,w);}).setNegativeButton("取消",null).show();
     }
+    @Override public void careers(){if(world.game.mode==ActionGame.Mode.CAMP){world.resetInput();careerDialog=CareerHall.show(this);}}
     @Override public void relics(){if(world.game.mode==ActionGame.Mode.CAMP){world.resetInput();relicDialog=RelicCabinet.show(this);}}
     @Override public void souls(){if(world.game.mode==ActionGame.Mode.CAMP){world.resetInput();soulDialog=SoulAltar.show(this);}}
     @Override public void talent(int id){

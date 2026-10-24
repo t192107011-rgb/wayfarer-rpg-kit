@@ -3,14 +3,14 @@ package io.wayfarer.rpg.core;
 /** Stable, data-driven character and talent definitions. IDs are save protocol values. */
 public final class BuildSystem {
     private BuildSystem(){}
-    public static final String[] WEAPONS={"长剑 · 弧形三连斩","长弓 · 自动瞄准","双刃 · 高速连击"};
-    public static final String[] SKILLS={"震地 · 范围重击","箭雨 · 扇形投射","环刃 · 近身爆发与无敌"};
-    public static final String[] ORIGINS={"炉乡 · 生命 +18 / 移速 -5%","林径 · 移速 +7% / 生命 -10","流亡 · 伤害 +2 / 生命 -8"};
+    public static final String[] WEAPONS={"军刀 · 弧形三连斩","卡宾枪 · 自动瞄准","双匕首 · 高速连击"};
+    public static final String[] SKILLS={"震地 · 范围重击","散射 · 扇形投射","环刃 · 近身爆发与无敌"};
+    public static final String[] ORIGINS={"工业镇 · 生命 +18 / 移速 -5%","乡村 · 移速 +7% / 生命 -10","流民 · 伤害 +2 / 生命 -8"};
     public static final String[] TRAITS={"守誓 · 药水恢复55% / 攻速降低","逐猎 · 闪避冷却 -0.12秒 / 受伤 +12%","寻火 · 技能冷却 -0.8秒 / 生命 -8"};
     public static final String[] COLORS={"苔绿","赭金","雾紫","霜蓝","绯红","月白"};
     public static final int[] PALETTE={0xFFA9C59A,0xFFC39C70,0xFF9A9FCE,0xFF7CBAC5,0xFFCB8586,0xFFD5D4C5};
     public static final int[] SKIN={0xFFD6B48E,0xFFAD7954,0xFF744E40};
-    public static final String[] HAIR={"短发","长发","兜帽"};
+    public static final String[] HAIR={"短发","长发","便帽"};
     public static final class Profile {
         public String name="无名守灯者";
         public int weapon,skill,origin,trait,color,skin,hair,xp,soul,soulArt;
@@ -33,7 +33,7 @@ public final class BuildSystem {
     public static final String[] BRANCHES={"锋刃 · 连击与风险","逐影 · 闪避与节奏","守火 · 技能与续航"};
     public static final Node[] NODES={
         new Node("淬锋","每级所有攻击伤害 +2。",3,-1,1),
-        new Node("三拍","每级第三次普攻的伤害倍率 +12%；长弓也计连击。",2,0,2),
+        new Node("三拍","每级第三次普攻的伤害倍率 +12%；卡宾枪也计连击。",2,0,2),
         new Node("裂地回响","第三次普攻同时向周围140范围释放60%伤害震波。",1,1,4),
         new Node("孤焰","生命低于40%时伤害 +40%；受到伤害始终 +15%。",1,1,4),
         new Node("轻步","每级移速 +3%，闪避冷却 -0.07秒。",3,-1,1),

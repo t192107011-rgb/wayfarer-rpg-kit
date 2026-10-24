@@ -8,7 +8,7 @@ import java.util.*;
 
 /** Native landscape canvas with fixed-step simulation and independent multi-touch pointers. */
 public final class WorldView extends View implements Choreographer.FrameCallback {
-    public interface Host {void save();void slots();void help();void confirmAbandon();void sound(String event);void editCharacter();void talent(int id);void resetTalents();void souls();void relics();}
+    public interface Host {void save();void slots();void help();void confirmAbandon();void sound(String event);void editCharacter();void talent(int id);void resetTalents();void souls();void relics();void careers();void setting();}
     private final Host host;
     public ActionGame game;
     private final ActionGame.Input input=new ActionGame.Input();
@@ -85,16 +85,19 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     }
     private void camp(Canvas c){
         box(c,0,0,960,540,0xFF12282D);
-        for(int i=0;i<30;i++){float px=(i*97)%960,py=100+(i*53)%440;tree(c,px,py,.9f+(i%3)*.25f,0xFF193637);}
+        // Distant brick mills and telegraph wires; purely decorative, no hidden collisions.
+        for(int i=0;i<6;i++){float xx=35+i*175;box(c,xx,180-i%2*35,130,320,0xFF223239);box(c,xx+77,95,23,130,0xFF29373C);for(int w=0;w<3;w++)box(c,xx+14+w*35,200,15,24,0x554D5D58);}
+        line(c,0,122,960,100,0xFF3A4546,1);line(c,0,130,960,108,0xFF3A4546,1);
+        for(int xx=0;xx<960;xx+=28)box(c,xx,451,19,8,0xFF3F3933);line(c,0,448,960,448,0xFF6D7270,2);line(c,0,462,960,462,0xFF6D7270,2);
         glow(c,480,320,250,0x554C8B77);glow(c,480,320,100,0x66EDB16B);
         for(int i=0;i<7;i++){float a=visualTime*1.5f+i*2;circle(c,470+i*4,310-(visualTime*25+i*13)%80,2,0xFFDEAF76);}
-        text(c,"灯 下 归 途",44,62,33,cream,false);text(c,"WAYFARER  /  ACTION RPG KIT",46,88,12,muted,false);
-        text(c,"选择守灯者，穿过五重庭院。每次归来，都让灯火更亮。",46,112,14,muted,false);
-        text(c,"共享余烬  "+game.bank,820,51,19,gold,true);text(c,"远征 "+game.runs+"  ·  通关 "+game.wins,770,83,13,muted,false);
+        text(c,"灯 下 归 途",44,62,33,cream,false);text(c,"WAYFARER  /  GREYBRIDGE, 1887",46,88,12,muted,false);
+        text(c,"1887年 · 灰桥封锁线：寻找失踪夜班列车。点击阅读事件档案。",46,112,14,muted,false);
+        text(c,"共享票券  "+game.bank,820,51,19,gold,true);text(c,"远征 "+game.runs+"  ·  通关 "+game.wins,770,83,13,muted,false);
         button(c,40,126,130,32,"预设角色",!customRoster);button(c,185,126,130,32,"我的角色",customRoster);
-        text(c,"当前："+game.heroName()+"  ·  可用天赋点 "+game.availablePoints(),350,148,14,gold,false);
+        button(c,340,126,355,32,"职业与历练 · "+game.careerName(),false);
         button(c,710,126,210,32,"圣遗物 · "+Integer.bitCount(game.relicOwned)+" / 8",false);
-        String[] detail={"弧形三连斩 · 震地技能","自动瞄准射击 · 扇形箭雨","高速连击 · 环刃与无敌"};
+        String[] detail={"军刀三连斩 · 震地技能","卡宾枪射击 · 扇形散射","双匕首连击 · 环刃与无敌"};
         for(int i=0;i<3;i++){
             float bx=40+i*300;BuildSystem.Profile look=customRoster?game.profiles[i]:null;
             boolean selected=customRoster?game.custom==i:game.custom<0&&game.hero==i;
@@ -107,10 +110,12 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             int soul=look==null?game.presetSouls[i]:look.soul,style=look==null?i:look.skill;
             text(c,SoulSystem.SKILLS[soul][style]+" · "+SoulSystem.NAMES[soul],bx+20,305,12,soul==2?0xFFCAA9E2:gold,false);
             text(c,selected?"已选择":"点击选择",bx+235,320,12,selected?gold:muted,true);
+            int[] career=game.careers[customRoster?i+3:i];
+            text(c,CareerSystem.name(career[0],career[1])+" / "+CareerSystem.BACKGROUNDS[career[2]],bx+20,327,10,muted,false);
         }
         text(c,"携行："+game.relicLoadout(),40,354,13,gold,false);
-        button(c,40,365,280,57,"磨刃 +2  ·  "+(game.power>=10?"MAX":game.upgradeCost(game.power)+" 余烬"),false);
-        button(c,340,365,280,57,"护火 +10 HP  ·  "+(game.vitality>=10?"MAX":game.upgradeCost(game.vitality)+" 余烬"),false);
+        button(c,40,365,280,57,"磨刃 +2  ·  "+(game.power>=10?"MAX":game.upgradeCost(game.power)+" 票券"),false);
+        button(c,340,365,280,57,"护火 +10 HP  ·  "+(game.vitality>=10?"MAX":game.upgradeCost(game.vitality)+" 票券"),false);
         text(c,"永久攻击 "+game.power+"/10     永久生命 "+game.vitality+"/10",40,445,13,muted,false);
         button(c,660,365,260,80,"踏入长夜  →",true);
         text(c,game.notice.length()>54?game.notice.substring(0,54):game.notice,40,465,12,muted,false);
@@ -150,23 +155,29 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     private void dungeon(Canvas c){
         cameraX=Math.max(0,Math.min(ActionGame.WIDTH-960,game.x-480));cameraY=Math.max(0,Math.min(ActionGame.HEIGHT-540,game.y-275));
         c.save();c.translate(-cameraX+(float)Math.sin(visualTime*81)*shake,-cameraY+(float)Math.cos(visualTime*67)*shake);
-        int floor=game.room<3?0xFF293E3B:game.room==5?0xFF30383E:0xFF303E41;
+        int floor=game.room==2?0xFF303E36:game.room==3?0xFF493D39:game.room==5?0xFF303A40:0xFF3C4142;
         box(c,0,0,1120,760,0xFF102328);
         for(int yy=48;yy<712;yy+=32)for(int xx=48;xx<1072;xx+=32){
             int hash=(xx*17+yy*31+game.room*7)&15;
             box(c,xx,yy,31,31,hash<3?floor+0x030403:hash>12?floor-0x020202:floor);
             if(hash==2)line(c,xx+5,yy+19,xx+15,yy+22,0xFF49605A,1);
         }
-        // Stone perimeter, repeated pillars and two distinct exit gates.
+        // Rails, pipework and brick courses are scenery; obstacles below retain their exact hitboxes.
+        if(game.room<=2){for(int yy=85;yy<700;yy+=28)box(c,465,yy,190,9,0xFF443D35);line(c,485,70,485,708,0xFF8A8980,5);line(c,635,70,635,708,0xFF8A8980,5);}
+        if(game.room>=3){for(int xx=60;xx<1050;xx+=64)line(c,xx,52,xx+30,52,0xFF9A7561,4);line(c,80,115,1040,115,0xFF766B59,8);for(int xx=120;xx<1040;xx+=160)ring(c,xx,115,10,0xFF9F8A66,3);}
+        // Brick perimeter and two distinct exit gates.
         for(int xx=16;xx<1100;xx+=48){box(c,xx,22,46,27,0xFF47565A);box(c,xx,708,46,30,0xFF1D3036);}
         for(int yy=48;yy<720;yy+=48){box(c,18,yy,30,46,0xFF3D5053);box(c,1072,yy,30,46,0xFF253A41);}
-        gate(c,280,70,game.roomCleared,"泉径 · 恢复",0xFF83BFC1);gate(c,840,70,game.roomCleared,"余烬 · 收获",gold);
+        gate(c,280,70,game.roomCleared,"补给所 · 恢复",0xFF83BFC1);gate(c,840,70,game.roomCleared,"货栈 · 收获",gold);
         for(ActionGame.Block b:game.blocks){
             box(c,b.x+6,b.y+8,b.w,b.h,0x6610171B);
-            if(b.style==0){box(c,b.x,b.y,b.w,b.h,0xFF40524D);box(c,b.x+5,b.y+3,b.w-10,10,0xFF657563);for(int i=0;i<3;i++)box(c,b.x+i*20,b.y-5,16,9,0xFF6C7960);}
-            else {box(c,b.x,b.y,b.w,b.h,0xFF536063);box(c,b.x+4,b.y+3,b.w-8,8,0xFF84908A);line(c,b.x+2,b.y+b.h/2,b.x+b.w,b.y+b.h/2,0xFF33464B,2);}
+            if(b.style==0){box(c,b.x,b.y,b.w,b.h,0xFF62533F);box(c,b.x+4,b.y+4,b.w-8,b.h-8,0xFF776248);line(c,b.x+4,b.y+4,b.x+b.w-4,b.y+b.h-4,0xFF3C3B35,4);line(c,b.x+b.w-4,b.y+4,b.x+4,b.y+b.h-4,0xFF3C3B35,4);}
+            else {box(c,b.x,b.y,b.w,b.h,0xFF6A5148);for(float yy=b.y+9;yy<b.y+b.h;yy+=12)line(c,b.x,yy,b.x+b.w,yy,0xFF383D3C,2);box(c,b.x,b.y,b.w,6,0xFF928575);}
+            if(game.room==3){for(float xx=b.x+10;xx<b.x+b.w-5;xx+=16)line(c,xx,b.y+8,xx,b.y+b.h-5,0xFFC2B494,2);box(c,b.x+4,b.y+b.h/2,b.w-8,5,0xFF353F42);}
+            else if(game.room==4){rounded(c,b.x+4,b.y+2,b.w-8,b.h-4,8,0xFF747773);line(c,b.x+b.w/2,b.y+9,b.x+b.w/2,b.y+b.h-8,0xFF41494A,3);line(c,b.x+b.w*.3f,b.y+19,b.x+b.w*.7f,b.y+19,0xFF41494A,3);}
+            else if(game.room==5){box(c,b.x,b.y,b.w,b.h,0xFF46555A);for(float xx=b.x+6;xx<b.x+b.w;xx+=18){circle(c,xx,b.y+5,2,0xFFA4A59C);circle(c,xx,b.y+b.h-5,2,0xFFA4A59C);}ring(c,b.x+b.w/2,b.y+b.h/2,Math.min(b.w,b.h)*.28f,0xFFAA9272,4);}
         }
-        for(int i=0;i<4;i++){float tx=i%2==0?80:1040,ty=160+(i/2)*380;glow(c,tx,ty,100,0x32FFC56D);box(c,tx-3,ty-3,6,16,0xFF5C5041);circle(c,tx,ty-7,4+(float)Math.sin(visualTime*5+i),0xFFFFD18B);}
+        for(int i=0;i<4;i++){float tx=i%2==0?80:1040,ty=160+(i/2)*380;glow(c,tx,ty,100,0x32FFC56D);box(c,tx-3,ty-3,6,23,0xFF393C3E);box(c,tx-8,ty-19,16,18,0xFF343B3C);box(c,tx-5,ty-16,10,12,0xFFFFD18B);box(c,tx-11,ty-21,22,4,0xFF65605A);}
         for(ActionGame.SoulField f:game.soulFields){
             int tint=f.type==1?0xFFE6D78F:0xFFB292DD;float radius=f.type==1?175:185;
             circle(c,f.x,f.y,radius,f.type==1?0x22E8D391:0x333E245E);ring(c,f.x,f.y,radius,tint,2);
@@ -197,6 +208,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         box(c,x-32,y-18,64,46,open?0x885AA899:0xFF15262C);if(open){glow(c,x,y,80,0x554DCEAB);text(c,name,x,y+57,14,tint,true);}else for(int i=-2;i<=2;i++)box(c,x+i*12-2,y-18,4,46,0xFF687575);
     }
     private void player(Canvas c){
+        if(game.careerWard>0)ring(c,game.x,game.y-10,35,0xFF9CBBC6,2);
         if(game.soulWard>0)ring(c,game.x,game.y-10,31,0xFFEFDC9D,3);
         if(game.soulBuff>0)ring(c,game.x,game.y-10,32,0xFFD994E0,3);
         if(game.shield>0)ring(c,game.x,game.y-10,27,0xCC8ACEDD,2);
@@ -214,14 +226,14 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         if(look!=null&&look.soul>0)ring(c,0,-42,9,look.soul==1?0xFFE8D493:0xFFBE8FDC,2);
         color(0x7708131A);c.drawOval(-19,-3,19,9,p);
         int cloth=kind==0?0xFFA9C59A:kind==1?0xFFC39C70:0xFF9A9FCE;if(look!=null)cloth=BuildSystem.PALETTE[look.color];if(flash)cloth=0xFFEBF5CD;
-        box(c,-10,-19,20,21,0xFF172B31);box(c,-8,-22,16,21,cloth);box(c,-11,-12,6,16,cloth-0x202020);box(c,5,-12,6,16,cloth-0x202020);
+        box(c,-10,-19,20,21,0xFF172B31);box(c,-8,-22,16,25,cloth);line(c,0,-21,0,-1,0xFF334045,1);box(c,2,-17,2,2,gold);box(c,2,-11,2,2,gold);box(c,-11,-12,6,16,cloth-0x202020);box(c,5,-12,6,16,cloth-0x202020);
         box(c,-7,-34,14,13,0xFF1D2A32);box(c,-5,-32,10,11,look==null?0xFFD6B48E:BuildSystem.SKIN[look.skin]);box(c,-7,-36,14,6,kind==1?0xFF684A3D:0xFF36484D);
         if(look!=null&&look.hair==1){box(c,-8,-33,3,19,0xFF684A3D);box(c,5,-33,3,19,0xFF684A3D);}
-        if(look!=null&&look.hair==2){box(c,-8,-37,16,5,cloth);box(c,-8,-34,3,14,cloth);box(c,5,-34,3,14,cloth);}
+        if(look==null||look.hair==2){box(c,-8,-39,16,7,cloth);box(c,-11,-34,23,3,0xFF29343A);}
         box(c,-8,0+step,6,8,0xFF252B30);box(c,2,0-step,6,8,0xFF252B30);
         box(c,-6,-10,12,3,0xFF6B5741);box(c,-1,-11,3,4,gold);
         if(kind==0){box(c,13,-27,4,27,0xFFC6D5CD);box(c,9,-5,12,3,0xFF947652);box(c,-17,-17,8,19,0xFF678281);}
-        else if(kind==1){ring(c,13,-14,12,0xFFB99A67,2);line(c,13,-26,13,-2,0xFFD4D0AF,1);}
+        else if(kind==1){box(c,10,-18,6,17,0xFF806045);box(c,12,-37,3,26,0xFFB0B7B1);box(c,10,-23,7,3,0xFF444D50);}
         else {box(c,-17,-19,3,17,0xFFD1DCE0);box(c,14,-19,3,17,0xFFD1DCE0);}
         if(dy>=-.3f){box(c,-3+(dx>0?2:0),-27,2,2,0xFF253039);box(c,2+(dx>0?1:0),-27,2,2,0xFF253039);}
         c.restore();
@@ -231,9 +243,9 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         c.save();c.translate(e.x,e.y);float s=e.type==3?2.1f:1;c.scale(s,s);color(0x880B151B);c.drawOval(-19,-2,19,11,p);
         int tint=e.flash>0?0xFFF4E4BD:e.type==0?0xFF936C65:e.type==1?0xFF6F8B91:e.type==2?0xFFA18A60:0xFF967967;
         box(c,-14,-27,28,30,0xFF1C292E);box(c,-11,-25,22,26,tint);box(c,-8,-37,16,16,tint-0x101010);
-        box(c,-14,-38,6,9,tint);box(c,8,-38,6,9,tint);box(c,-5,-31,4,3,0xFFEDB781);box(c,3,-31,4,3,0xFFEDB781);
+        box(c,-12,-41,24,7,0xFF3D4548);box(c,-15,-35,30,3,0xFF77736A);box(c,-5,-31,4,3,0xFFEDB781);box(c,3,-31,4,3,0xFFEDB781);
         box(c,-9,0,6,8,0xFF253239);box(c,3,0,6,8,0xFF253239);
-        if(e.type==1){box(c,15,-37,3,40,0xFF819293);circle(c,16,-39,5,0xFFE4AA79);}else if(e.type==2)box(c,13,-22,10,16,0xFFC4B58A);
+        if(e.type==1){box(c,13,-22,7,23,0xFF6C533F);box(c,15,-40,3,28,0xFF9EAAA5);}else if(e.type==2)box(c,13,-22,10,16,0xFFC4B58A);
         c.restore();
         if(e.type!=3&&e.hp<e.maxHp){box(c,e.x-20,e.y-47,40,3,0xFF172529);box(c,e.x-20,e.y-47,40*e.hp/e.maxHp,3,0xFFB98672);}
     }
@@ -241,8 +253,9 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     private void hud(Canvas c){
         rounded(c,17,13,308,66,10,0xDC12242B);text(c,game.heroName()+"  Lv."+game.heroLevel(),30,36,15,cream,false);
         box(c,30,47,220,10,0xFF37464A);box(c,30,47,220*Math.max(0,game.hp/game.maxHp()),10,0xFFBA705D);text(c,(int)game.hp+" / "+(int)game.maxHp(),263,57,12,cream,false);
-        text(c,"第 "+game.room+" / 5 庭院  ·  "+(game.room>0?ActionGame.ROOM_NAMES[game.room-1]:""),480,28,16,cream,true);
-        text(c,"余烬 "+game.loot+"   ·   敌人 "+game.enemies.size(),480,50,13,gold,true);
+        text(c,"第 "+game.room+" / 5 区域  ·  "+(game.room>0?ActionGame.ROOM_NAMES[game.room-1]:""),480,28,16,cream,true);
+        if(game.time<7&&game.room>0&&game.mode==ActionGame.Mode.PLAY){rounded(c,325,119,520,38,7,0xDD18272D);text(c,WorldSetting.REPORTS[game.room-1],585,143,12,cream,true);}
+        text(c,"票券 "+game.loot+"   ·   敌人 "+game.enemies.size(),480,50,13,gold,true);
         if(game.soulKind()>0){
             int tint=game.soulKind()==1?0xFFE8D493:0xFFBE8FDC;
             rounded(c,17,81,308,70,8,0xD912242B);
@@ -256,10 +269,15 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             text(c,"遗物："+game.relicLoadout(),30,game.soulKind()>0?193:122,11,gold,false);
             if(game.relicEcho>0||game.hasRelic(8))text(c,(game.relicEcho>0?"铜铃待发  ":"")+(game.hasRelic(8)?(game.relicRevived?"沙漏已用":"沙漏待命"):""),30,game.soulKind()>0?210:140,11,muted,false);
         }
+        if(game.job()!=0||game.background()!=0){
+            float yy=game.soulKind()>0?233:164;
+            text(c,game.careerName()+" / "+CareerSystem.BACKGROUNDS[game.background()],30,yy,11,0xFFAACDDC,false);
+            if(game.careerWard>0||game.careerCharge>0)text(c,"职能护盾 "+(int)game.careerWard+(game.careerCharge>0?" · 强化命中就绪":""),30,yy+18,11,0xFFAACDDC,false);
+        }
         if(soulMessageTime>0)text(c,"魂能不足，需要40点",480,170,17,gold,true);
         button(c,855,15,88,45,"Ⅱ 暂停",false);
-        if(game.roomCleared){rounded(c,280,82,400,35,8,0xDF18372F);text(c,"出口已开启：向上走，选择泉径或余烬之门",480,105,14,0xFFCADEB0,true);}
-        for(ActionGame.Enemy e:game.enemies)if(e.type==3){text(c,e.hp<e.maxHp*.5f?"失灯守卫 · 狂怒":"失灯守卫",480,87,14,gold,true);box(c,340,97,280,7,0xFF273239);box(c,340,97,280*e.hp/e.maxHp,7,0xFFB36C5B);}
+        if(game.roomCleared){rounded(c,280,82,400,35,8,0xDF18372F);text(c,"出口已开启：向上走，选择补给所或货栈",480,105,14,0xFFCADEB0,true);}
+        for(ActionGame.Enemy e:game.enemies)if(e.type==3){text(c,e.hp<e.maxHp*.5f?"失魂监工 · 狂怒":"失魂监工",480,87,14,gold,true);box(c,340,97,280,7,0xFF273239);box(c,340,97,280*e.hp/e.maxHp,7,0xFFB36C5B);}
     }
     private void control(Canvas c,float x,float y,float r,String label,float cooldown,boolean held){circle(c,x,y,r,held?0xCC6C8271:0xBB192D36);ring(c,x,y,r,0x998AA598,2);text(c,cooldown>.05f?String.format(java.util.Locale.ROOT,"%.1f",cooldown):label,x,y+6,18,cooldown>.05f?muted:cream,true);}
     private void controls(Canvas c){
@@ -271,7 +289,8 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     }
     private void shade(Canvas c){box(c,0,0,960,540,0xD50C1820);}
     private void rewards(Canvas c){
-        shade(c);text(c,"余 火 的 馈 赠",480,126,29,cream,true);text(c,"选择一项本轮增益，再选择出口继续前进",480,160,16,muted,true);
+        shade(c);text(c,"封 锁 线 补 给",480,126,29,cream,true);text(c,"选择一项本轮增益，再选择出口继续前进",480,160,16,muted,true);
+        if(game.room>0)text(c,WorldSetting.REPORTS[game.room-1],480,190,12,gold,true);
         String[] titles={"锋芒","生息","轻羽"};String[] body={"所有攻击伤害 +4","生命上限 +20，基础恢复35","移动速度 +8%，技能就绪"};
         for(int i=0;i<3;i++){rounded(c,45+i*300,211,270,165,12,0xFF2D4545);text(c,titles[i],180+i*300,266,26,gold,true);text(c,body[i],180+i*300,311,15,cream,true);text(c,"点击获取",180+i*300,351,13,muted,true);}
         text(c,"局内增益在下一次远征时重置",480,421,14,muted,true);
@@ -279,12 +298,14 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     }
     private void pausePanel(Canvas c){shade(c);text(c,"灯火暂歇",480,125,30,cream,true);text(c,"暂停期间，战斗与冷却均停止",480,162,15,muted,true);
         if(game.soulKind()>0)text(c,SoulSystem.NAMES[game.soulKind()]+" · "+game.skillName()+" / "+game.soulArtName(),480,187,13,gold,true);
+        text(c,game.careerName()+" / "+CareerSystem.BACKGROUNDS[game.background()],480,481,13,muted,true);
+        if(game.room>0)text(c,WorldSetting.REPORTS[game.room-1],480,510,12,muted,true);
         button(c,330,205,300,53,"继续冒险",true);button(c,330,272,140,50,"存档",false);button(c,490,272,140,50,soundOn?"音效：开":"音效：关",false);
         button(c,330,337,300,50,"结束本轮并返回营地",false);button(c,330,403,300,45,"操作说明",false);
     }
     private void result(Canvas c){shade(c);text(c,game.won?"长 夜 已 尽":"灯 火 尚 存",480,155,34,game.won?gold:cream,true);
-        text(c,game.notice,480,212,20,cream,true);text(c,"击败 "+game.kills+" 名敌人 · 抵达第 "+game.room+" 庭院",480,258,17,muted,true);
-        text(c,game.won?"带回全部余烬，并获得通关奖励。":"带回已拾取余烬的 70%，角色经验仍然保留。",480,298,16,muted,true);
+        text(c,game.notice,480,212,20,cream,true);text(c,"击败 "+game.kills+" 名敌人 · 抵达第 "+game.room+" 区域",480,258,17,muted,true);
+        text(c,game.won?"带回全部票券，并获得通关奖励。":"带回已拾取票券的 70%，角色经验仍然保留。",480,298,16,muted,true);
         if(game.lastRelic!=0)text(c,game.relicDiscovery(),480,330,14,gold,true);
         button(c,340,359,280,65,"返回营地",true);
     }
@@ -296,6 +317,8 @@ public final class WorldView extends View implements Choreographer.FrameCallback
                 if(inside(x,y,700,475,210,42)){host.resetTalents();return;}
                 for(int i=0;i<12;i++){float[] a=nodeRect(i);if(inside(x,y,a[0],a[1],a[2],a[3])){host.talent(i);return;}}return;
             }
+            if(inside(x,y,40,90,700,32)){host.setting();return;}
+            if(inside(x,y,340,126,355,32)){host.careers();return;}
             if(inside(x,y,710,126,210,32)){host.relics();return;}
             if(inside(x,y,40,126,130,32)){customRoster=false;return;}
             if(inside(x,y,185,126,130,32)){customRoster=true;return;}

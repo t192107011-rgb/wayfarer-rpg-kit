@@ -22,8 +22,8 @@ public final class CharacterWorkshop {
         TextView summary=new TextView(a);summary.setTextSize(12);summary.setTextColor(Color.rgb(230,226,202));summary.setPadding(dp(a,8),dp(a,8),dp(a,8),dp(a,8));summary.setBackgroundColor(0xFF183235);
         View preview=new View(a){@Override protected void onDraw(Canvas c){super.onDraw(c);c.drawColor(0xFF183235);a.world.drawPortrait(c,getWidth()/2f,getHeight()*.78f,Math.min(getWidth()/64f,getHeight()/60f),draft);}};
         left.addView(preview,new LinearLayout.LayoutParams(-1,dp(a,90)));
-        Runnable refresh=()->{ActionGame sample=new ActionGame();sample.profiles[0]=draft.copy();sample.selectCustom(0);
-            summary.setText("生命 "+(int)sample.maxHp()+" · 伤害 "+(int)sample.damage()+" · 移速 "+(int)sample.speed()+"\n技能 "+String.format(java.util.Locale.ROOT,"%.1f",sample.skillPeriod())+"秒 · 闪避 "+String.format(java.util.Locale.ROOT,"%.2f",sample.dodgePeriod())+"秒\n"+SoulSystem.NAMES[draft.soul]+" · "+sample.skillName()+"\n含角色等级\n不含营地、天赋与圣遗物");preview.invalidate();};
+        Runnable refresh=()->{ActionGame sample=new ActionGame();sample.profiles[0]=draft.copy();System.arraycopy(g.careers[3+slot],0,sample.careers[3],0,3);sample.selectCustom(0);
+            summary.setText("生命 "+(int)sample.maxHp()+" · 伤害 "+(int)sample.damage()+" · 移速 "+(int)sample.speed()+"\n技能 "+String.format(java.util.Locale.ROOT,"%.1f",sample.skillPeriod())+"秒 · 闪避 "+String.format(java.util.Locale.ROOT,"%.2f",sample.dodgePeriod())+"秒\n"+SoulSystem.NAMES[draft.soul]+" · "+sample.skillName()+"\n含等级与职业\n不含营地、天赋与圣遗物");preview.invalidate();};
         left.addView(summary);label(a,left,"名字 · 1至10个字符");EditText name=new EditText(a);name.setSingleLine(true);name.setTextSize(16);name.setFilters(new InputFilter[]{new InputFilter.LengthFilter(20)});name.setText(draft.name);name.setContentDescription("自定义角色名字");name.setTag("profile-name");left.addView(name);
         name.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int count,int after){}public void onTextChanged(CharSequence s,int st,int before,int count){draft.name=s.toString();refresh.run();}public void afterTextChanged(Editable e){}});
         choose(a,body,"武器 · 决定普攻",BuildSystem.WEAPONS,draft.weapon,"profile-weapon",v->{draft.weapon=v;refresh.run();});
@@ -39,6 +39,7 @@ public final class CharacterWorkshop {
         choose(a,body,"衣装颜色",BuildSystem.COLORS,draft.color,"profile-color",v->{draft.color=v;refresh.run();});
         choose(a,body,"肤色",new String[]{"浅肤色","棕肤色","深肤色"},draft.skin,"profile-skin",v->{draft.skin=v;refresh.run();});
         choose(a,body,"发型",BuildSystem.HAIR,draft.hair,"profile-hair",v->{draft.hair=v;refresh.run();});
+        label(a,body,"职业、专精和背景经历：在营地「职业与历练」调整，武器可自由搭配。");
         label(a,body,"改造免费，保留本角色经验与天赋。只能在营地编辑。取消不会改变角色。");
         AlertDialog dialog=new AlertDialog.Builder(a).setTitle("角色工坊 · 槽位 "+(slot+1)).setView(layout).setPositiveButton("保存并选用",null).setNegativeButton("取消",null).create();
         dialog.setOnShowListener(d->{dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{

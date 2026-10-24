@@ -22,6 +22,8 @@ public final class SmokeInstrumentation extends Instrumentation {
             Intent launch=new Intent(getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK);
             activity=(MainActivity)startActivitySync(launch);waitForIdleSync();SystemClock.sleep(700);
             ui(()->{activity.world.replace(new ActionGame());check(activity.world.getWidth()>activity.world.getHeight(),"landscape viewport");});
+            careerFlow();
+            ui(()->activity.world.replace(new ActionGame()));
             relicFlow();
             ui(()->activity.world.replace(new ActionGame()));
             soulFlow();
@@ -55,10 +57,41 @@ public final class SmokeInstrumentation extends Instrumentation {
                 ActionGame.Enemy s=new ActionGame.Enemy(g.nextId++,1,400,260,80);s.state=1;s.aimX=.78f;s.aimY=.62f;s.timer=.8f;g.enemies.add(s);
                 g.mode=ActionGame.Mode.PLAY;activity.world.stopFrames();});
             screenshot("04-combat-render.png");
-            result.putString("stream","ARPG_SMOKE_OK: launch, landscape, character selection, simultaneous move/attack, dodge, skill, pause, atomic save and resume; custom editor save/cancel, cross-class skill, talent purchase/locks and profile persistence; soul binding/cancel, independent soul button, radiant domain, forbidden pact, corruption costs and soul snapshot persistence; relic cabinet equip/cancel, duplicate guard, character isolation, checkpoint discovery and relic manual save.\n");
+            result.putString("stream","ARPG_SMOKE_OK: launch, landscape, character selection, simultaneous move/attack, dodge, skill, pause, atomic save and resume; custom editor save/cancel, cross-class skill, talent purchase/locks and profile persistence; soul binding/cancel, independent soul button, radiant domain, forbidden pact, corruption costs and soul snapshot persistence; relic cabinet equip/cancel, duplicate guard, character isolation, checkpoint discovery and relic manual save; career level gate, save/cancel, specialization persistence, class-independent weapon, background/skill shields, dodge charge and atomic snapshot; 1887 setting dossier.\n");
             finish(Activity.RESULT_OK,result);
         }catch(Throwable t){result.putString("stream","ARPG_SMOKE_FAILED: "+t+"\n");finish(Activity.RESULT_CANCELED,result);}
     }
+    private void careerFlow(){
+        tap(350,108);waitForIdleSync();
+        ui(()->{check(activity.settingDialog!=null&&activity.settingDialog.isShowing(),"1887 dossier opens from camp");check(WorldSetting.DISTRICTS.length==5&&WorldSetting.DOSSIER.contains("1887"),"setting content present");});
+        screenshotNativeDialog("17-greybridge-dossier.png",activity.settingDialog);
+        ui(()->activity.settingDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick());waitForIdleSync();
+        tap(510,142);waitForIdleSync();
+        ui(()->{View root=activity.careerDialog.getWindow().getDecorView();((Spinner)root.findViewWithTag("career-job")).setSelection(1);((Spinner)root.findViewWithTag("career-background")).setSelection(1);});waitForIdleSync();
+        ui(()->{check(!activity.careerDialog.getWindow().getDecorView().findViewWithTag("career-spec").isEnabled(),"level-one specialization locked");activity.careerDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();});waitForIdleSync();
+        // A level-three test fixture exercises unlocks without claiming natural progression.
+        ui(()->{check(activity.world.game.job()==0&&activity.world.game.background()==0,"cancel leaves neutral career");activity.world.game.experience[0]=160;activity.world.game.hp=activity.world.game.maxHp();});
+        tap(510,142);waitForIdleSync();ui(()->((Spinner)activity.careerDialog.getWindow().getDecorView().findViewWithTag("career-job")).setSelection(1));waitForIdleSync();
+        ui(()->{View root=activity.careerDialog.getWindow().getDecorView();check(root.findViewWithTag("career-spec").isEnabled(),"level-three specialization unlocked");((Spinner)root.findViewWithTag("career-spec")).setSelection(1);((Spinner)root.findViewWithTag("career-background")).setSelection(1);});waitForIdleSync();
+        screenshotNativeDialog("15-career-hall.png",activity.careerDialog);
+        ui(()->activity.careerDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick());waitForIdleSync();
+        ui(()->check(activity.world.game.isSpec(1,1)&&activity.world.game.background()==1,"career confirmed"));
+        tap(510,142);waitForIdleSync();ui(()->{check(((Spinner)activity.careerDialog.getWindow().getDecorView().findViewWithTag("career-spec")).getSelectedItemPosition()==1,"reopening preserves specialization");((Spinner)activity.careerDialog.getWindow().getDecorView().findViewWithTag("career-job")).setSelection(3);});waitForIdleSync();
+        ui(()->{check(((Spinner)activity.careerDialog.getWindow().getDecorView().findViewWithTag("career-spec")).getSelectedItemPosition()==0,"changing class resets draft specialization");activity.careerDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();});waitForIdleSync();
+        ui(()->check(activity.world.game.isSpec(1,1),"cancel class change preserves committed spec"));
+        tap(440,230);ui(()->check(activity.world.game.job()==0,"other preset has independent career"));tap(140,230);
+        tap(785,405);ui(()->check(activity.world.game.careerWard==10,"smith background grants actual entry shield"));tap(855,298);
+        ui(()->check(activity.world.game.careerWard==14,"bulwark active grants actual shield"));screenshot("16-career-combat.png");tap(900,37);
+        ui(()->{try{SaveStore store=new SaveStore(activity);store.write(1,activity.world.game);ActionGame loaded=store.read(1);check(loaded.isSpec(1,1)&&loaded.background()==1&&loaded.careerWard==14,"career and shield survive AtomicFile");loaded.abandon();loaded.returnCamp();loaded.selectCustom(0);loaded.profile().xp=160;activity.world.replace(loaded);}catch(IOException e){throw new RuntimeException(e);}});
+        tap(510,142);waitForIdleSync();ui(()->((Spinner)activity.careerDialog.getWindow().getDecorView().findViewWithTag("career-job")).setSelection(2));waitForIdleSync();
+        ui(()->{View root=activity.careerDialog.getWindow().getDecorView();((Spinner)root.findViewWithTag("career-spec")).setSelection(2);((Spinner)root.findViewWithTag("career-background")).setSelection(3);});waitForIdleSync();
+        ui(()->activity.careerDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick());waitForIdleSync();
+        tap(510,142);waitForIdleSync();ui(()->{check(((Spinner)activity.careerDialog.getWindow().getDecorView().findViewWithTag("career-spec")).getSelectedItemPosition()==2,"second specialization survives reopen");activity.careerDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();});waitForIdleSync();
+        ui(()->check(activity.world.game.isSpec(2,2)&&activity.world.game.hero==0,"career does not force a different weapon"));
+        tap(785,405);tap(737,456);tap(900,37);
+        ui(()->{check(activity.world.game.careerCharge>0,"skirmish dodge actually primes hit");try{ActionGame loaded=ActionSave.decode(ActionSave.encode(activity.world.game));check(loaded.isSpec(2,2)&&loaded.background()==3&&loaded.careerCharge==activity.world.game.careerCharge,"second spec and remaining proc persist");}catch(IOException e){throw new RuntimeException(e);}});
+    }
+    private void screenshotNativeDialog(String name,AlertDialog dialog){ui(()->{try{View v=dialog.getWindow().getDecorView();Bitmap b=Bitmap.createBitmap(v.getWidth(),v.getHeight(),Bitmap.Config.ARGB_8888);v.draw(new Canvas(b));writeBitmap(b,name);}catch(IOException e){throw new RuntimeException(e);}});}
     private void relicFlow(){
         tap(815,142);waitForIdleSync();
         ui(()->{check(activity.relicDialog.isShowing(),"relic cabinet opens from camp");View root=activity.relicDialog.getWindow().getDecorView();((Spinner)root.findViewWithTag("relic-slot-0")).setSelection(1);((Spinner)root.findViewWithTag("relic-slot-1")).setSelection(1);});waitForIdleSync();

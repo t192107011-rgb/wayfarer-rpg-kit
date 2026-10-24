@@ -27,7 +27,7 @@ public final class RelicCabinet {
         TextView detail=text(a,left,"",14),error=text(a,left,"",13);error.setTextColor(Color.rgb(239,175,141));
         text(a,left,"确认后生效；取消不修改。\n收藏共享，各角色独立装备。\n同件不能在同一角色上叠加。",13);
         text(a,right,"圣遗物图鉴 · "+Integer.bitCount(g.relicOwned)+" / 8",17);
-        text(a,right,"初始赠予灯芯与罗盘。第2、4庭院及首领清场各发现一件未拥有的圣遗物；发现即保留，回营装备。收集齐后改为本轮余烬+15。",13);
+        text(a,right,"初始赠予灯芯与罗盘。第2、4区域及首领清场各发现一件未拥有的圣遗物；发现即保留，回营装备。收集齐后改为本轮票券+15。",13);
         for(int id=1;id<RelicSystem.NAMES.length;id++){
             boolean owned=RelicSystem.owns(g.relicOwned,id);
             TextView name=text(a,right,(owned?"◆ 已收录 · ":"◇ 待发现 · ")+RelicSystem.NAMES[id],16);name.setTextColor(owned?Color.rgb(232,212,147):Color.rgb(170,176,176));
