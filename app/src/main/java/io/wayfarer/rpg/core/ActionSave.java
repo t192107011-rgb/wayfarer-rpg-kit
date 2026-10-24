@@ -7,11 +7,13 @@ import java.util.*;
 public final class ActionSave {
     private ActionSave(){}
     public static byte[] encode(ActionGame g) throws IOException {
-        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",3);
+        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",4);
         p.setProperty("mode",g.mode.name());p.setProperty("rng",Long.toString(g.rngState));p.setProperty("won",Boolean.toString(g.won));p.setProperty("cleared",Boolean.toString(g.roomCleared));
         String[] ik={"hero","bank","power","vitality","runs","wins","room","loot","kills","potions","damageBonus","healthBonus","speedBonus","combo","nextId"};
         int[] iv={g.hero,g.bank,g.power,g.vitality,g.runs,g.wins,g.room,g.loot,g.kills,g.potions,g.damageBonus,g.healthBonus,g.speedBonus,g.combo,g.nextId};
         for(int i=0;i<ik.length;i++)put(p,ik[i],iv[i]);for(int i=0;i<3;i++)put(p,"xp"+i,g.experience[i]);
+        put(p,"relicOwned",g.relicOwned);put(p,"relicAwards",g.relicAwards);put(p,"lastRelic",g.lastRelic);put(p,"relicEcho",g.relicEcho);p.setProperty("relicRevived",Boolean.toString(g.relicRevived));
+        for(int b=0;b<6;b++)for(int slot=0;slot<2;slot++)put(p,"relic"+b+"."+slot,g.relics[b][slot]);
         put(p,"custom",g.custom);put(p,"shield",g.shield);put(p,"dodgeCharge",g.dodgeCharge);
         for(int i=0;i<3;i++){BuildSystem.Profile b=g.profiles[i];String k="profile"+i+".";p.setProperty(k+"name",b.name);p.setProperty(k+"data",csv(b.weapon,b.skill,b.origin,b.trait,b.color,b.skin,b.hair,b.xp));}
         for(int b=0;b<6;b++)for(int t=0;t<12;t++)put(p,"talent"+b+"."+t,g.talents[b][t]);
@@ -29,7 +31,7 @@ public final class ActionSave {
         for(ActionGame.Block b:g.blocks)p.setProperty("b"+i++,csv(b.x,b.y,b.w,b.h,b.style));
         put(p,"drops",g.drops.size());i=0;
         for(ActionGame.Drop d:g.drops)p.setProperty("d"+i++,csv(d.x,d.y,d.amount,d.heal?1:0));
-        ByteArrayOutputStream out=new ByteArrayOutputStream();p.store(out,"Wayfarer Action save v3");return out.toByteArray();
+        ByteArrayOutputStream out=new ByteArrayOutputStream();p.store(out,"Wayfarer Action save v4");return out.toByteArray();
     }
     private static void put(Properties p,String k,Number value){p.setProperty(k,value.toString());}
     private static String csv(Number... values){StringJoiner j=new StringJoiner(",");for(Number n:values)j.add(n.toString());return j.toString();}
@@ -37,7 +39,7 @@ public final class ActionSave {
         if(data==null||data.length==0||data.length>131072)throw new IOException("存档大小不正确");
         try{
             Properties p=new Properties();p.load(new ByteArrayInputStream(data));
-            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,3);
+            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,4);
             ActionGame g=new ActionGame();g.mode=ActionGame.Mode.valueOf(required(p,"mode"));g.rngState=Long.parseLong(required(p,"rng"));if(g.rngState==0)throw new IllegalArgumentException("随机状态无效");
             g.won=bool(p,"won");g.roomCleared=bool(p,"cleared");g.hero=n(p,"hero",0,2);g.bank=n(p,"bank",0,999999);g.power=n(p,"power",0,10);g.vitality=n(p,"vitality",0,10);g.runs=n(p,"runs",0,999999);g.wins=n(p,"wins",0,g.runs);
             g.room=n(p,"room",0,5);g.loot=n(p,"loot",0,99999);g.kills=n(p,"kills",0,99999);g.potions=n(p,"potions",0,2);g.damageBonus=n(p,"damageBonus",0,16);g.healthBonus=n(p,"healthBonus",0,80);g.speedBonus=n(p,"speedBonus",0,4);g.combo=n(p,"combo",0,2);g.nextId=n(p,"nextId",1,Integer.MAX_VALUE-1);
@@ -62,6 +64,20 @@ public final class ActionSave {
                     if(type!=g.soulKind()||g.soulArt()!=0||f.life<=0)throw new IllegalArgumentException("领域与灵魂配置不符");g.soulFields.add(f);}
                 if(g.soulKind()!=1&&g.soulWard>0||g.soulKind()!=2&&(g.corruption>0||g.soulQuiet>0||g.soulBuff>0)||g.soulBuff>0&&g.soulArt()!=1||g.soulKind()==0&&g.soulEnergy>0)throw new IllegalArgumentException("灵魂状态无效");
                 if(g.mode==ActionGame.Mode.CAMP&&(g.soulEnergy>0||g.soulCd>0||g.soulWard>0||g.corruption>0||g.soulQuiet>0||g.soulBuff>0||fields>0))throw new IllegalArgumentException("营地灵魂状态无效");
+            }
+            // Older saves receive starter collection but empty loadouts: no retroactive combat bonuses.
+            if(version>=4){
+                g.relicOwned=n(p,"relicOwned",0,RelicSystem.ALL);
+                if((g.relicOwned&~RelicSystem.ALL)!=0||(g.relicOwned&RelicSystem.STARTERS)!=RelicSystem.STARTERS)throw new IllegalArgumentException("圣遗物收藏无效");
+                for(int b=0;b<6;b++){
+                    for(int slot=0;slot<2;slot++)g.relics[b][slot]=n(p,"relic"+b+"."+slot,0,8);
+                    String error=RelicSystem.invalid(g.relicOwned,g.relics[b][0],g.relics[b][1]);if(!error.isEmpty())throw new IllegalArgumentException(error);
+                }
+                g.relicAwards=n(p,"relicAwards",0,RelicSystem.DISCOVERY_ROOMS);g.lastRelic=n(p,"lastRelic",-1,8);g.relicEcho=f(p,"relicEcho",0,3);g.relicRevived=bool(p,"relicRevived");
+                if((g.relicAwards&~RelicSystem.DISCOVERY_ROOMS)!=0||(g.relicAwards&~((1<<g.room)-1))!=0)throw new IllegalArgumentException("圣遗物发现进度无效");
+                if(g.lastRelic!=0&&(g.room<1||(g.relicAwards&(1<<(g.room-1)))==0||!RelicSystem.owns(g.relicOwned,g.lastRelic<0?0:g.lastRelic)||g.lastRelic==1||g.lastRelic==2||g.lastRelic==-1&&g.relicOwned!=RelicSystem.ALL))throw new IllegalArgumentException("圣遗物发现记录无效");
+                if(g.relicEcho>0&&!g.hasRelic(3)||g.relicRevived&&!g.hasRelic(8))throw new IllegalArgumentException("圣遗物触发状态无效");
+                if(g.mode==ActionGame.Mode.CAMP&&(g.relicAwards!=0||g.lastRelic!=0||g.relicEcho>0||g.relicRevived))throw new IllegalArgumentException("营地圣遗物状态无效");
             }
             g.x=f(p,"x",48,1072);g.y=f(p,"y",48,712);g.hp=f(p,"hp",0,g.maxHp());g.faceX=f(p,"faceX",-1,1);g.faceY=f(p,"faceY",-1,1);g.time=f(p,"time",0,10000000);
             g.attackCd=f(p,"attackCd",0,1);g.rollTime=f(p,"rollTime",0,.3f);g.rollCd=f(p,"rollCd",0,1.2f);g.skillCd=f(p,"skillCd",0,7.5f);g.invulnerable=f(p,"invulnerable",0,1);g.comboWindow=f(p,"comboWindow",0,1);g.rollX=f(p,"rollX",-1,1);g.rollY=f(p,"rollY",-1,1);

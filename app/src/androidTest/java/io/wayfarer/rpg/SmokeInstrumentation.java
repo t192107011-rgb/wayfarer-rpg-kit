@@ -22,6 +22,8 @@ public final class SmokeInstrumentation extends Instrumentation {
             Intent launch=new Intent(getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK);
             activity=(MainActivity)startActivitySync(launch);waitForIdleSync();SystemClock.sleep(700);
             ui(()->{activity.world.replace(new ActionGame());check(activity.world.getWidth()>activity.world.getHeight(),"landscape viewport");});
+            relicFlow();
+            ui(()->activity.world.replace(new ActionGame()));
             soulFlow();
             ui(()->activity.world.replace(new ActionGame()));
             workshopFlow();
@@ -53,10 +55,28 @@ public final class SmokeInstrumentation extends Instrumentation {
                 ActionGame.Enemy s=new ActionGame.Enemy(g.nextId++,1,400,260,80);s.state=1;s.aimX=.78f;s.aimY=.62f;s.timer=.8f;g.enemies.add(s);
                 g.mode=ActionGame.Mode.PLAY;activity.world.stopFrames();});
             screenshot("04-combat-render.png");
-            result.putString("stream","ARPG_SMOKE_OK: launch, landscape, character selection, simultaneous move/attack, dodge, skill, pause, atomic save and resume; custom editor save/cancel, cross-class skill, talent purchase/locks and profile persistence; soul binding/cancel, independent soul button, radiant domain, forbidden pact, corruption costs and soul snapshot persistence.\n");
+            result.putString("stream","ARPG_SMOKE_OK: launch, landscape, character selection, simultaneous move/attack, dodge, skill, pause, atomic save and resume; custom editor save/cancel, cross-class skill, talent purchase/locks and profile persistence; soul binding/cancel, independent soul button, radiant domain, forbidden pact, corruption costs and soul snapshot persistence; relic cabinet equip/cancel, duplicate guard, character isolation, checkpoint discovery and relic manual save.\n");
             finish(Activity.RESULT_OK,result);
         }catch(Throwable t){result.putString("stream","ARPG_SMOKE_FAILED: "+t+"\n");finish(Activity.RESULT_CANCELED,result);}
     }
+    private void relicFlow(){
+        tap(815,142);waitForIdleSync();
+        ui(()->{check(activity.relicDialog.isShowing(),"relic cabinet opens from camp");View root=activity.relicDialog.getWindow().getDecorView();((Spinner)root.findViewWithTag("relic-slot-0")).setSelection(1);((Spinner)root.findViewWithTag("relic-slot-1")).setSelection(1);});waitForIdleSync();
+        ui(()->{check(!activity.relicDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled(),"duplicate equip blocked in native editor");((Spinner)activity.relicDialog.getWindow().getDecorView().findViewWithTag("relic-slot-1")).setSelection(2);});waitForIdleSync();
+        screenshotRelicDialog("13-relic-cabinet.png");
+        ui(()->{check(activity.relicDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled(),"distinct pair enabled");activity.relicDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();check(activity.world.game.hasRelic(1)&&activity.world.game.hasRelic(2)&&activity.world.game.maxHp()==122,"starter relics really affect stats");});
+        tap(815,142);waitForIdleSync();ui(()->activity.relicDialog.getButton(AlertDialog.BUTTON_NEUTRAL).performClick());waitForIdleSync();ui(()->activity.relicDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick());ui(()->check(activity.world.game.hasRelic(1)&&activity.world.game.hasRelic(2),"cancel clearing keeps actual loadout"));
+        tap(440,230);ui(()->check(!activity.world.game.hasRelic(1),"other character has independent relic loadout"));tap(140,230);
+        tap(785,405);tap(737,456);ui(()->check(activity.world.game.rollCd>0&&activity.world.game.rollCd<=1.001f,"equipped compass changes dodge cooldown"));
+        // Accelerate to a clearable second-room fixture, then exercise the actual reward UI.
+        ui(()->{ActionGame g=activity.world.game;g.room=2;g.generateRoom();g.enemies.clear();g.update(1f/60f,new ActionGame.Input());check(g.mode==ActionGame.Mode.REWARD&&g.lastRelic>=3,"second room reveals a new relic");});
+        screenshot("14-relic-discovery-fixture.png");int[] found={0,0};ui(()->{found[0]=activity.world.game.lastRelic;found[1]=activity.world.game.relicOwned;});
+        tap(180,290);tap(900,37);
+        ui(()->{try{SaveStore store=new SaveStore(activity);store.write(2,activity.world.game);ActionGame loaded=store.read(2);check(loaded.relicOwned==found[1]&&loaded.hasRelic(1)&&loaded.lastRelic==found[0],"relic discovery and loadout survive atomic manual save");activity.world.replace(loaded);loaded.abandon();loaded.returnCamp();check(loaded.relicOwned==found[1],"discovery survives failed expedition");}catch(IOException e){throw new RuntimeException(e);}});
+        tap(815,142);waitForIdleSync();ui(()->((Spinner)activity.relicDialog.getWindow().getDecorView().findViewWithTag("relic-slot-0")).setSelection(3));waitForIdleSync();ui(()->activity.relicDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick());
+        ui(()->check(activity.world.game.hasRelic(found[0]),"newly found relic can be equipped in camp"));
+    }
+    private void screenshotRelicDialog(String name){ui(()->{try{View v=activity.relicDialog.getWindow().getDecorView();Bitmap b=Bitmap.createBitmap(v.getWidth(),v.getHeight(),Bitmap.Config.ARGB_8888);v.draw(new Canvas(b));writeBitmap(b,name);}catch(IOException e){throw new RuntimeException(e);}});}
     private void soulFlow(){
         tap(780,500);waitForIdleSync();
         ui(()->{check(activity.soulDialog.isShowing(),"soul altar opens");((Spinner)activity.soulDialog.getWindow().getDecorView().findViewWithTag("soul-kind")).setSelection(1);});waitForIdleSync();

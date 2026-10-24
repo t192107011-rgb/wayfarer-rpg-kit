@@ -13,6 +13,26 @@ public final class ActionGame {
     public final BuildSystem.Profile[] profiles=new BuildSystem.Profile[3];
     public final int[][] talents=new int[6][12];
     public float shield=0,dodgeCharge=0;
+    public int relicOwned=RelicSystem.STARTERS,relicAwards=0,lastRelic=0;
+    public final int[][] relics=new int[6][2];
+    public float relicEcho=0;
+    public boolean relicRevived=false;
+    public boolean hasRelic(int id){return id>0&&(relics[buildId()][0]==id||relics[buildId()][1]==id);}
+    public String relicLoadout(){return RelicSystem.NAMES[relics[buildId()][0]]+" / "+RelicSystem.NAMES[relics[buildId()][1]];}
+    public boolean equipRelics(int first,int second){
+        if(mode!=Mode.CAMP)return false;
+        String error=RelicSystem.invalid(relicOwned,first,second);if(!error.isEmpty()){notice=error;return false;}
+        relics[buildId()][0]=first;relics[buildId()][1]=second;hp=maxHp();relicEcho=0;notice="圣遗物已装备："+relicLoadout();return true;
+    }
+    private void clearRelicRun(){relicAwards=0;lastRelic=0;relicEcho=0;relicRevived=false;}
+    private void discoverRelic(){
+        int bit=1<<(room-1);if((RelicSystem.DISCOVERY_ROOMS&bit)==0||(relicAwards&bit)!=0)return;
+        relicAwards|=bit;List<Integer> missing=new ArrayList<>();for(int id=3;id<RelicSystem.NAMES.length;id++)if(!RelicSystem.owns(relicOwned,id))missing.add(id);
+        if(missing.isEmpty()){lastRelic=-1;loot=Math.min(99999,loot+15);}
+        else {lastRelic=missing.get(random(missing.size()));relicOwned|=1<<lastRelic;}
+        signal("relic",x,y,lastRelic);
+    }
+    public String relicDiscovery(){return lastRelic==0?"":lastRelic<0?"收藏已齐 · 本轮余烬 +15":"发现「"+RelicSystem.NAMES[lastRelic]+"」· 已永久收录，回营装备";}
     public final int[] presetSouls=new int[3],presetArts=new int[3];
     public float soulEnergy=0,soulCd=0,soulWard=0,corruption=0,soulQuiet=0,soulBuff=0;
     public final List<SoulField> soulFields=new ArrayList<>();
@@ -31,9 +51,9 @@ public final class ActionGame {
     }
     private void clearSoulRuntime(){soulEnergy=0;soulCd=0;soulWard=0;corruption=0;soulQuiet=0;soulBuff=0;soulFields.clear();}
     private void gainSoul(float value){if(soulKind()!=0&&mode==Mode.PLAY)soulEnergy=Math.min(100,soulEnergy+value);}
-    public float healingFactor(){return soulKind()==1?1.15f:soulKind()==2?1-corruption*.003f:1;}
+    public float healingFactor(){return (soulKind()==1?1.15f:soulKind()==2?1-corruption*.003f:1)*(hasRelic(4)?1.1f:1);}
     private void heal(float amount){float restored=Math.min(maxHp()-hp,Math.max(0,amount)*healingFactor());hp+=restored;if(restored>.01f)signal("heal",x,y,(int)restored);}
-    private void payForbidden(float ratio,float debt){float before=hp;hp=Math.max(Math.min(1,hp),hp-maxHp()*ratio);corruption=Math.min(100,corruption+debt);soulQuiet=3;signal("sacrifice",x,y,(int)(before-hp));}
+    private void payForbidden(float ratio,float debt){if(hasRelic(6))ratio*=.75f;float before=hp;hp=Math.max(Math.min(1,hp),hp-maxHp()*ratio);corruption=Math.min(100,corruption+debt);soulQuiet=3;signal("sacrifice",x,y,(int)(before-hp));}
     private float swingBoost=1;
     public ActionGame(){for(int i=0;i<3;i++){profiles[i]=new BuildSystem.Profile();profiles[i].name=new String[]{"余烬旅人","雾林信使","夜渡客"}[i];profiles[i].weapon=i;profiles[i].skill=(i+1)%3;profiles[i].origin=i;profiles[i].trait=i;profiles[i].color=i;}}
     public int buildId(){return custom<0?hero:3+custom;}
@@ -51,7 +71,7 @@ public final class ActionGame {
         BuildSystem.Profile copy=draft.copy();copy.name=BuildSystem.cleanName(copy.name);copy.xp=profiles[slot].xp;BuildSystem.validate(copy);profiles[slot]=copy;selectCustom(slot);
     }
     public float skillPeriod(){return 7-rank(9)*.4f-(custom>=0&&profile().trait==2?.8f:0)+(soulKind()==1?.5f:soulKind()==2?-.6f:0);}
-    public float dodgePeriod(){return 1.15f-rank(4)*.07f-(custom>=0&&profile().trait==1?.12f:0);}
+    public float dodgePeriod(){return 1.15f-rank(4)*.07f-(custom>=0&&profile().trait==1?.12f:0)-(hasRelic(2)?.15f:0);}
     public float potionRatio(){return custom>=0&&profile().trait==0?.55f:.45f;}
     private float originHp(){return custom<0?0:profile().origin==0?18:profile().origin==1?-10:-8;}
     public int room=0,loot=0,kills=0,potions=2,damageBonus=0,healthBonus=0,speedBonus=0,combo=0;
@@ -99,7 +119,7 @@ public final class ActionGame {
         public Signal(String kind,float x,float y,int value){this.kind=kind;this.x=x;this.y=y;this.value=value;}
     }
     public int heroLevel(){return 1+Math.min(19,heroXp()/80);}
-    public float maxHp(){return (hero==0?110:hero==1?85:90)+vitality*10+healthBonus+(heroLevel()-1)*3+rank(8)*(soulKind()==1?10:8)+originHp()-(custom>=0&&profile().trait==2?8:0);}
+    public float maxHp(){return (hero==0?110:hero==1?85:90)+vitality*10+healthBonus+(heroLevel()-1)*3+rank(8)*(soulKind()==1?10:8)+originHp()-(custom>=0&&profile().trait==2?8:0)+(hasRelic(1)?12:0);}
     public float damage(){float value=(hero==0?22:hero==1?18:15)+power*2+damageBonus+(heroLevel()-1)+rank(0)*2+(custom>=0&&profile().origin==2?2:0);return value*(rank(3)>0&&hp<maxHp()*.4f?1.4f:1)*(soulBuff>0?1.25f:1);}
     public float speed(){return (hero==2?240:hero==1?215:205)*(1+speedBonus*.08f+rank(4)*.03f)*(custom<0?1:profile().origin==0?.95f:profile().origin==1?1.07f:1);}
     public float attackPeriod(){return (hero==0?.48f:hero==1?.4f:.29f)*(custom>=0&&profile().trait==0?1.06f:1)*(soulBuff>0?.8f:1);}
@@ -114,12 +134,12 @@ public final class ActionGame {
         bank-=cost;if(health)vitality++;else power++;hp=maxHp();notice="升级完成，所有角色共同受益。";
     }
     public void start(long seed){
-        if(mode!=Mode.CAMP)return;clearSoulRuntime();soulEnergy=soulKind()==0?0:40;rngState=seed==0?1:seed;runs=Math.min(999999,runs+1);
+        if(mode!=Mode.CAMP)return;clearSoulRuntime();clearRelicRun();soulEnergy=soulKind()==0?0:40+(hasRelic(5)?(soulKind()==1?30:15):0);rngState=seed==0?1:seed;runs=Math.min(999999,runs+1);
         loot=0;kills=0;nextId=1;room=1;potions=2;damageBonus=0;healthBonus=0;speedBonus=0;combo=0;time=0;won=false;hp=maxHp();
         generateRoom();
     }
     public void generateRoom(){
-        mode=Mode.PLAY;roomCleared=false;x=WIDTH/2;y=HEIGHT-100;faceX=0;faceY=-1;
+        mode=Mode.PLAY;roomCleared=false;lastRelic=0;relicEcho=0;x=WIDTH/2;y=HEIGHT-100;faceX=0;faceY=-1;
         attackCd=0;attackAnim=0;rollTime=0;rollCd=0;skillCd=0;shield=0;dodgeCharge=0;swingBoost=1;soulWard=0;soulBuff=0;soulFields.clear();invulnerable=.8f;comboWindow=0;hitStop=0;
         enemies.clear();shots.clear();blocks.clear();drops.clear();signals.clear();swingHits.clear();
         // Keep the central route and both exits connected in every layout.
@@ -148,7 +168,7 @@ public final class ActionGame {
     }
     public void pause(){if(mode==Mode.PLAY){mode=Mode.PAUSED;notice="已暂停";}}
     public void resume(){if(mode==Mode.PAUSED)mode=Mode.PLAY;}
-    public void returnCamp(){if(mode==Mode.RESULT){mode=Mode.CAMP;clearSoulRuntime();room=0;damageBonus=0;healthBonus=0;speedBonus=0;roomCleared=false;shield=0;dodgeCharge=0;enemies.clear();shots.clear();blocks.clear();drops.clear();hp=maxHp();notice="冒险所得已结算。选择角色，再次出发。";}}
+    public void returnCamp(){if(mode==Mode.RESULT){mode=Mode.CAMP;clearSoulRuntime();clearRelicRun();room=0;damageBonus=0;healthBonus=0;speedBonus=0;roomCleared=false;shield=0;dodgeCharge=0;enemies.clear();shots.clear();blocks.clear();drops.clear();hp=maxHp();notice="冒险所得已结算。选择角色，再次出发。";}}
     public void abandon(){if(mode==Mode.PAUSED)finish(false);}
     public void dodge(float dx,float dy){
         if(mode!=Mode.PLAY||rollCd>0||rollTime>0)return;
@@ -157,11 +177,12 @@ public final class ActionGame {
         dodgeCharge=rank(5)>0?3:0;
         if(rank(6)>0){for(Enemy e:enemies)if(len(e.x-x,e.y-y)<85){hit(e,damage()*.75f);e.stun=Math.max(e.stun,.45f);}signal("echo",x,y,85);}
         if(rank(7)>0)skillCd=Math.max(0,skillCd-2.5f);
+        if(hasRelic(3))relicEcho=3;
         signal("roll",x,y,0);
     }
     public void potion(){
-        if(mode!=Mode.PLAY||potions<=0||hp>=maxHp())return;
-        potions--;heal(maxHp()*potionRatio());
+        if(mode!=Mode.PLAY||potions<=0||hp>=maxHp()&&!(hasRelic(4)&&soulKind()==2&&corruption>0))return;
+        potions--;if(hasRelic(4)){if(soulKind()==1)soulWard=Math.max(soulWard,12);if(soulKind()==2)corruption=Math.max(0,corruption-20);}heal(maxHp()*potionRatio());
     }
     public void skill(){
         if(mode!=Mode.PLAY||skillCd>0||rollTime>0)return;
@@ -247,7 +268,7 @@ public final class ActionGame {
         if(mode!=Mode.PLAY)return;
         if(!Float.isFinite(dt)||dt<=0)return;dt=Math.min(dt,.05f);
         if(hitStop>0){hitStop=Math.max(0,hitStop-dt);return;}
-        updateSoul(dt);time+=dt;attackCd=dec(attackCd,dt);rollCd=dec(rollCd,dt);skillCd=dec(skillCd,dt);invulnerable=dec(invulnerable,dt);comboWindow=dec(comboWindow,dt);dodgeCharge=dec(dodgeCharge,dt);
+        updateSoul(dt);relicEcho=dec(relicEcho,dt);time+=dt;attackCd=dec(attackCd,dt);rollCd=dec(rollCd,dt);skillCd=dec(skillCd,dt);invulnerable=dec(invulnerable,dt);comboWindow=dec(comboWindow,dt);dodgeCharge=dec(dodgeCharge,dt);
         float mx=Float.isFinite(in.mx)?in.mx:0,my=Float.isFinite(in.my)?in.my:0,mag=len(mx,my);
         if(mag>1){mx/=mag;my/=mag;mag=1;}
         if(rollTime>0){movePlayer(rollX*530*dt,rollY*530*dt);rollTime=dec(rollTime,dt);}
@@ -278,7 +299,7 @@ public final class ActionGame {
         }
         if(enemies.isEmpty()&&!roomCleared){
             for(Drop p:drops){if(p.heal)heal(p.amount);else loot=Math.min(99999,loot+p.amount);}drops.clear();shots.clear();
-            if(room==5)finish(true);else mode=Mode.REWARD;
+            discoverRelic();if(room==5)finish(true);else mode=Mode.REWARD;
         }
         if(roomCleared&&y<100){
             if(x<430){heal(maxHp()*.18f);room++;generateRoom();notice="穿过泉径，基础恢复18%生命（受灵魂修正）。";}
@@ -328,8 +349,11 @@ public final class ActionGame {
         }
     }
     private void hit(Enemy e,float value){hit(e,value,true);}
-    private void hit(Enemy e,float value,boolean charge){
-        if(e.hp<=0)return;value*=e.hex>0?1.15f:1;float dealt=Math.min(e.hp,value);e.hp=Math.max(0,e.hp-value);
+    private void hit(Enemy e,float value,boolean charge){hit(e,value,charge,charge);}
+    private void hit(Enemy e,float value,boolean charge,boolean echoEligible){
+        if(e.hp<=0)return;
+        if(echoEligible&&relicEcho>0&&hasRelic(3)){value*=1.35f;relicEcho=0;signal("echo",e.x,e.y,65);}
+        value*=e.hex>0?1.15f*(hasRelic(6)?1.1f:1):1;float dealt=Math.min(e.hp,value);e.hp=Math.max(0,e.hp-value);
         e.flash=.12f;e.stun=Math.max(e.stun,e.type==3?.03f:.12f);signal("hit",e.x,e.y,(int)value);
         if(charge&&dealt>0){gainSoul(Math.min(4,dealt*.08f));if(soulBuff>0)heal(Math.min(maxHp()*.015f,dealt*.08f));}
     }
@@ -339,8 +363,10 @@ public final class ActionGame {
         float wardTaken=Math.min(soulWard,value);soulWard-=wardTaken;value-=wardTaken;
         float talentTaken=Math.min(shield,value);shield-=talentTaken;value-=talentTaken;float absorbed=talentTaken+wardTaken;
         if(soulKind()==1&&absorbed>0)gainSoul(Math.min(6,absorbed*.2f));
-        if(absorbed>0){signal("shield",x,y,(int)absorbed);if(rank(11)>0)for(Enemy e:enemies)if(len(e.x-x,e.y-y)<100)hit(e,absorbed*.5f);}
-        hp=Math.max(0,hp-value);invulnerable=.65f;signal("hurt",x,y,(int)value);
+        if(absorbed>0){signal("shield",x,y,(int)absorbed);if(rank(11)>0)for(Enemy e:enemies)if(len(e.x-x,e.y-y)<100)hit(e,absorbed*.5f,true,false);}
+        float lost=Math.min(hp,value);hp=Math.max(0,hp-value);invulnerable=.65f;signal("hurt",x,y,(int)lost);
+        if(hasRelic(7)&&lost>0){for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<120)hit(e,lost*.25f,false);signal("echo",x,y,120);}
+        if(hp<=0&&hasRelic(8)&&!relicRevived){relicRevived=true;hp=maxHp()*.25f;invulnerable=1;signal("revive",x,y,0);}
         if(hp<=0)finish(false);
     }
     private void finish(boolean victory){
