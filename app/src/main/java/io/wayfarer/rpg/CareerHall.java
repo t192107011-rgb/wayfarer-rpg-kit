@@ -23,7 +23,7 @@ public final class CareerHall {
         TextView special=text(a,left,"",14);
         TextView temperament=text(a,left,"",14);temperament.setTag("career-temperament");
         text(a,left,"行事倾向供角色扮演参考，不强制道德立场。职业能力无需缔结灵魂即可使用。",12);
-        CheckBox forbidden=new CheckBox(a);forbidden.setTag("career-pact");forbidden.setText("启用职业禁术 · 可选，Lv.3开放");forbidden.setChecked(pact[0]);right.addView(forbidden);
+        CheckBox forbidden=new CheckBox(a);forbidden.setTag("career-pact");forbidden.setText("选择越界禁术 · 可选，Lv.3开放");forbidden.setChecked(pact[0]);right.addView(forbidden);
         TextView pactDetails=text(a,right,"",14);pactDetails.setTag("career-pact-details");
         Spinner background=picker(a,right,"背景经历 · 提供独立被动","career-background",CareerSystem.BACKGROUNDS,draft[2]);
         TextView passive=text(a,right,"",15);
@@ -32,7 +32,7 @@ public final class CareerHall {
         AlertDialog dialog=new AlertDialog.Builder(a).setTitle(g.heroName()+" · 职业与历练").setView(row)
             .setPositiveButton("确认历练",(d,w)->{if(g.chooseCareer(draft[0],draft[1],draft[2],pact[0])){a.save();a.world.invalidate();}}).setNegativeButton("取消",null).create();
         Runnable refresh=()->{
-            base.setText(CareerSystem.CLASS_DETAILS[draft[0]]);temperament.setText("行事风格："+ProfessionPacts.TEMPERAMENTS[draft[0]]+"\n「"+ProfessionPacts.LINES[draft[0]]+"」");pactDetails.setText(ProfessionPacts.NAMES[draft[0]]+"\n"+ProfessionPacts.DETAILS[draft[0]]+"\n"+(pact[0]?"已选择；确认后才生效。":"未开启；普通职业能力照常生效。"));special.setText(CareerSystem.SPEC_DETAILS[draft[0]][draft[1]]);passive.setText(CareerSystem.BACKGROUND_DETAILS[draft[2]]);
+            base.setText(CareerSystem.CLASS_DETAILS[draft[0]]);temperament.setText("行事风格："+ProfessionPacts.TEMPERAMENTS[draft[0]]+"\n「"+ProfessionPacts.ORDINARY_LINES[draft[0]]+"」");pactDetails.setText(ProfessionPacts.NAMES[draft[0]]+"\n"+ProfessionPacts.TRANSGRESSIONS[draft[0]]+"\n禁术发动：「"+ProfessionPacts.LINES[draft[0]]+"」\n\n"+ProfessionPacts.DETAILS[draft[0]]+"\n"+(pact[0]?"已选择；确认后才生效。":"未开启；普通职业能力照常生效。"));special.setText(CareerSystem.SPEC_DETAILS[draft[0]][draft[1]]);passive.setText(CareerSystem.BACKGROUND_DETAILS[draft[2]]);
             boolean unlocked=g.heroXp()>=CareerSystem.SPECIALIZATION_XP;spec.setEnabled(draft[0]>0&&unlocked);forbidden.setEnabled(unlocked&&ProfessionPacts.available(draft[0]));
             level.setText("当前 Lv."+g.heroLevel()+" · "+g.heroXp()+"经验\n"+(unlocked?"专精已开放：选职业后可选择一个专精。":"再获得 "+(CareerSystem.SPECIALIZATION_XP-g.heroXp())+" 经验开放专精。职业与背景现在即可选择。"));
             String issue=CareerSystem.invalid(draft[0],draft[1],draft[2],g.heroXp());error.setText(issue);if(dialog.isShowing())dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(issue.isEmpty());

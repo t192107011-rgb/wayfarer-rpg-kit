@@ -7,7 +7,7 @@ import java.util.*;
 public final class ActionSave {
     private ActionSave(){}
     public static byte[] encode(ActionGame g) throws IOException {
-        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",7);
+        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",8);
         p.setProperty("mode",g.mode.name());p.setProperty("rng",Long.toString(g.rngState));p.setProperty("won",Boolean.toString(g.won));p.setProperty("cleared",Boolean.toString(g.roomCleared));
         String[] ik={"hero","bank","power","vitality","runs","wins","room","loot","kills","potions","damageBonus","healthBonus","speedBonus","combo","nextId"};
         int[] iv={g.hero,g.bank,g.power,g.vitality,g.runs,g.wins,g.room,g.loot,g.kills,g.potions,g.damageBonus,g.healthBonus,g.speedBonus,g.combo,g.nextId};
@@ -28,14 +28,14 @@ public final class ActionSave {
         float[] fv={g.x,g.y,g.hp,g.faceX,g.faceY,g.time,g.attackCd,g.rollTime,g.rollCd,g.skillCd,g.invulnerable,g.comboWindow,g.rollX,g.rollY};
         for(int i=0;i<fk.length;i++)put(p,fk[i],fv[i]);
         put(p,"enemies",g.enemies.size());int i=0;
-        for(ActionGame.Enemy e:g.enemies){put(p,"hex"+i,e.hex);p.setProperty("e"+i++,csv(e.id,e.type,e.state,e.x,e.y,e.hp,e.maxHp,e.timer,e.aimX,e.aimY,e.stun,e.flash,e.struck?1:0));}
+        for(ActionGame.Enemy e:g.enemies){p.setProperty("pactEnemy"+i,csv(e.pactMark,e.pactTick,e.pactStacks,e.pactDebt));put(p,"hex"+i,e.hex);p.setProperty("e"+i++,csv(e.id,e.type,e.state,e.x,e.y,e.hp,e.maxHp,e.timer,e.aimX,e.aimY,e.stun,e.flash,e.struck?1:0));}
         put(p,"shots",g.shots.size());i=0;
         for(ActionGame.Shot s:g.shots){put(p,"shotEffect"+i,s.effect);put(p,"shotPierce"+i,s.pierce);StringJoiner hits=new StringJoiner(",");for(int id:s.hitIds)hits.add(Integer.toString(id));p.setProperty("shotHits"+i,hits.toString());p.setProperty("s"+i++,csv(s.x,s.y,s.vx,s.vy,s.life,s.damage,s.radius,s.friendly?1:0));}
         put(p,"blocks",g.blocks.size());i=0;
         for(ActionGame.Block b:g.blocks)p.setProperty("b"+i++,csv(b.x,b.y,b.w,b.h,b.style));
         put(p,"drops",g.drops.size());i=0;
         for(ActionGame.Drop d:g.drops)p.setProperty("d"+i++,csv(d.x,d.y,d.amount,d.heal?1:0));
-        ByteArrayOutputStream out=new ByteArrayOutputStream();p.store(out,"Wayfarer Action save v7");return out.toByteArray();
+        ByteArrayOutputStream out=new ByteArrayOutputStream();p.store(out,"Wayfarer Action save v8");return out.toByteArray();
     }
     private static void put(Properties p,String k,Number value){p.setProperty(k,value.toString());}
     private static String csv(Number... values){StringJoiner j=new StringJoiner(",");for(Number n:values)j.add(n.toString());return j.toString();}
@@ -43,7 +43,7 @@ public final class ActionSave {
         if(data==null||data.length==0||data.length>131072)throw new IOException("存档大小不正确");
         try{
             Properties p=new Properties();p.load(new ByteArrayInputStream(data));
-            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,7);
+            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,8);
             ActionGame g=new ActionGame();g.mode=ActionGame.Mode.valueOf(required(p,"mode"));g.rngState=Long.parseLong(required(p,"rng"));if(g.rngState==0)throw new IllegalArgumentException("随机状态无效");
             g.won=bool(p,"won");g.roomCleared=bool(p,"cleared");g.hero=n(p,"hero",0,2);g.bank=n(p,"bank",0,999999);g.power=n(p,"power",0,10);g.vitality=n(p,"vitality",0,10);g.runs=n(p,"runs",0,999999);g.wins=n(p,"wins",0,g.runs);
             g.room=n(p,"room",0,5);g.loot=n(p,"loot",0,99999);g.kills=n(p,"kills",0,99999);g.potions=n(p,"potions",0,2);g.damageBonus=n(p,"damageBonus",0,16);g.healthBonus=n(p,"healthBonus",0,80);g.speedBonus=n(p,"speedBonus",0,4);g.combo=n(p,"combo",0,2);g.nextId=n(p,"nextId",1,Integer.MAX_VALUE-1);
@@ -109,6 +109,9 @@ public final class ActionSave {
                 ActionGame.Enemy e=new ActionGame.Enemy(id,integer(a[1],0,3),range(a[3],48,1072),range(a[4],48,712),range(a[6],1,1000));
                 e.hp=range(a[5],0,e.maxHp);e.state=integer(a[2],0,2);e.timer=range(a[7],-.1f,2);e.aimX=range(a[8],-1,1);e.aimY=range(a[9],-1,1);e.stun=range(a[10],0,1);e.flash=range(a[11],0,1);e.struck=integer(a[12],0,1)==1;
                 if(version>=3)e.hex=f(p,"hex"+i,0,3);
+                if(version>=8){float[] pm=array(p,"pactEnemy"+i,4);e.pactMark=range(pm[0],0,g.pactTime);e.pactTick=range(pm[1],0,g.job()==CareerSystem.MECHANIC?.5f:1);e.pactStacks=integer(pm[2],0,3);e.pactDebt=range(pm[3],0,1000);
+                    if(e.pactMark>0&&(!g.pactEnabled()||e.hp<=0)||e.pactMark==0&&(e.pactTick>0||e.pactStacks>0||e.pactDebt>0)||e.pactStacks>0&&g.job()!=CareerSystem.BOXER||e.pactDebt>0&&g.job()!=CareerSystem.REPORTER)throw new IllegalArgumentException("敌人禁术标记无效");
+                }
                 if(!g.free(e.x,e.y,e.radius()))throw new IllegalArgumentException("敌人位置无效");g.enemies.add(e);
             }
             count=n(p,"shots",0,160);for(int i=0;i<count;i++){
@@ -126,7 +129,9 @@ public final class ActionSave {
             if(g.roomCleared&&!g.enemies.isEmpty())throw new IllegalArgumentException("房间状态矛盾");
             if(g.mode==ActionGame.Mode.REWARD&&(!g.enemies.isEmpty()||g.room==5||g.roomCleared))throw new IllegalArgumentException("奖励状态矛盾");
             if(g.won&&(g.mode!=ActionGame.Mode.RESULT&&g.mode!=ActionGame.Mode.CAMP))throw new IllegalArgumentException("结算状态无效");
-            g.settleRestoredAttack();g.notice="存档已恢复";return g;
+            // v7 opted in to different abilities: never silently substitute the rewritten acts.
+            if(version==7){Arrays.fill(g.careerPacts,false);g.pactCd=0;g.pactTime=0;g.pactWard=0;}
+            g.settleRestoredAttack();g.notice=version==7?"旧档已恢复；职业禁术已重做，请回营自行选择。":"存档已恢复";return g;
         }catch(IllegalArgumentException|NullPointerException e){throw new IOException("存档校验失败："+e.getMessage(),e);}
     }
     private static String required(Properties p,String key){String s=p.getProperty(key);if(s==null)throw new IllegalArgumentException("缺少 "+key);return s;}

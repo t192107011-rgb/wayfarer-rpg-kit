@@ -57,6 +57,9 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             else if(s.kind.equals("radiant")||s.kind.equals("forbidden"))effects.add(new Fx("ring",s.x,s.y,.55f,s.value>3?s.value:160,s.kind.equals("radiant")?0xFFF2DD9B:0xFFB991DF));
             else if(s.kind.equals("lance"))effects.add(new Fx("lance",s.x,s.y,.35f,s.value,0xFFFFE8AD));
             else if(s.kind.equals("pact")||s.kind.equals("pactLow")){pactMessage=game.notice;pactMessageTime=3;if(s.kind.equals("pact")){effects.add(new Fx("ring",s.x,s.y,.65f,210,0xFFCF85A0));if(soundOn)host.sound("forbidden");}}
+            else if(s.kind.equals("pactBurst")){effects.add(new Fx("ring",s.x,s.y,.55f,s.value,0xFFBD534F));shake=Math.max(shake,3);}
+            else if(s.kind.equals("sentence")||s.kind.equals("fracture")||s.kind.equals("obituary")){effects.add(new Fx("ring",s.x,s.y,.4f,55,0xFFE6A5A1));}
+            else if(s.kind.equals("grind")||s.kind.equals("bury")||s.kind.equals("drain")){for(int i=0;i<4;i++){Fx f=new Fx("spark",s.x,s.y,.3f,0,0xFFB95F68);f.vx=(cosmetic.nextFloat()-.5f)*80;f.vy=-40-cosmetic.nextFloat()*50;effects.add(f);}}
             else if(s.kind.equals("soulLow"))soulMessageTime=2;
             else if(s.kind.equals("sacrifice")){Fx f=new Fx("number",s.x,s.y-45,.7f,-s.value,0xFFD89DCC);f.vy=-20;effects.add(f);}
             else if(s.kind.equals("revive")){effects.add(new Fx("ring",s.x,s.y,.7f,150,0xFFF2DC9D));if(soundOn)host.sound("heal");}
@@ -242,6 +245,17 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         c.restore();
     }
     private void enemy(Canvas c,ActionGame.Enemy e){
+        if(e.pactMark>0&&e.hp>0){
+            int job=game.job(),tint=0xFFDA858A;float xx=e.x,yy=e.y;
+            text(c,ProfessionPacts.MARKS[job]+(job==CareerSystem.BOXER?" "+e.pactStacks+"/3":""),xx,yy-(e.type==3?105:65),13,tint,true);
+            if(job==CareerSystem.DOCTOR){line(c,game.x,game.y-15,xx,yy-15,0xFF773C49,3);float t=(visualTime*.9f)%1;circle(c,xx+(game.x-xx)*t,yy-15+(game.y-yy)*t,4,0xFFE39A9E);ring(c,xx,yy,25,tint,2);}
+            else if(job==CareerSystem.MECHANIC){ring(c,xx,yy,33,0xFFB9A18D,4);for(int i=0;i<8;i++){double a=i*Math.PI/4+visualTime*3;line(c,xx+(float)Math.cos(a)*27,yy+(float)Math.sin(a)*27,xx+(float)Math.cos(a)*41,yy+(float)Math.sin(a)*41,0xFFBA887C,5);}}
+            else if(job==CareerSystem.MINER){circle(c,xx,yy,34,0xDD110F19);for(int i=-2;i<=2;i++)line(c,xx+i*12,yy+15,xx+i*8,yy-14,0xFF806B65,5);}
+            else if(job==CareerSystem.POLICE){line(c,xx-28,yy-40,xx+28,yy+5,tint,3);line(c,xx+28,yy-40,xx-28,yy+5,tint,3);}
+            else if(job==CareerSystem.SOLDIER){ring(c,xx,yy-20,30,tint,2);line(c,xx-40,yy-20,xx+40,yy-20,tint,1);line(c,xx,yy-60,xx,yy+20,tint,1);}
+            else if(job==CareerSystem.BOXER){for(int i=0;i<e.pactStacks;i++)line(c,xx-16+i*14,yy-48,xx-23+i*14,yy-38,tint,4);}
+            else {box(c,xx+19,yy-47,21,29,job==CareerSystem.MERCHANT?0xFFB89B65:0xFFCCC0A5);text(c,job==CareerSystem.MERCHANT?"债":"讣",xx+29,yy-27,13,0xFF492B35,true);}
+        }
         if(e.hex>0){ring(c,e.x,e.y,22,0xFFBA7CD9,2);text(c,"咒",e.x,e.y-52,12,0xFFDAACEE,true);}
         c.save();c.translate(e.x,e.y);float s=e.type==3?2.1f:1;c.scale(s,s);color(0x880B151B);c.drawOval(-19,-2,19,11,p);
         int tint=e.flash>0?0xFFF4E4BD:e.type==0?0xFF936C65:e.type==1?0xFF6F8B91:e.type==2?0xFFA18A60:0xFF967967;

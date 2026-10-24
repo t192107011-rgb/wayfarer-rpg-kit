@@ -85,7 +85,7 @@ public final class CareerTests {
         g=game(REPORTER,2,0);g.room=5;g.enemies.clear();tick(g);check(g.won&&g.heroXp()==220,"investigation victory XP");
         // Existing v5 careers retain temporary states and never reinterpret IDs.
         g=game(1,2,0);hit(g,10);g.pause();byte[] v5=edit(ActionSave.encode(g),"version","5");loaded=ActionSave.decode(v5);check(loaded.isSpec(1,2)&&loaded.careerCharge==g.careerCharge,"v5 career migration exact");reject(v5,"career0.0","4");
-        g=game(MINER,2,0);byte[] bytes=ActionSave.encode(g);reject(bytes,"careerWard","13");reject(bytes,"careerCharge","1");reject(bytes,"version","8");
+        g=game(MINER,2,0);byte[] bytes=ActionSave.encode(g);reject(bytes,"careerWard","13");reject(bytes,"careerCharge","1");reject(bytes,"version","9");
         g=game(POLICE,2,0);g.mode=ActionGame.Mode.CAMP;g.bindSoul(2,0);g.start(1);hp=g.hp;g.skill();near(hp-g.hp,g.maxHp()*.04f,"police reduction does not reduce sacrifice");
         System.out.println("PASS eight ordinary careers, sixteen specializations, actual damage/healing/economy/XP, exclusions, unbound play and v5 compatibility");
     }

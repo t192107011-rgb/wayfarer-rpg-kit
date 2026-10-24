@@ -76,7 +76,8 @@ public final class ActionGame {
     }
     private void clearSoulRuntime(){soulEnergy=0;soulCd=0;soulWard=0;corruption=0;soulQuiet=0;soulBuff=0;soulFields.clear();}
     private void gainSoul(float value){if(soulKind()!=0&&mode==Mode.PLAY)soulEnergy=Math.min(100,soulEnergy+value);}
-    public float healingFactor(){if(pactActive(DOCTOR))return 0;return (soulKind()==1?1.15f:soulKind()==2?1-corruption*.003f:1)*(hasRelic(4)?1.1f:1)*(isSpec(DOCTOR,2)?1.12f:1);}
+    public float healingFactor(){return pactActive(DOCTOR)?0:ordinaryHealingFactor();}
+    private float ordinaryHealingFactor(){return (soulKind()==1?1.15f:soulKind()==2?1-corruption*.003f:1)*(hasRelic(4)?1.1f:1)*(isSpec(DOCTOR,2)?1.12f:1);}
     private void heal(float amount){float restored=Math.min(maxHp()-hp,Math.max(0,amount)*healingFactor());hp+=restored;if(restored>.01f)signal("heal",x,y,(int)restored);}
     private void payForbidden(float ratio,float debt){if(hasRelic(6))ratio*=.75f;float before=hp;hp=Math.max(Math.min(1,hp),hp-maxHp()*ratio);corruption=Math.min(100,corruption+debt);soulQuiet=3;signal("sacrifice",x,y,(int)(before-hp));}
     private float swingBoost=1;
@@ -120,6 +121,8 @@ public final class ActionGame {
         public int id,type,state=0; // 0 approach, 1 windup, 2 recovery/rush
         public float x,y,hp,maxHp,timer=0,aimX=0,aimY=1,stun=0,flash=0;
         public float hex=0;
+        public float pactMark=0,pactTick=0,pactDebt=0;
+        public int pactStacks=0;
         public boolean struck=false;
         public Enemy(int id,int type,float x,float y,float hp){this.id=id;this.type=type;this.x=x;this.y=y;this.hp=hp;maxHp=hp;}
         public float radius(){return type==3?30:16;}
@@ -208,7 +211,7 @@ public final class ActionGame {
     }
     public void potion(){
         if(mode!=Mode.PLAY)return;
-        if(pactActive(DOCTOR)){notice="代命手术的8秒疗养禁忌尚未结束，暂时不能喝药。";signal("pactLow",x,y,0);return;}
+        if(pactActive(DOCTOR)){notice="活体取材期间只能掠取生命，暂时不能喝药。";signal("pactLow",x,y,0);return;}
         if(mode!=Mode.PLAY||potions<=0||hp>=maxHp()&&!(hasRelic(4)&&soulKind()==2&&corruption>0))return;
         potions--;if(hasRelic(4)){if(soulKind()==1)soulWard=Math.max(soulWard,12);if(soulKind()==2)corruption=Math.max(0,corruption-20);}heal(maxHp()*potionRatio()+(background()==4?6:0)+(job()==DOCTOR?8:0));
     }
@@ -246,24 +249,57 @@ public final class ActionGame {
         if(pactCd>0){notice="职业禁术尚在冷却。";signal("pactLow",x,y,0);return false;}
         float cost=maxHp()*ProfessionPacts.COST[job()];
         if(hp<=cost||pactActive(DOCTOR)){notice="生命不足以支付禁术代价并存活。";signal("pactLow",x,y,0);return false;}
-        if(job()==BOXER&&hero==1){notice="断骨搏命需要军刀或双匕首。";signal("pactLow",x,y,0);return false;}
-        if(job()==DOCTOR&&hp>=maxHp()){notice="生命已满，无需发动代命手术。";signal("pactLow",x,y,0);return false;}
-        if(job()==MERCHANT&&loot<30){notice="血本交易需要本轮30票券，共享存款不会扣除。";signal("pactLow",x,y,0);return false;}
-        payPact(cost);
-        // Restore before installing the doctor's no-healing debt.
-        if(job()==DOCTOR)heal(maxHp()*.55f);
-        if(job()==MERCHANT){loot-=30;heal(maxHp()*.30f);}
+        if(job()==BOXER&&hero==1){notice="拆骨连打需要军刀或双匕首。";signal("pactLow",x,y,0);return false;}
+        if(job()==MERCHANT&&loot<30){notice="人命抵押需要本轮30票券，共享存款不会扣除。";signal("pactLow",x,y,0);return false;}
+        ArrayList<Enemy> targets=new ArrayList<>();Enemy nearest=null;float best=ProfessionPacts.RANGE[job()];
+        for(Enemy e:enemies)if(e.hp>0){float distance=len(e.x-x,e.y-y);if(distance<ProfessionPacts.RANGE[job()]&&lineClear(x,y,e.x,e.y)){targets.add(e);if(distance<best){best=distance;nearest=e;}}}
+        if(targets.isEmpty()){notice="范围内没有可施加禁术的敌人。";signal("pactLow",x,y,0);return false;}
+        if(job()==DOCTOR||job()==MECHANIC||job()==BOXER){targets.clear();targets.add(nearest);}
+        payPact(cost);if(job()==MERCHANT)loot-=30;
         pactCd=ProfessionPacts.COOLDOWN[job()];pactTime=ProfessionPacts.DURATION[job()];
-        if(job()==POLICE)for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<260)e.stun=Math.max(e.stun,e.type==3?.15f:1);
-        if(job()==MECHANIC)skillCd=0;
-        if(job()==MINER){pactWard=35;for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<210)hit(e,damage()*3.2f,false);}
-        if(job()==REPORTER)for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<400){e.stun=Math.max(e.stun,e.type==3?.15f:.8f);if(e.type!=3){e.state=0;e.timer=0;e.struck=false;}}
+        for(Enemy e:targets){e.pactMark=pactTime;e.pactTick=job()==MECHANIC?.5f:1;e.pactStacks=0;e.pactDebt=0;}
+        if(job()==POLICE)for(Enemy e:targets){interrupt(e,1);signal("sentence",e.x,e.y,0);}
+        if(job()==SOLDIER)for(Enemy e:targets)hit(e,damage()*1.8f,false);
+        if(job()==DOCTOR)drainDonor(nearest,damage()*2.5f);
+        if(job()==MECHANIC){skillCd=0;interrupt(nearest,1);}
+        if(job()==MINER){pactWard=35;for(Enemy e:targets){interrupt(e,1);hit(e,damage()*1.2f,false);}}
+        if(job()==BOXER){interrupt(nearest,1);hit(nearest,damage()*1.8f,false);}
+        if(job()==MERCHANT)for(Enemy e:targets)hit(e,damage()*1.2f,false);
+        if(job()==REPORTER)for(Enemy e:targets)interrupt(e,.8f);
         notice=ProfessionPacts.LINES[job()];signal("pact",x,y,job());return true;
     }
     public String pactStatus(){
         if(pactTime<=0)return pactCd>0?"禁术冷却 "+(int)Math.ceil(pactCd)+"秒":"禁术可用";
-        String debt=job()==POLICE?"减伤50% / 移速−35%":job()==SOLDIER?"增伤30% / 受伤+40%":job()==DOCTOR?"禁止治疗 / 受伤+25%":job()==MECHANIC?"技能加速 / 每次付4%生命":job()==MINER?"护盾"+(int)pactWard+" / 移速−30%":job()==BOXER?"近战增伤80% / 受伤+50%":job()==MERCHANT?"增伤50% / 受伤+25%":"增伤60% / 受伤+35%";
+        String debt=job()==POLICE?"残血处决 / 移速−35%":job()==SOLDIER?"死亡连爆 / 受伤+40%":job()==DOCTOR?"掠取供体 / 常规治疗封锁":job()==MECHANIC?"活体绞机 / 技能付4%生命":job()==MINER?"活埋碾压 / 移速−30%":job()==BOXER?"拆骨叠击 / 受伤+50%":job()==MERCHANT?"征命兑债 / 受伤+25%":"伤害传述 / 受伤+35%";
         return (int)Math.ceil(pactTime)+"秒 · "+debt;
+    }
+    private boolean marked(Enemy e){return pactEnabled()&&pactTime>0&&e.pactMark>0;}
+    private void clearMark(Enemy e){e.pactMark=0;e.pactTick=0;e.pactDebt=0;e.pactStacks=0;}
+    private void interrupt(Enemy e,float seconds){e.stun=Math.max(e.stun,e.type==3?.15f:seconds);if(e.type!=3){e.state=0;e.timer=0;e.struck=false;}}
+    private void drainDonor(Enemy e,float value){
+        float before=e.hp;hit(e,value,false);float stolen=before-e.hp;
+        float restored=Math.min(maxHp()-hp,stolen*.8f*ordinaryHealingFactor());hp+=restored;
+        if(restored>.01f)signal("heal",x,y,(int)restored);signal("drain",e.x,e.y,(int)stolen);
+    }
+    private void updatePacts(float dt){
+        // Resolve the final pulse before expiring its mark. Timers freeze with the game.
+        for(Enemy e:enemies)if(marked(e)&&e.hp>0){
+            float step=Math.min(dt,e.pactMark);e.pactTick-=step;
+            if(e.pactTick<=.0001f){e.pactTick+=job()==MECHANIC?.5f:1;
+                if(job()==DOCTOR&&len(e.x-x,e.y-y)<320&&lineClear(x,y,e.x,e.y))drainDonor(e,damage()*.75f);
+                if(job()==MECHANIC){float before=e.hp;hit(e,damage()*.9f,false);if(before>e.hp)skillCd=Math.max(0,skillCd-.5f);signal("grind",e.x,e.y,0);}
+                if(job()==MINER){hit(e,damage()*.8f,false);signal("bury",e.x,e.y,0);}
+            }
+            if(e.pactMark>0){e.pactMark=dec(e.pactMark,step);
+                if(e.pactMark<=.0001f){float debt=e.pactDebt;clearMark(e);if(job()==REPORTER&&debt>0){hit(e,debt,false);signal("obituary",e.x,e.y,0);}if(job()==MINER)hit(e,damage()*2.8f,false);}
+            }
+        }
+        pactCd=dec(pactCd,dt);pactTime=dec(pactTime,dt);if(pactTime<=0){pactWard=0;for(Enemy e:enemies)clearMark(e);}
+    }
+    private void pactDeath(Enemy e){
+        if(!marked(e))return;int kind=job();clearMark(e); // Clear before chaining: each body pays or bursts once.
+        if(kind==MERCHANT){int price=e.type==3?30:12;loot=Math.min(99999,loot+price);signal("coin",e.x,e.y,price);}
+        if(kind==SOLDIER||kind==MECHANIC){float radius=kind==SOLDIER?130:180;signal("pactBurst",e.x,e.y,(int)radius);for(Enemy other:enemies)if(other!=e&&other.hp>0&&len(other.x-e.x,other.y-e.y)<radius&&lineClear(e.x,e.y,other.x,other.y))hit(other,damage()*(kind==SOLDIER?1.2f:2),false);}
     }
     public void soulSkill(){
         if(mode!=Mode.PLAY||soulKind()==0||soulCd>0||rollTime>0||roomCleared||enemies.isEmpty())return;
@@ -326,7 +362,7 @@ public final class ActionGame {
         if(mode!=Mode.PLAY)return;
         if(!Float.isFinite(dt)||dt<=0)return;dt=Math.min(dt,.05f);
         if(hitStop>0){hitStop=Math.max(0,hitStop-dt);return;}
-        pactCd=dec(pactCd,dt);pactTime=dec(pactTime,dt);if(pactTime<=0)pactWard=0;
+        updatePacts(dt);
         updateSoul(dt);relicEcho=dec(relicEcho,dt);careerCharge=dec(careerCharge,dt);time+=dt;attackCd=dec(attackCd,dt);rollCd=dec(rollCd,dt);skillCd=dec(skillCd,dt);invulnerable=dec(invulnerable,dt);comboWindow=dec(comboWindow,dt);dodgeCharge=dec(dodgeCharge,dt);
         float mx=Float.isFinite(in.mx)?in.mx:0,my=Float.isFinite(in.my)?in.my:0,mag=len(mx,my);
         if(mag>1){mx/=mag;my/=mag;mag=1;}
@@ -366,7 +402,10 @@ public final class ActionGame {
         }
     }
     private void updateEnemy(Enemy e,float dt){
-        e.hex=dec(e.hex,dt);e.flash=dec(e.flash,dt);if(e.stun>0){e.stun=dec(e.stun,dt);return;}
+        e.hex=dec(e.hex,dt);e.flash=dec(e.flash,dt);
+        if(marked(e)&&(job()==MINER||job()==MECHANIC)&&e.type!=3){e.stun=dec(e.stun,dt);return;}
+        if(marked(e)&&job()==MINER&&e.type==3)dt*=.5f;
+if(e.stun>0){e.stun=dec(e.stun,dt);return;}
         float dx=x-e.x,dy=y-e.y,distance=Math.max(.01f,len(dx,dy));
         if(e.state==0){
             float reach=e.type==0?56:e.type==1?330:e.type==2?260:210;
@@ -377,24 +416,25 @@ public final class ActionGame {
             e.timer-=dt;
             if(e.timer<=0){
                 e.state=2;
-                if(e.type==0){e.timer=.7f;if(distance<72)hurt(10+room*2);signal("enemySwing",e.x,e.y,0);}
+                if(e.type==0){e.timer=.7f;if(distance<72)hurt((10+room*2)*enemyForce(e));signal("enemySwing",e.x,e.y,0);}
                 else if(e.type==1){e.timer=1.1f;enemyShot(e,e.aimX,e.aimY,220,10+room*2);}
                 else if(e.type==2)e.timer=.6f;
                 else {
-                    e.timer=1.3f;signal("slam",e.x,e.y,0);if(distance<185)hurt(24);
+                    e.timer=1.3f;signal("slam",e.x,e.y,0);if(distance<185)hurt(24*enemyForce(e));
                     int count=e.hp<e.maxHp*.5f?14:10;
                     for(int i=0;i<count;i++){double a=i*Math.PI*2/count+time*.1;enemyShot(e,(float)Math.cos(a),(float)Math.sin(a),170,15);}
                 }
             }
         }else{
             e.timer-=dt;
-            if(e.type==2){moveEnemy(e,e.aimX*380*dt,e.aimY*380*dt);if(!e.struck&&len(x-e.x,y-e.y)<35){e.struck=true;hurt(16+room*2);}}
+            if(e.type==2){moveEnemy(e,e.aimX*380*dt,e.aimY*380*dt);if(!e.struck&&len(x-e.x,y-e.y)<35){e.struck=true;hurt((16+room*2)*enemyForce(e));}}
             if(e.timer<=0)e.state=0;
         }
         // Gentle separation avoids enemies stacking into an unreadable single hitbox.
         for(Enemy other:enemies)if(other!=e&&other.hp>0){float sx=e.x-other.x,sy=e.y-other.y,d=len(sx,sy),min=e.radius()+other.radius();if(d>.1&&d<min)moveEnemy(e,sx/d*22*dt,sy/d*22*dt);}
     }
-    private void enemyShot(Enemy e,float dx,float dy,float speed,float damage){if(shots.size()<160)shots.add(new Shot(e.x+dx*24,e.y+dy*24,dx*speed,dy*speed,damage,false));}
+    private float enemyForce(Enemy e){return marked(e)&&job()==BOXER&&e.pactStacks>=3?.5f:1;}
+    private void enemyShot(Enemy e,float dx,float dy,float speed,float damage){if(shots.size()<160)shots.add(new Shot(e.x+dx*24,e.y+dy*24,dx*speed,dy*speed,damage*enemyForce(e),false));}
     private void updateShots(float dt){
         Iterator<Shot> it=shots.iterator();while(it.hasNext()){
             Shot p=it.next();p.life-=dt;float ox=p.x,oy=p.y,nx=p.x+p.vx*dt,ny=p.y+p.vy*dt;
@@ -412,7 +452,11 @@ public final class ActionGame {
     private void hit(Enemy e,float value,boolean charge,boolean echoEligible){
         if(e.hp<=0)return;
         if(echoEligible){
-            value*=pactActive(SOLDIER)?1.3f:pactActive(BOXER)&&hero!=1?1.8f:pactActive(MERCHANT)?1.5f:pactActive(REPORTER)?1.6f:1;
+            value*=pactActive(SOLDIER)?1.3f:marked(e)&&job()==BOXER&&hero!=1?1.8f+e.pactStacks*.25f:1;
+            if(marked(e)&&job()==POLICE&&e.hp<=e.maxHp*.3f){if(e.type!=3)value=Math.max(value,e.hp);else value*=1.6f;signal("sentence",e.x,e.y,0);}
+            if(marked(e)&&job()==MERCHANT&&e.type!=3&&e.hp<=e.maxHp*.2f)value=Math.max(value,e.hp);
+            if(marked(e)&&job()==BOXER&&hero!=1){e.pactStacks=Math.min(3,e.pactStacks+1);if(e.pactStacks==3){interrupt(e,1);signal("fracture",e.x,e.y,0);}}
+
             if(isSpec(POLICE,2)&&e.hp<e.maxHp*.5f)value*=1.18f;
             if(isSpec(SOLDIER,1)&&len(e.x-x,e.y-y)<140)value*=1.12f;
             if(isSpec(MINER,1)&&hero!=1)value*=1.12f;
@@ -423,6 +467,11 @@ public final class ActionGame {
         if(echoEligible&&relicEcho>0&&hasRelic(3)){value*=1.35f;relicEcho=0;signal("echo",e.x,e.y,65);}
         value*=e.hex>0?1.15f*(hasRelic(6)?1.1f:1):1;float dealt=Math.min(e.hp,value);e.hp=Math.max(0,e.hp-value);
         e.flash=.12f;e.stun=Math.max(e.stun,e.type==3?.03f:.12f);signal("hit",e.x,e.y,(int)value);
+        if(echoEligible&&marked(e)&&dealt>0){
+            if(job()==MERCHANT)heal(dealt*.3f);
+            if(job()==REPORTER){e.pactDebt=Math.min(1000,e.pactDebt+dealt*.35f);for(Enemy other:enemies)if(other!=e&&other.hp>0&&marked(other)){hit(other,dealt*.5f,false);signal("obituary",other.x,other.y,0);}}
+        }
+        if(e.hp<=0)pactDeath(e);
         if(charge&&dealt>0){gainSoul(Math.min(4,dealt*.08f));if(soulBuff>0)heal(Math.min(maxHp()*.015f,dealt*.08f));}
     }
     private void hurt(float value){
