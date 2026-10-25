@@ -91,7 +91,7 @@ public final class SmokeInstrumentation extends Instrumentation {
             for(int cast=0;cast<4;cast++){g.skill();g.skill();if(cast<3)for(int t=0;t<391;t++){e.stun=1;g.hitStop=0;g.update(1f/60,new ActionGame.Input());g.signals.clear();}}
             check(g.corruption==100&&g.ruptureTime>0,"legal cast sequence reaches actual 100 erosion");activity.world.replace(g);g.resume();});
         screenshot("25-erosion-100-fixture.png");
-        ui(()->{ActionGame g=activity.world.game;g.enemies.clear();g.shots.clear();g.signals.clear();g.room=4;
+        ui(()->{ActionGame g=activity.world.game;g.enemies.clear();g.shots.clear();g.signals.clear();g.hitStop=0;g.room=4;
             ActionGame.Enemy hunter=new ActionGame.Enemy(g.nextId++,4,710,320,130);hunter.state=1;hunter.timer=.5f;hunter.aimX=-.8f;hunter.aimY=.6f;hunter.targetX=g.x;hunter.targetY=g.y;g.enemies.add(hunter);
             ActionGame.Enemy fire=new ActionGame.Enemy(g.nextId++,5,440,280,120);fire.state=1;fire.timer=.001f;fire.targetX=g.x;fire.targetY=g.y;fire.aimX=.6f;fire.aimY=.8f;g.enemies.add(fire);
             ActionGame.Enemy bell=new ActionGame.Enemy(g.nextId++,6,580,250,140);bell.state=1;bell.timer=.001f;bell.aimX=0;bell.aimY=1;g.enemies.add(bell);g.update(1f/60,new ActionGame.Input());check(g.hazards.size()==2&&hunter.guard==24,"new enemy AI produces actual ground warnings and ally shields");try{ActionGame loaded=ActionSave.decode(ActionSave.encode(g));check(loaded.hazards.size()==2&&loaded.enemies.get(0).guard==24,"new enemy runtime restores");}catch(IOException e){throw new RuntimeException(e);}});
