@@ -145,7 +145,7 @@ Debug APK 只用于测试。不同 CI 构建机可能使用不同 debug 签名�
 
 应用 Java 文件位于 `app/src/main/java/io/wayfarer/rpg/`。测试 runner 位于 `app/src/androidTest/java/io/wayfarer/rpg/`。
 
-- [扩展指南](docs/DEVELOPMENT.md)
+- [0.8.0 开发指南](docs/DEVELOPMENT.md)：架构、技能追击、侵蚀、新敌人、剧情扩展、v9迁移、验证与签名发布。
 - [验证范围与复现步骤](docs/TESTING.md)
 - [更新说明](docs/CHANGELOG.md)
 
