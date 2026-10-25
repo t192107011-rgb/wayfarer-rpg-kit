@@ -24,7 +24,7 @@ public final class ActionTests {
         check(e.hp==178,"single sword swing cannot repeatedly hit same target");
         ticks(g,in,60);check(e.hp<150,"held attack repeats combo");
         g=game(1);e=mob(g,0,720,600,100);e.stun=1;in.attack=true;ticks(g,in,22);check(e.hp<100,"bow projectile travels and hits");
-        g=game(2);e=mob(g,0,615,600,100);g.skill();check(e.hp<70&&g.skillCd==7,"rogue skill damages nearby enemies");float eh=e.hp;g.skill();check(e.hp==eh,"skill cooldown prevents repetition");
+        g=game(2);e=mob(g,0,615,600,100);g.skill();check(e.hp<70&&g.skillCd==7,"rogue skill damages nearby enemies");float eh=e.hp;g.skill();check(e.hp<eh&&g.followUpWindow==0,"one deliberate follow-up adds a second attack");eh=e.hp;g.skill();check(e.hp==eh,"spent follow-up cannot bypass skill cooldown");
         g=game(0);e=mob(g,0,590,600,100);e.state=1;e.timer=.01f;g.dodge(0,-1);float health=g.hp;in.attack=false;ticks(g,in,2);check(g.hp==health,"dodge invulnerability avoids melee");check(g.y<600,"dodge moves immediately");
         float cd=g.rollCd;g.dodge(1,0);check(g.rollCd==cd,"dodge cooldown honored");
         ticks(g,in,25);e.x=g.x+25;e.y=g.y;e.state=1;e.timer=.001f;e.stun=0;ticks(g,in,1);check(g.hp<health,"melee damages after dodge ends");

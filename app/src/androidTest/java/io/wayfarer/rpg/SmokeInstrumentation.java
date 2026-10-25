@@ -22,6 +22,8 @@ public final class SmokeInstrumentation extends Instrumentation {
             Intent launch=new Intent(getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK);
             activity=(MainActivity)startActivitySync(launch);waitForIdleSync();SystemClock.sleep(700);
             ui(()->{activity.world.replace(new ActionGame());check(activity.world.getWidth()>activity.world.getHeight(),"landscape viewport");});
+            challengeFlow();
+            ui(()->{activity.world.replace(new ActionGame());activity.world.startFrames();});
             pactFlow();
             ui(()->activity.world.replace(new ActionGame()));
             ordinaryCareerFlow();
@@ -61,9 +63,37 @@ public final class SmokeInstrumentation extends Instrumentation {
                 ActionGame.Enemy s=new ActionGame.Enemy(g.nextId++,1,400,260,80);s.state=1;s.aimX=.78f;s.aimY=.62f;s.timer=.8f;g.enemies.add(s);
                 g.mode=ActionGame.Mode.PLAY;activity.world.stopFrames();});
             screenshot("04-combat-render.png");
-            result.putString("stream","ARPG_SMOKE_OK: launch, landscape, character selection, simultaneous move/attack, dodge, skill, pause, atomic save and resume; custom editor save/cancel, cross-class skill, talent purchase/locks and profile persistence; soul binding/cancel, independent soul button, radiant domain, forbidden pact, corruption costs and soul snapshot persistence; relic cabinet equip/cancel, duplicate guard, character isolation, checkpoint discovery and relic manual save; career level gate, save/cancel, specialization persistence, class-independent weapon, background/skill shields, dodge charge and atomic snapshot; 1887 setting dossier; all eight ordinary career selections, doctor treatment and potion, merchant actual upgrade price, miner protection and v6 manual save; optional pact cancel/confirm, job-change opt-out, separate pact/soul touch buttons, healing lock, frozen penalty, AtomicFile persistence and local-only merchant payment; all eight rewritten arts mark real test victims, donor damage and healing, pulse snapshot and machine/burial rendering.\n");
+            result.putString("stream","ARPG_SMOKE_OK: main and personal story choices, once-only rewards, personal passive and AtomicFile; real two-touch combo and blocked third touch; legal-cast 100 erosion; real burner zones and bell shields with snapshot; launch, landscape, character selection, simultaneous move/attack, dodge, skill, pause, atomic save and resume; custom editor save/cancel, cross-class skill, talent purchase/locks and profile persistence; soul binding/cancel, independent soul button, radiant domain, forbidden pact, corruption costs and soul snapshot persistence; relic cabinet equip/cancel, duplicate guard, character isolation, checkpoint discovery and relic manual save; career level gate, save/cancel, specialization persistence, class-independent weapon, background/skill shields, dodge charge and atomic snapshot; 1887 setting dossier; all eight ordinary career selections, doctor treatment and potion, merchant actual upgrade price, miner protection and v6 manual save; optional pact cancel/confirm, job-change opt-out, separate pact/soul touch buttons, healing lock, frozen penalty, AtomicFile persistence and local-only merchant payment; all eight rewritten arts mark real test victims, donor damage and healing, pulse snapshot and machine/burial rendering.\n");
             finish(Activity.RESULT_OK,result);
         }catch(Throwable t){result.putString("stream","ARPG_SMOKE_FAILED: "+t+"\n");finish(Activity.RESULT_CANCELED,result);}
+    }
+    private void journalItem(int index){ui(()->{ListView list=activity.storyDialog.getListView();list.performItemClick(null,index,index);});waitForIdleSync();}
+    private void challengeFlow(){
+        ui(()->{activity.world.stopFrames();ActionGame g=activity.world.game;g.chooseCareer(CareerSystem.DOCTOR,0,0);});
+        tap(835,105);waitForIdleSync();journalItem(0);
+        ui(()->{check(((TextView)activity.storyDialog.getWindow().getDecorView().findViewWithTag("story-text")).getText().toString().contains("诺拉"),"journal intro opens from real camp entry");activity.storyDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();});
+        tap(785,405);
+        // Deterministic clear fixture exercises the actual clear event, choice UI and durable award.
+        ui(()->{ActionGame g=activity.world.game;for(ActionGame.Enemy e:g.enemies)e.hp=0;g.update(.05f,new ActionGame.Input());check(g.mode==ActionGame.Mode.REWARD&&g.storyUnlocked==1,"clear reveals main scene");});
+        tap(480,412);waitForIdleSync();screenshotNativeDialog("23-main-story-fixture.png",activity.storyDialog);
+        int[] bank={0};ui(()->{bank[0]=activity.world.game.bank;activity.storyDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();check(activity.world.game.storyChoices[0]==1&&activity.world.game.bank==bank[0]+12,"main choice commits actual once-only reward");});
+        tap(480,412);waitForIdleSync();journalItem(1);
+        ui(()->{check(activity.world.game.bank==bank[0]+12,"rereading cannot duplicate main reward");activity.storyDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();ActionGame g=activity.world.game;g.chooseReward(0);g.pause();g.abandon();g.returnCamp();});
+        tap(835,105);waitForIdleSync();journalItem(6);journalItem(0);screenshotNativeDialog("24-doctor-story-fixture.png",activity.storyDialog);
+        ui(()->{ActionGame g=activity.world.game;float hp=g.maxHp();activity.storyDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();check(g.maxHp()==hp+4,"personal decision grants actual persistent passive");try{SaveStore store=new SaveStore(activity);store.write(2,g);ActionGame loaded=store.read(2);check(loaded.storyChoices[0]==1&&loaded.characterJobs[0]==CareerSystem.DOCTOR&&loaded.characterChoices[0][0]==1&&loaded.maxHp()==g.maxHp(),"story and derived health survive AtomicFile");}catch(IOException e){throw new RuntimeException(e);}activity.world.replace(new ActionGame());});
+        tap(785,405);ui(()->{ActionGame g=activity.world.game;pactArena(g);g.enemies.get(0).y=g.y-140;});tap(855,298);
+        float[] target={0};ui(()->{check(activity.world.game.followUpWindow>0,"real skill button opens combo");target[0]=activity.world.game.enemies.get(0).hp;});tap(855,298);
+        ui(()->{check(activity.world.game.followUpWindow==0&&activity.world.game.enemies.get(0).hp<target[0],"second touch performs damaging follow-up");target[0]=activity.world.game.enemies.get(0).hp;});tap(855,298);ui(()->check(activity.world.game.enemies.get(0).hp==target[0],"third touch cannot repeat combo"));
+        ui(()->{ActionGame g=new ActionGame();g.bindSoul(2,0);g.start(91);g.blocks.clear();g.enemies.clear();g.x=560;g.y=430;ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,100,100,1000);g.enemies.add(e);
+            // No injected erosion: real casts and natural cooldown updates, with a frozen distant actor.
+            for(int cast=0;cast<4;cast++){g.skill();g.skill();if(cast<3)for(int t=0;t<391;t++){e.stun=1;g.hitStop=0;g.update(1f/60,new ActionGame.Input());g.signals.clear();}}
+            check(g.corruption==100&&g.ruptureTime>0,"legal cast sequence reaches actual 100 erosion");activity.world.replace(g);g.resume();});
+        screenshot("25-erosion-100-fixture.png");
+        ui(()->{ActionGame g=activity.world.game;g.enemies.clear();g.shots.clear();g.signals.clear();g.room=4;
+            ActionGame.Enemy hunter=new ActionGame.Enemy(g.nextId++,4,710,320,130);hunter.state=1;hunter.timer=.5f;hunter.aimX=-.8f;hunter.aimY=.6f;hunter.targetX=g.x;hunter.targetY=g.y;g.enemies.add(hunter);
+            ActionGame.Enemy fire=new ActionGame.Enemy(g.nextId++,5,440,280,120);fire.state=1;fire.timer=.001f;fire.targetX=g.x;fire.targetY=g.y;fire.aimX=.6f;fire.aimY=.8f;g.enemies.add(fire);
+            ActionGame.Enemy bell=new ActionGame.Enemy(g.nextId++,6,580,250,140);bell.state=1;bell.timer=.001f;bell.aimX=0;bell.aimY=1;g.enemies.add(bell);g.update(1f/60,new ActionGame.Input());check(g.hazards.size()==2&&hunter.guard==24,"new enemy AI produces actual ground warnings and ally shields");try{ActionGame loaded=ActionSave.decode(ActionSave.encode(g));check(loaded.hazards.size()==2&&loaded.enemies.get(0).guard==24,"new enemy runtime restores");}catch(IOException e){throw new RuntimeException(e);}});
+        screenshot("26-mixed-enemies-fixture.png");
     }
     private void pactFlow(){
         ui(()->{activity.world.game.experience[0]=160;activity.world.game.hp=activity.world.game.maxHp();});

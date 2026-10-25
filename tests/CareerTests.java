@@ -51,7 +51,7 @@ public final class CareerTests {
     private static byte[] edit(byte[] bytes,String key,String value)throws Exception{Properties p=new Properties();p.load(new ByteArrayInputStream(bytes));p.setProperty(key,value);ByteArrayOutputStream out=new ByteArrayOutputStream();p.store(out,"");return out.toByteArray();}
     private static void reject(byte[] bytes,String key,String value)throws Exception{boolean bad=false;try{ActionSave.decode(edit(bytes,key,value));}catch(IOException e){bad=true;}check(bad,"reject "+key+"="+value);}
     private static void saves()throws Exception{
-        ActionGame g=new ActionGame();g.selectCustom(1);g.profile().xp=160;g.bindSoul(2,1);g.equipRelics(1,2);g.start(1);g.soulSkill();g.pause();byte[] bytes=ActionSave.encode(g);ActionGame old=ActionSave.decode(edit(bytes,"version","4"));check(old.custom==1&&old.soulBuff>0&&old.soulKind()==2&&old.hasRelic(1)&&old.heroXp()==160&&old.job()==0&&old.background()==0,"v4 migration preserves soul/relic snapshot with no invented career");
+        ActionGame g=new ActionGame();g.selectCustom(1);g.profile().xp=160;g.bindSoul(2,1);g.equipRelics(1,2);g.start(1);g.soulSkill();g.soulQuiet=3;g.pause();byte[] bytes=ActionSave.encode(g);ActionGame old=ActionSave.decode(edit(bytes,"version","4"));check(old.custom==1&&old.soulBuff>0&&old.soulKind()==2&&old.hasRelic(1)&&old.heroXp()==160&&old.job()==0&&old.background()==0,"v4 migration preserves soul/relic snapshot with no invented career");
         reject(bytes,"career4.0",Integer.toString(CareerSystem.CLASSES.length));reject(bytes,"career4.1","1");reject(bytes,"career4.2","7");reject(bytes,"careerWard","1");reject(bytes,"careerCharge","1");reject(bytes,"careerCharge","NaN");
         g=new ActionGame();g.chooseCareer(1,0,1);bytes=ActionSave.encode(g);reject(bytes,"career0.1","1");reject(bytes,"careerWard","10");g=game(1,1,1);g.skill();g.pause();bytes=ActionSave.encode(g);ActionGame a=ActionSave.decode(bytes);near(a.careerWard,14,"profession shield persists exactly");reject(bytes,"careerWard","15");reject(bytes,"careerCharge","1");
         g=game(3,2,0);g.mode=ActionGame.Mode.CAMP;g.bindSoul(1,1);g.start(1);g.soulSkill();bytes=ActionSave.encode(g);ActionSave.decode(bytes);reject(bytes,"soulCd","12");
@@ -85,7 +85,7 @@ public final class CareerTests {
         g=game(REPORTER,2,0);g.room=5;g.enemies.clear();tick(g);check(g.won&&g.heroXp()==220,"investigation victory XP");
         // Existing v5 careers retain temporary states and never reinterpret IDs.
         g=game(1,2,0);hit(g,10);g.pause();byte[] v5=edit(ActionSave.encode(g),"version","5");loaded=ActionSave.decode(v5);check(loaded.isSpec(1,2)&&loaded.careerCharge==g.careerCharge,"v5 career migration exact");reject(v5,"career0.0","4");
-        g=game(MINER,2,0);byte[] bytes=ActionSave.encode(g);reject(bytes,"careerWard","13");reject(bytes,"careerCharge","1");reject(bytes,"version","9");
+        g=game(MINER,2,0);byte[] bytes=ActionSave.encode(g);reject(bytes,"careerWard","13");reject(bytes,"careerCharge","1");reject(bytes,"version","10");
         g=game(POLICE,2,0);g.mode=ActionGame.Mode.CAMP;g.bindSoul(2,0);g.start(1);hp=g.hp;g.skill();near(hp-g.hp,g.maxHp()*.04f,"police reduction does not reduce sacrifice");
         System.out.println("PASS eight ordinary careers, sixteen specializations, actual damage/healing/economy/XP, exclusions, unbound play and v5 compatibility");
     }

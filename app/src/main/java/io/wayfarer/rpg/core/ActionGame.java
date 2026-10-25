@@ -38,6 +38,22 @@ public final class ActionGame {
     public float careerChargeLimit(){return isSpec(1,2)?4:isSpec(2,2)?3:0;}
     public float soulPeriod(){return SoulSystem.COOLDOWNS[soulKind()][soulArt()]*(isSpec(3,2)?.9f:1);}
     public float springRatio(){return background()==2?.26f:.18f;}
+    public int storyUnlocked=0;
+    public final int[] storyChoices=new int[5],characterUnlocked=new int[6],characterJobs={-1,-1,-1,-1,-1,-1};
+    public final int[][] characterChoices=new int[6][3];
+    public int characterTrait(int choice){int n=0;for(int c:characterChoices[buildId()])if(c==choice)n++;return n;}
+    private void unlockStory(){storyUnlocked|=1<<(room-1);int id=buildId();if(characterJobs[id]<0)characterJobs[id]=job();characterUnlocked[id]|=room>=5?7:room>=3?3:1;}
+    public boolean decideStory(int scene,int choice){
+        if(mode==Mode.PLAY||scene<0||scene>=5||choice<1||choice>2||(storyUnlocked&(1<<scene))==0||storyChoices[scene]!=0)return false;
+        storyChoices[scene]=choice;if(choice==1)bank=Math.min(999999,bank+12);else gainExperience(20);
+        notice="已记录："+StorySystem.OPTIONS[scene][choice-1];return true;
+    }
+    public boolean decideCharacter(int chapter,int choice){
+        int id=buildId();if(mode!=Mode.CAMP||chapter<0||chapter>=3||choice<1||choice>2||(characterUnlocked[id]&(1<<chapter))==0||characterChoices[id][chapter]!=0)return false;
+        characterChoices[id][chapter]=choice;hp=maxHp();notice=choice==1?"人物历练：守护 +4生命上限":"人物历练：决意 +1基础伤害";return true;
+    }
+    public int unreadStories(){int n=0;for(int i=0;i<5;i++)if((storyUnlocked&(1<<i))!=0&&storyChoices[i]==0)n++;for(int i=0;i<3;i++)if((characterUnlocked[buildId()]&(1<<i))!=0&&characterChoices[buildId()][i]==0)n++;return n;}
+    private void gainExperience(int amount){if(custom<0)experience[hero]=Math.min(1000000,experience[hero]+amount);else profile().xp=Math.min(1000000,profile().xp+amount);}
     public int relicOwned=RelicSystem.STARTERS,relicAwards=0,lastRelic=0;
     public final int[][] relics=new int[6][2];
     public float relicEcho=0;
@@ -74,12 +90,20 @@ public final class ActionGame {
         if(custom<0){presetSouls[hero]=kind;presetArts[hero]=art;}else{profile().soul=kind;profile().soulArt=art;}
         clearSoulRuntime();hp=maxHp();notice="已缔结："+SoulSystem.NAMES[kind];return true;
     }
-    private void clearSoulRuntime(){soulEnergy=0;soulCd=0;soulWard=0;corruption=0;soulQuiet=0;soulBuff=0;soulFields.clear();}
+    private void clearSoulRuntime(){soulEnergy=0;soulCd=0;soulWard=0;corruption=0;soulQuiet=0;soulBuff=0;ruptureTime=0;ruptureTick=0;ruptureLatched=false;soulFields.clear();}
     private void gainSoul(float value){if(soulKind()!=0&&mode==Mode.PLAY)soulEnergy=Math.min(100,soulEnergy+value);}
     public float healingFactor(){return pactActive(DOCTOR)?0:ordinaryHealingFactor();}
     private float ordinaryHealingFactor(){return (soulKind()==1?1.15f:soulKind()==2?1-corruption*.003f:1)*(hasRelic(4)?1.1f:1)*(isSpec(DOCTOR,2)?1.12f:1);}
     private void heal(float amount){float restored=Math.min(maxHp()-hp,Math.max(0,amount)*healingFactor());hp+=restored;if(restored>.01f)signal("heal",x,y,(int)restored);}
-    private void payForbidden(float ratio,float debt){if(hasRelic(6))ratio*=.75f;float before=hp;hp=Math.max(Math.min(1,hp),hp-maxHp()*ratio);corruption=Math.min(100,corruption+debt);soulQuiet=3;signal("sacrifice",x,y,(int)(before-hp));}
+    private void payForbidden(float ratio,float debt){if(hasRelic(6))ratio*=.75f;float before=hp;hp=Math.max(Math.min(1,hp),hp-maxHp()*ratio);corruption=Math.min(100,corruption+debt);soulQuiet=8;if(corruption>=100&&!ruptureLatched){ruptureLatched=true;ruptureTime=6;ruptureTick=1.5f;signal("rupture",x,y,0);}signal("sacrifice",x,y,(int)(before-hp));}
+    public float followUpWindow=0,ruptureTime=0,ruptureTick=0;
+    public boolean ruptureLatched=false;
+    private float motionX=0,motionY=0;
+    public final List<Hazard> hazards=new ArrayList<>();
+    public static final class Hazard {
+        public int type;public float x,y,radius,warning,life,tick,damage;
+        public Hazard(int type,float x,float y,float radius,float warning,float life,float damage){this.type=type;this.x=x;this.y=y;this.radius=radius;this.warning=warning;this.life=life;this.damage=damage;}
+    }
     private float swingBoost=1;
     public ActionGame(){for(int i=0;i<3;i++){profiles[i]=new BuildSystem.Profile();profiles[i].name=new String[]{"灰桥旅人","林缘信使","夜班工人"}[i];profiles[i].weapon=i;profiles[i].skill=(i+1)%3;profiles[i].origin=i;profiles[i].trait=i;profiles[i].color=i;}}
     public int buildId(){return custom<0?hero:3+custom;}
@@ -120,7 +144,8 @@ public final class ActionGame {
     public static final class Enemy {
         public int id,type,state=0; // 0 approach, 1 windup, 2 recovery/rush
         public float x,y,hp,maxHp,timer=0,aimX=0,aimY=1,stun=0,flash=0;
-        public float hex=0;
+        public float hex=0,guard=0,targetX=560,targetY=380;
+        public int pattern=0;
         public float pactMark=0,pactTick=0,pactDebt=0;
         public int pactStacks=0;
         public boolean struck=false;
@@ -147,8 +172,8 @@ public final class ActionGame {
         public Signal(String kind,float x,float y,int value){this.kind=kind;this.x=x;this.y=y;this.value=value;}
     }
     public int heroLevel(){return 1+Math.min(19,heroXp()/80);}
-    public float maxHp(){return (hero==0?110:hero==1?85:90)+vitality*10+healthBonus+(heroLevel()-1)*3+rank(8)*(soulKind()==1?10:8)+originHp()-(custom>=0&&profile().trait==2?8:0)+(hasRelic(1)?12:0)+(job()==1?16:job()==MINER?12:0)+(isSpec(MECHANIC,2)?10:0);}
-    public float damage(){float value=(hero==0?22:hero==1?18:15)+power*2+damageBonus+(heroLevel()-1)+rank(0)*2+(custom>=0&&profile().origin==2?2:0)+(job()==SOLDIER?3:0);return value*(rank(3)>0&&hp<maxHp()*.4f?1.4f:1)*(soulBuff>0?1.25f:1);}
+    public float maxHp(){return (hero==0?110:hero==1?85:90)+vitality*10+healthBonus+(heroLevel()-1)*3+rank(8)*(soulKind()==1?10:8)+originHp()-(custom>=0&&profile().trait==2?8:0)+(hasRelic(1)?12:0)+(job()==1?16:job()==MINER?12:0)+(isSpec(MECHANIC,2)?10:0)+characterTrait(1)*4;}
+    public float damage(){float value=(hero==0?22:hero==1?18:15)+power*2+damageBonus+(heroLevel()-1)+rank(0)*2+(custom>=0&&profile().origin==2?2:0)+(job()==SOLDIER?3:0)+characterTrait(2);return value*(rank(3)>0&&hp<maxHp()*.4f?1.4f:1)*(soulBuff>0?1.25f:1)*(soulKind()==2?(ruptureTime>0?1.4f:corruption>=75?1.25f:corruption>=50?1.15f:1):1);}
     public float speed(){return (hero==2?240:hero==1?215:205)*(1+speedBonus*.08f+rank(4)*.03f)*(custom<0?1:profile().origin==0?.95f:profile().origin==1?1.07f:1)*(job()==2?1.06f:job()==REPORTER?1.03f:1)*(isSpec(POLICE,1)||isSpec(MERCHANT,1)?1.05f:1)*(background()==2?1.03f:1)*(background()==3&&hp<maxHp()*.35f?1.12f:1)*(pactActive(POLICE)?.65f:pactActive(MINER)?.7f:1);}
     public float attackPeriod(){return (hero==0?.48f:hero==1?.4f:.29f)*(custom>=0&&profile().trait==0?1.06f:1)*(soulBuff>0?.8f:1)*(job()==BOXER&&hero!=1?.94f:1)*(isSpec(SOLDIER,2)&&hero==1?.9f:1)*(pactActive(SOLDIER)?.55f:pactActive(MECHANIC)?.85f:pactActive(BOXER)&&hero!=1?.7f:1);}
     public int upgradeCost(int rank){int base=30+rank*25;return isSpec(MERCHANT,2)?(base*85+99)/100:base;}
@@ -168,22 +193,20 @@ public final class ActionGame {
     }
     public void generateRoom(){
         mode=Mode.PLAY;roomCleared=false;lastRelic=0;relicEcho=0;careerWard=entryCareerWard();careerCharge=0;x=WIDTH/2;y=HEIGHT-100;faceX=0;faceY=-1;
-        attackCd=0;attackAnim=0;rollTime=0;rollCd=0;skillCd=0;shield=0;dodgeCharge=0;swingBoost=1;soulWard=0;soulBuff=0;soulFields.clear();invulnerable=.8f;comboWindow=0;hitStop=0;
+        attackCd=0;attackAnim=0;rollTime=0;rollCd=0;skillCd=0;shield=0;dodgeCharge=0;swingBoost=1;followUpWindow=0;hazards.clear();soulWard=0;soulBuff=0;soulFields.clear();invulnerable=.8f;comboWindow=0;hitStop=0;
         enemies.clear();shots.clear();blocks.clear();drops.clear();signals.clear();swingHits.clear();
         // Keep the central route and both exits connected in every layout.
         for(int i=0;i<6;i++) {
             float bx=(i%2==0?150:730)+random(120),by=180+(i/2)*140+random(25);
             blocks.add(new Block(bx,by,55+random(35),45+random(25),room<3?0:1));
         }
-        if(room==5)enemies.add(new Enemy(nextId++,3,560,230,520));
-        else {
-            int count=3+room;
-            for(int i=0;i<count;i++) {
-                int type=room==1?0:random(Math.min(3,room));float ex,ey;int tries=0;
-                do{ex=130+random(860);ey=150+random(340);tries++;}while(!free(ex,ey,24)&&tries<100);
-                if(!free(ex,ey,24)){ex=560;ey=150+i*35;}
-                enemies.add(new Enemy(nextId++,type,ex,ey,40+room*10+(type==2?12:0)));
-            }
+        int[] group=EncounterSystem.GROUPS[room-1];
+        for(int i=0;i<group.length;i++){
+            int type=group[i];float ex=560,ey=150;int tries=0;
+            do{ex=120+random(880);ey=130+random(300);tries++;}while((!free(ex,ey,type==3?32:24)||len(ex-x,ey-y)<230)&&tries<100);
+            if(!free(ex,ey,type==3?32:24)){ex=560;ey=130+i*40;}
+            float life=type==3?900:55+room*12+(type==1?10:type==2?24:type==5?15:type==6?25:0);
+            enemies.add(new Enemy(nextId++,type,ex,ey,life));
         }
         notice=ROOM_NAMES[room-1]+" · 清除敌人开启出口";signal("enter",x,y,room);
     }
@@ -191,12 +214,12 @@ public final class ActionGame {
         if(mode!=Mode.REWARD || which<0||which>2)return;
         if(which==0){damageBonus+=4;notice="锋芒：本轮伤害 +4";}
         if(which==1){healthBonus+=20;heal(35);notice="生息：本轮生命上限 +20，基础恢复 35";}
-        if(which==2){speedBonus++;skillCd=0;notice="轻羽：本轮移速 +8%，技能立即就绪";}
+        if(which==2){speedBonus++;skillCd=0;followUpWindow=0;notice="轻羽：本轮移速 +8%，技能立即就绪";}
         roomCleared=true;mode=Mode.PLAY;signal("clear",x,y,0);
     }
     public void pause(){if(mode==Mode.PLAY){mode=Mode.PAUSED;notice="已暂停";}}
     public void resume(){if(mode==Mode.PAUSED)mode=Mode.PLAY;}
-    public void returnCamp(){if(mode==Mode.RESULT){mode=Mode.CAMP;clearSoulRuntime();clearRelicRun();clearPactRuntime();careerWard=0;careerCharge=0;room=0;damageBonus=0;healthBonus=0;speedBonus=0;roomCleared=false;shield=0;dodgeCharge=0;enemies.clear();shots.clear();blocks.clear();drops.clear();hp=maxHp();notice="冒险所得已结算。选择角色，再次出发。";}}
+    public void returnCamp(){if(mode==Mode.RESULT){mode=Mode.CAMP;clearSoulRuntime();clearRelicRun();clearPactRuntime();careerWard=0;careerCharge=0;room=0;damageBonus=0;healthBonus=0;speedBonus=0;roomCleared=false;shield=0;dodgeCharge=0;enemies.clear();shots.clear();blocks.clear();drops.clear();hazards.clear();followUpWindow=0;hp=maxHp();notice="冒险所得已结算。选择角色，再次出发。";}}
     public void abandon(){if(mode==Mode.PAUSED)finish(false);}
     public void dodge(float dx,float dy){
         if(mode!=Mode.PLAY||rollCd>0||rollTime>0)return;
@@ -216,11 +239,12 @@ public final class ActionGame {
         potions--;if(hasRelic(4)){if(soulKind()==1)soulWard=Math.max(soulWard,12);if(soulKind()==2)corruption=Math.max(0,corruption-20);}heal(maxHp()*potionRatio()+(background()==4?6:0)+(job()==DOCTOR?8:0));
     }
     public void skill(){
-        if(mode!=Mode.PLAY||skillCd>0||rollTime>0)return;
+        if(mode!=Mode.PLAY||rollTime>0)return;
+        if(skillCd>0){if(followUpWindow>0)followUp();return;}
         if(pactActive(MECHANIC)){float cost=maxHp()*.04f;if(hp<=cost){notice="超载施法需要支付4%最大生命并存活。";signal("pactLow",x,y,0);return;}payPact(cost);}
         aimAtNearest(440);int kind=soulKind(),style=skillStyle();
         if(kind==2)payForbidden(.04f,18);
-        skillCd=skillPeriod();signal(kind==1?"radiant":kind==2?"forbidden":"skill",x,y,style);
+        skillCd=skillPeriod();followUpWindow=2;signal(kind==1?"radiant":kind==2?"forbidden":"skill",x,y,style);
         shield=Math.max(shield,rank(9)*6+(rank(11)>0?12:0));
         if(kind==1)soulWard=Math.max(soulWard,8+rank(9)*4+(style==2?6:0));
         if(rank(10)>0)heal(maxHp()*.08f);
@@ -243,6 +267,22 @@ public final class ActionGame {
             hitStop=.045f;
         }
     }
+    private void followUp(){
+        if(pactActive(MECHANIC)){float cost=maxHp()*.04f;if(hp<=cost){notice="机匣追击需要支付4%最大生命并存活。";signal("pactLow",x,y,0);return;}payPact(cost);}
+        followUpWindow=0;aimAtNearest(560);int style=skillStyle();
+        if(soulKind()==2)payForbidden(.02f,12);
+        float ox=x,oy=y,range=style==0?260:style==1?540:145;
+        float endX=x+faceX*range,endY=y+faceY*range;
+        if(style==2){for(int i=0;i<29;i++)movePlayer(faceX*5,faceY*5);endX=x;endY=y;invulnerable=Math.max(invulnerable,.18f);}
+        boolean connected=false;
+        for(Enemy e:enemies)if(e.hp>0&&segmentDistance(e.x,e.y,ox,oy,endX,endY)<(style==0?36:style==1?19:30)+e.radius()&&lineClear(ox,oy,e.x,e.y)){
+            boolean cursed=e.hex>0;float factor=style==0?(e.stun>0?1.95f:1.3f):style==1?1.8f:e.state==1?2.1f:1.5f;
+            if(style==1)e.guard=0;hit(e,damage()*factor);connected=true;
+            if(soulKind()==2&&cursed){e.hex=0;signal("echo",e.x,e.y,85);for(Enemy other:enemies)if(other!=e&&other.hp>0&&len(other.x-e.x,other.y-e.y)<85&&lineClear(e.x,e.y,other.x,other.y))hit(other,damage()*.65f,false);}
+        }
+        if(soulKind()==1){if(connected)soulWard=Math.min(30,soulWard+8);cleanse(x,y,110);}
+        signal("followup",ox,oy,style);notice=EncounterSystem.FOLLOWUPS[style];
+    }
     private void payPact(float amount){if(amount>0){hp-=amount;signal("sacrifice",x,y,(int)amount);}}
     public boolean professionPact(){
         if(mode!=Mode.PLAY||!pactEnabled()||!ProfessionPacts.available(job())||roomCleared||enemies.isEmpty()||rollTime>0)return false;
@@ -261,7 +301,7 @@ public final class ActionGame {
         if(job()==POLICE)for(Enemy e:targets){interrupt(e,1);signal("sentence",e.x,e.y,0);}
         if(job()==SOLDIER)for(Enemy e:targets)hit(e,damage()*1.8f,false);
         if(job()==DOCTOR)drainDonor(nearest,damage()*2.5f);
-        if(job()==MECHANIC){skillCd=0;interrupt(nearest,1);}
+        if(job()==MECHANIC){skillCd=0;followUpWindow=0;interrupt(nearest,1);}
         if(job()==MINER){pactWard=35;for(Enemy e:targets){interrupt(e,1);hit(e,damage()*1.2f,false);}}
         if(job()==BOXER){interrupt(nearest,1);hit(nearest,damage()*1.8f,false);}
         if(job()==MERCHANT)for(Enemy e:targets)hit(e,damage()*1.2f,false);
@@ -330,7 +370,12 @@ public final class ActionGame {
     }
     private void updateSoul(float dt){
         soulCd=dec(soulCd,dt);soulBuff=dec(soulBuff,dt);
-        float quiet=Math.min(soulQuiet,dt);soulQuiet=dec(soulQuiet,dt);if(soulKind()==2)corruption=Math.max(0,corruption-(dt-quiet)*4);
+        float quiet=Math.min(soulQuiet,dt);soulQuiet=dec(soulQuiet,dt);if(soulKind()==2&&soulBuff<=0&&soulFields.isEmpty())corruption=Math.max(0,corruption-(dt-quiet));
+        if(corruption<70&&ruptureTime<=0)ruptureLatched=false;
+        if(ruptureTime>0){float elapsed=Math.min(dt,ruptureTime);ruptureTime=dec(ruptureTime,elapsed);ruptureTick-=elapsed;
+            if(ruptureTick<=.0001f){ruptureTick+=1.5f;float before=hp;hp=Math.max(Math.min(1,hp),hp-maxHp()*.03f);signal("sacrifice",x,y,(int)(before-hp));}
+            if(ruptureTime<=0)ruptureTick=0;
+        }
         Iterator<SoulField> it=soulFields.iterator();while(it.hasNext()){
             SoulField f=it.next();float elapsed=Math.min(dt,f.life);f.life=Math.max(0,f.life-elapsed);f.tick-=elapsed;
             if(f.tick<=.0001f){
@@ -362,10 +407,11 @@ public final class ActionGame {
         if(mode!=Mode.PLAY)return;
         if(!Float.isFinite(dt)||dt<=0)return;dt=Math.min(dt,.05f);
         if(hitStop>0){hitStop=Math.max(0,hitStop-dt);return;}
-        updatePacts(dt);
+        followUpWindow=dec(followUpWindow,dt);updatePacts(dt);
         updateSoul(dt);relicEcho=dec(relicEcho,dt);careerCharge=dec(careerCharge,dt);time+=dt;attackCd=dec(attackCd,dt);rollCd=dec(rollCd,dt);skillCd=dec(skillCd,dt);invulnerable=dec(invulnerable,dt);comboWindow=dec(comboWindow,dt);dodgeCharge=dec(dodgeCharge,dt);
         float mx=Float.isFinite(in.mx)?in.mx:0,my=Float.isFinite(in.my)?in.my:0,mag=len(mx,my);
         if(mag>1){mx/=mag;my/=mag;mag=1;}
+        motionX=mx*speed();motionY=my*speed();
         if(rollTime>0){movePlayer(rollX*530*dt,rollY*530*dt);rollTime=dec(rollTime,dt);}
         else {
             if(mag>.1f){if(attackAnim<=0){faceX=mx/mag;faceY=my/mag;}float slow=attackAnim>0?.65f:1;movePlayer(mx*speed()*slow*dt,my*speed()*slow*dt);}
@@ -384,7 +430,7 @@ public final class ActionGame {
         }
         for(Enemy e:enemies)if(e.hp>0)updateEnemy(e,dt);
         if(mode!=Mode.PLAY)return;
-        updateShots(dt);if(mode!=Mode.PLAY)return;
+        updateHazards(dt);if(mode!=Mode.PLAY)return;updateShots(dt);if(mode!=Mode.PLAY)return;
         Iterator<Enemy> it=enemies.iterator();while(it.hasNext()){
             Enemy e=it.next();if(e.hp<=0){it.remove();kills=Math.min(99999,kills+1);drops.add(new Drop(e.x,e.y,(e.type==3?55:5+room)+(background()==6?2:0)+(job()==MERCHANT?1:0),false));if(background()==5){heal(1);gainSoul(e.type==3?8:2);}if(random(6)==0)drops.add(new Drop(e.x+15,e.y,15,true));signal("defeat",e.x,e.y,e.type);}
         }
@@ -393,45 +439,75 @@ public final class ActionGame {
             if(dist<24){if(p.heal)heal(p.amount);else loot=Math.min(99999,loot+p.amount);if(!p.heal)signal("coin",p.x,p.y,p.amount);d.remove();}
         }
         if(enemies.isEmpty()&&!roomCleared){
-            for(Drop p:drops){if(p.heal)heal(p.amount);else loot=Math.min(99999,loot+p.amount);}drops.clear();shots.clear();
-            discoverRelic();if(room==5)finish(true);else mode=Mode.REWARD;
+            for(Drop p:drops){if(p.heal)heal(p.amount);else loot=Math.min(99999,loot+p.amount);}drops.clear();shots.clear();hazards.clear();
+            unlockStory();discoverRelic();if(room==5)finish(true);else mode=Mode.REWARD;
         }
         if(roomCleared&&y<100){
             if(x<430){float recovery=springRatio();heal(maxHp()*recovery);room++;generateRoom();notice="穿过补给所，基础恢复"+Math.round(recovery*100)+"%生命（受治疗修正）。";}
             else if(x>690){loot=Math.min(99999,loot+12);room++;generateRoom();notice="穿过货栈，额外获得 12 票券。";}
         }
     }
+    private void addHazard(int type,float px,float py,float radius,float warning,float life,float power){
+        if(hazards.size()<18)hazards.add(new Hazard(type,Math.max(64,Math.min(WIDTH-64,px)),Math.max(64,Math.min(HEIGHT-64,py)),radius,warning,life,power));
+    }
+    private void updateHazards(float dt){
+        Iterator<Hazard> it=hazards.iterator();while(it.hasNext()){
+            Hazard h=it.next();float wait=Math.min(h.warning,dt);h.warning=dec(h.warning,wait);float active=dt-wait;
+            if(h.warning<=0&&active>0){float step=Math.min(h.life,active);h.life=dec(h.life,step);h.tick-=step;
+                if(h.tick<=.0001f){h.tick+=.65f;if(len(x-h.x,y-h.y)<h.radius+PLAYER_RADIUS&&lineClear(h.x,h.y,x,y))hurt(h.damage);signal("hazard",h.x,h.y,(int)h.radius);}
+            }
+            if(h.warning<=0&&h.life<=0)it.remove();if(mode!=Mode.PLAY)return;
+        }
+    }
+    private void aimEnemy(Enemy e,float prediction){
+        e.targetX=Math.max(64,Math.min(WIDTH-64,x+motionX*prediction));e.targetY=Math.max(64,Math.min(HEIGHT-64,y+motionY*prediction));
+        float dx=e.targetX-e.x,dy=e.targetY-e.y,d=Math.max(.01f,len(dx,dy));e.aimX=dx/d;e.aimY=dy/d;
+    }
+    private void fan(Enemy e,int half,float spread,float speed,float power){double base=Math.atan2(e.aimY,e.aimX);for(int i=-half;i<=half;i++)enemyShot(e,(float)Math.cos(base+i*spread),(float)Math.sin(base+i*spread),speed,power);}
     private void updateEnemy(Enemy e,float dt){
         e.hex=dec(e.hex,dt);e.flash=dec(e.flash,dt);
         if(marked(e)&&(job()==MINER||job()==MECHANIC)&&e.type!=3){e.stun=dec(e.stun,dt);return;}
         if(marked(e)&&job()==MINER&&e.type==3)dt*=.5f;
-if(e.stun>0){e.stun=dec(e.stun,dt);return;}
-        float dx=x-e.x,dy=y-e.y,distance=Math.max(.01f,len(dx,dy));
+        if(e.stun>0){e.stun=dec(e.stun,dt);return;}
+        float dx=x-e.x,dy=y-e.y,distance=Math.max(.01f,len(dx,dy));boolean enraged=e.type==3&&e.hp<e.maxHp*.5f;
         if(e.state==0){
-            float reach=e.type==0?56:e.type==1?330:e.type==2?260:210;
+            float reach=e.type==0?64:e.type==1?440:e.type==2?300:e.type==3?490:e.type==4?240:e.type==5?440:360;
             if(distance<reach&&lineClear(e.x,e.y,x,y)){
-                e.state=1;e.timer=e.type==0?.58f:e.type==1?.9f:e.type==2?.85f:1.2f;e.aimX=dx/distance;e.aimY=dy/distance;e.struck=false;
-            }else moveEnemy(e,dx/distance*(e.type==3?65:90+room*3)*dt,dy/distance*(e.type==3?65:90+room*3)*dt);
-        } else if(e.state==1){
+                e.state=1;e.timer=e.type==0?.42f:e.type==1?.7f:e.type==2?.7f:e.type==3?(enraged?.72f:1.05f):e.type==4?.55f:e.type==5?.75f:1;
+                aimEnemy(e,e.type==1?.22f:e.type==4?.35f:e.type==5?.5f:0);e.struck=false;
+            }else {
+                float speed=e.type==3?115:e.type==4?235:135+room*5;
+                float side=(e.id%2==0?1:-1)*(e.type==4?.45f:distance>150?.2f:0);
+                float nx=dx/distance-dy/distance*side,ny=dy/distance+dx/distance*side,n=len(nx,ny);
+                moveEnemy(e,nx/n*speed*dt,ny/n*speed*dt);
+            }
+        }else if(e.state==1){
             e.timer-=dt;
+            // Ranged units keep their locked aim while backing away from close attackers.
+            if((e.type==1||e.type==5)&&distance<160)moveEnemy(e,-dx/distance*75*dt,-dy/distance*75*dt);
             if(e.timer<=0){
                 e.state=2;
-                if(e.type==0){e.timer=.7f;if(distance<72)hurt((10+room*2)*enemyForce(e));signal("enemySwing",e.x,e.y,0);}
-                else if(e.type==1){e.timer=1.1f;enemyShot(e,e.aimX,e.aimY,220,10+room*2);}
-                else if(e.type==2)e.timer=.6f;
+                if(e.type==0){e.timer=.48f;if(distance<82&&lineClear(e.x,e.y,x,y))hurt((12+room*2)*enemyForce(e));signal("enemySwing",e.x,e.y,0);}
+                else if(e.type==1){e.timer=1.05f;fan(e,1,.15f,310,12+room*2);}
+                else if(e.type==2||e.type==4)e.timer=e.type==2?.5f:.34f;
+                else if(e.type==5){e.timer=1.5f;addHazard(0,e.targetX,e.targetY,82,1.05f,2.3f,(12+room*2)*enemyForce(e));addHazard(0,e.targetX-e.aimY*135,e.targetY+e.aimX*135,65,1.4f,1.8f,(10+room*2)*enemyForce(e));}
+                else if(e.type==6){e.timer=2;for(Enemy other:enemies)if(other!=e&&other.hp>0&&len(other.x-e.x,other.y-e.y)<260&&lineClear(e.x,e.y,other.x,other.y))other.guard=Math.min(40,other.guard+24);fan(e,2,.3f,240,12);signal("enemyWard",e.x,e.y,260);}
                 else {
-                    e.timer=1.3f;signal("slam",e.x,e.y,0);if(distance<185)hurt(24*enemyForce(e));
-                    int count=e.hp<e.maxHp*.5f?14:10;
-                    for(int i=0;i<count;i++){double a=i*Math.PI*2/count+time*.1;enemyShot(e,(float)Math.cos(a),(float)Math.sin(a),170,15);}
+                    e.timer=enraged?.85f:1.25f;
+                    if(e.pattern==0){addHazard(1,e.x,e.y,190,.3f,.1f,28*enemyForce(e));int count=enraged?16:12;for(int i=0;i<count;i++){double a=i*Math.PI*2/count+time*.1;enemyShot(e,(float)Math.cos(a),(float)Math.sin(a),enraged?270:220,18);}}
+                    else if(e.pattern==1)fan(e,enraged?3:2,.19f,350,20);
+                    else {addHazard(1,e.targetX,e.targetY,100,.8f,.1f,30*enemyForce(e));addHazard(1,e.targetX-135,e.targetY+70,90,1.15f,.1f,24*enemyForce(e));addHazard(1,e.targetX+135,e.targetY-70,90,1.5f,.1f,24*enemyForce(e));}
+                    signal("slam",e.x,e.y,e.pattern);
                 }
             }
-        }else{
+        }else if(e.state==3){e.timer-=dt;if(e.timer<=0)e.state=0;}
+        else {
             e.timer-=dt;
-            if(e.type==2){moveEnemy(e,e.aimX*380*dt,e.aimY*380*dt);if(!e.struck&&len(x-e.x,y-e.y)<35){e.struck=true;hurt((16+room*2)*enemyForce(e));}}
-            if(e.timer<=0)e.state=0;
+            if(e.type==2||e.type==4){float speed=e.type==2?440:520;moveEnemy(e,e.aimX*speed*dt,e.aimY*speed*dt);if(!e.struck&&len(x-e.x,y-e.y)<e.radius()+PLAYER_RADIUS+7){e.struck=true;hurt((18+room*2)*enemyForce(e));}}
+            if((e.type==1||e.type==3&&e.pattern==1)&&!e.struck&&e.timer<(e.type==1?.5f:.4f)){e.struck=true;fan(e,e.type==1?1:2,.12f,e.type==1?330:370,e.type==1?12+room*2:20);}
+            if(e.timer<=0){if(e.type==2||e.type==4){e.state=3;e.timer=e.type==2?.65f:.5f;}else{e.state=0;if(e.type==3)e.pattern=(e.pattern+1)%3;}}
         }
-        // Gentle separation avoids enemies stacking into an unreadable single hitbox.
-        for(Enemy other:enemies)if(other!=e&&other.hp>0){float sx=e.x-other.x,sy=e.y-other.y,d=len(sx,sy),min=e.radius()+other.radius();if(d>.1&&d<min)moveEnemy(e,sx/d*22*dt,sy/d*22*dt);}
+        for(Enemy other:enemies)if(other!=e&&other.hp>0){float sx=e.x-other.x,sy=e.y-other.y,d=len(sx,sy),min=e.radius()+other.radius();if(d>.1&&d<min)moveEnemy(e,sx/d*30*dt,sy/d*30*dt);}
     }
     private float enemyForce(Enemy e){return marked(e)&&job()==BOXER&&e.pactStacks>=3?.5f:1;}
     private void enemyShot(Enemy e,float dx,float dy,float speed,float damage){if(shots.size()<160)shots.add(new Shot(e.x+dx*24,e.y+dy*24,dx*speed,dy*speed,damage*enemyForce(e),false));}
@@ -453,8 +529,8 @@ if(e.stun>0){e.stun=dec(e.stun,dt);return;}
         if(e.hp<=0)return;
         if(echoEligible){
             value*=pactActive(SOLDIER)?1.3f:marked(e)&&job()==BOXER&&hero!=1?1.8f+e.pactStacks*.25f:1;
-            if(marked(e)&&job()==POLICE&&e.hp<=e.maxHp*.3f){if(e.type!=3)value=Math.max(value,e.hp);else value*=1.6f;signal("sentence",e.x,e.y,0);}
-            if(marked(e)&&job()==MERCHANT&&e.type!=3&&e.hp<=e.maxHp*.2f)value=Math.max(value,e.hp);
+            if(marked(e)&&job()==POLICE&&e.hp<=e.maxHp*.3f){if(e.type!=3)value=Math.max(value,e.hp+e.guard);else value*=1.6f;signal("sentence",e.x,e.y,0);}
+            if(marked(e)&&job()==MERCHANT&&e.type!=3&&e.hp<=e.maxHp*.2f)value=Math.max(value,e.hp+e.guard);
             if(marked(e)&&job()==BOXER&&hero!=1){e.pactStacks=Math.min(3,e.pactStacks+1);if(e.pactStacks==3){interrupt(e,1);signal("fracture",e.x,e.y,0);}}
 
             if(isSpec(POLICE,2)&&e.hp<e.maxHp*.5f)value*=1.18f;
@@ -465,8 +541,8 @@ if(e.stun>0){e.stun=dec(e.stun,dt);return;}
         if(echoEligible&&isSpec(2,1)&&len(e.x-x,e.y-y)>200)value*=1.18f;
         if(echoEligible&&careerCharge>0&&careerChargeLimit()>0){value*=1.25f;careerCharge=0;signal("echo",e.x,e.y,80);}
         if(echoEligible&&relicEcho>0&&hasRelic(3)){value*=1.35f;relicEcho=0;signal("echo",e.x,e.y,65);}
-        value*=e.hex>0?1.15f*(hasRelic(6)?1.1f:1):1;float dealt=Math.min(e.hp,value);e.hp=Math.max(0,e.hp-value);
-        e.flash=.12f;e.stun=Math.max(e.stun,e.type==3?.03f:.12f);signal("hit",e.x,e.y,(int)value);
+        value*=e.hex>0?1.15f*(hasRelic(6)?1.1f:1):1;float absorbed=Math.min(e.guard,value);e.guard-=absorbed;value-=absorbed;if(absorbed>0)signal("enemyShield",e.x,e.y,(int)absorbed);float dealt=Math.min(e.hp,value);e.hp=Math.max(0,e.hp-value);
+        e.flash=.12f;if(absorbed==0)e.stun=Math.max(e.stun,e.type==3?.03f:e.type==2||e.type==4?.06f:.12f);signal("hit",e.x,e.y,(int)value);
         if(echoEligible&&marked(e)&&dealt>0){
             if(job()==MERCHANT)heal(dealt*.3f);
             if(job()==REPORTER){e.pactDebt=Math.min(1000,e.pactDebt+dealt*.35f);for(Enemy other:enemies)if(other!=e&&other.hp>0&&marked(other)){hit(other,dealt*.5f,false);signal("obituary",other.x,other.y,0);}}
@@ -493,7 +569,7 @@ if(e.stun>0){e.stun=dec(e.stun,dt);return;}
         if(mode==Mode.RESULT||mode==Mode.CAMP)return;
         won=victory;int reward=victory?loot+40:(int)(loot*.7f);bank=Math.min(999999,bank+reward);
         int gained=kills*6+(victory?50:10);if(isSpec(REPORTER,2))gained=gained*120/100;
-        if(custom<0)experience[hero]=Math.min(1000000,experience[hero]+gained);else profile().xp=Math.min(1000000,profile().xp+gained);
+        gainExperience(gained);
         if(victory)wins=Math.min(999999,wins+1);mode=Mode.RESULT;notice=(victory?"长夜已尽":"灯火尚存")+" · 带回 "+reward+" 票券";signal(victory?"victory":"death",x,y,reward);
     }
     private void movePlayer(float dx,float dy){if(free(x+dx,y,PLAYER_RADIUS))x+=dx;if(free(x,y+dy,PLAYER_RADIUS))y+=dy;}
