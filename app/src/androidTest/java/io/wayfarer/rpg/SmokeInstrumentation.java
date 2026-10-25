@@ -68,19 +68,21 @@ public final class SmokeInstrumentation extends Instrumentation {
         }catch(Throwable t){result.putString("stream","ARPG_SMOKE_FAILED: "+t+"\n");finish(Activity.RESULT_CANCELED,result);}
     }
     private void journalItem(int index){ui(()->{ListView list=activity.storyDialog.getListView();list.performItemClick(null,index,index);});waitForIdleSync();}
+    private void storyButton(int which){ui(()->activity.storyDialog.getButton(which).performClick());waitForIdleSync();}
     private void challengeFlow(){
         ui(()->{activity.world.stopFrames();ActionGame g=activity.world.game;g.chooseCareer(CareerSystem.DOCTOR,0,0);});
         tap(835,105);waitForIdleSync();journalItem(0);
-        ui(()->{check(((TextView)activity.storyDialog.getWindow().getDecorView().findViewWithTag("story-text")).getText().toString().contains("诺拉"),"journal intro opens from real camp entry");activity.storyDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();});
-        tap(785,405);
+        ui(()->{check(((TextView)activity.storyDialog.getWindow().getDecorView().findViewWithTag("story-text")).getText().toString().contains("诺拉"),"journal intro opens from real camp entry");});storyButton(AlertDialog.BUTTON_NEGATIVE);
+        tap(785,405);waitForIdleSync();ui(()->check(activity.world.game.mode==ActionGame.Mode.PLAY,"story flow starts expedition: "+activity.world.game.mode));
         // Deterministic clear fixture exercises the actual clear event, choice UI and durable award.
-        ui(()->{ActionGame g=activity.world.game;for(ActionGame.Enemy e:g.enemies)e.hp=0;g.update(.05f,new ActionGame.Input());check(g.mode==ActionGame.Mode.REWARD&&g.storyUnlocked==1,"clear reveals main scene");});
+        ui(()->{ActionGame g=activity.world.game;for(ActionGame.Enemy e:g.enemies)e.hp=0;g.update(.05f,new ActionGame.Input());check(g.mode==ActionGame.Mode.REWARD&&g.storyUnlocked==1,"clear reveals main scene: "+g.mode+" flags="+g.storyUnlocked);});
         tap(480,412);waitForIdleSync();screenshotNativeDialog("23-main-story-fixture.png",activity.storyDialog);
-        int[] bank={0};ui(()->{bank[0]=activity.world.game.bank;activity.storyDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();check(activity.world.game.storyChoices[0]==1&&activity.world.game.bank==bank[0]+12,"main choice commits actual once-only reward");});
+        int[] bank={0};ui(()->bank[0]=activity.world.game.bank);storyButton(AlertDialog.BUTTON_POSITIVE);ui(()->check(activity.world.game.storyChoices[0]==1&&activity.world.game.bank==bank[0]+12,"main choice commits actual once-only reward"));
         tap(480,412);waitForIdleSync();journalItem(1);
-        ui(()->{check(activity.world.game.bank==bank[0]+12,"rereading cannot duplicate main reward");activity.storyDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();ActionGame g=activity.world.game;g.chooseReward(0);g.pause();g.abandon();g.returnCamp();});
+        ui(()->check(activity.world.game.bank==bank[0]+12,"rereading cannot duplicate main reward"));storyButton(AlertDialog.BUTTON_NEGATIVE);ui(()->{ActionGame g=activity.world.game;g.chooseReward(0);g.pause();g.abandon();g.returnCamp();});
         tap(835,105);waitForIdleSync();journalItem(6);journalItem(0);screenshotNativeDialog("24-doctor-story-fixture.png",activity.storyDialog);
-        ui(()->{ActionGame g=activity.world.game;float hp=g.maxHp();activity.storyDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();check(g.maxHp()==hp+4,"personal decision grants actual persistent passive");try{SaveStore store=new SaveStore(activity);store.write(2,g);ActionGame loaded=store.read(2);check(loaded.storyChoices[0]==1&&loaded.characterJobs[0]==CareerSystem.DOCTOR&&loaded.characterChoices[0][0]==1&&loaded.maxHp()==g.maxHp(),"story and derived health survive AtomicFile");}catch(IOException e){throw new RuntimeException(e);}activity.world.replace(new ActionGame());});
+        float[] personalHp={0};ui(()->personalHp[0]=activity.world.game.maxHp());storyButton(AlertDialog.BUTTON_POSITIVE);
+        ui(()->{ActionGame g=activity.world.game;check(g.maxHp()==personalHp[0]+4,"personal decision grants actual persistent passive");try{SaveStore store=new SaveStore(activity);store.write(2,g);ActionGame loaded=store.read(2);check(loaded.storyChoices[0]==1&&loaded.characterJobs[0]==CareerSystem.DOCTOR&&loaded.characterChoices[0][0]==1&&loaded.maxHp()==g.maxHp(),"story and derived health survive AtomicFile");}catch(IOException e){throw new RuntimeException(e);}activity.world.replace(new ActionGame());});
         tap(785,405);ui(()->{ActionGame g=activity.world.game;pactArena(g);g.enemies.get(0).y=g.y-140;});tap(855,298);
         float[] target={0};ui(()->{check(activity.world.game.followUpWindow>0,"real skill button opens combo");target[0]=activity.world.game.enemies.get(0).hp;});tap(855,298);
         ui(()->{check(activity.world.game.followUpWindow==0&&activity.world.game.enemies.get(0).hp<target[0],"second touch performs damaging follow-up");target[0]=activity.world.game.enemies.get(0).hp;});tap(855,298);ui(()->check(activity.world.game.enemies.get(0).hp==target[0],"third touch cannot repeat combo"));
