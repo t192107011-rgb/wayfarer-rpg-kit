@@ -7,7 +7,7 @@ public final class BuildTests {
     private static void check(boolean v,String message){count++;if(!v)throw new AssertionError(message);}
     private static void near(float a,float b,String m){check(Math.abs(a-b)<.02f,m+": "+a+" vs "+b);}
     private static ActionGame.Enemy mob(ActionGame g,float x,float y){ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,x,y,500);e.stun=1;g.enemies.add(e);return e;}
-    private static void arena(ActionGame g){g.start(123);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;g.invulnerable=0;g.hitStop=0;}
+    private static void arena(ActionGame g){g.start(123);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;g.invulnerable=0;g.hitStop=0;g.threat=1;g.encounterHpFloor=0;g.encounterDamageFloor=0;}
     private static void tick(ActionGame g,boolean attack,int n){ActionGame.Input i=new ActionGame.Input();i.attack=attack;for(int x=0;x<n;x++)g.update(1f/60f,i);}
     private static void points(ActionGame g){if(g.custom<0)g.experience[g.hero]=1200;else g.profile().xp=1200;g.hp=g.maxHp();}
     private static void learn(ActionGame g,int id,int times){for(int i=0;i<times;i++)check(g.learn(id),"learn node "+id);}
@@ -32,20 +32,20 @@ public final class BuildTests {
     }
     private static void treeRules()throws Exception{
         ActionGame g=new ActionGame();check(g.availablePoints()==2,"starts with two points");check(!g.learn(1),"level/parent lock");learn(g,0,2);check(!g.learn(8),"cannot overspend");g.resetTalents();check(g.availablePoints()==2&&g.rank(0)==0,"free refund exact");
-        points(g);learn(g,0,1);learn(g,1,1);check(!g.learn(2),"capstone requires rank2 parent");learn(g,1,1);learn(g,2,1);learn(g,4,1);learn(g,5,2);check(!g.learn(7)&&!g.learn(3),"all six capstones mutually exclusive");
-        int before=g.availablePoints();g.start(35);check(!g.learn(8)&&g.availablePoints()==before,"no learning in run");g.resetTalents();check(g.rank(2)==1,"no midrun respec");g.pause();g.abandon();g.returnCamp();g.resetTalents();check(g.availablePoints()==16,"full refund capped points");
+        points(g);learn(g,0,1);learn(g,1,1);check(!g.learn(2),"capstone requires rank2 parent");learn(g,1,1);learn(g,2,1);learn(g,4,1);learn(g,5,2);check(g.learn(7)&&!g.learn(3),"different branches can coexist; same branch remains exclusive");
+        int before=g.availablePoints();g.start(35);check(!g.learn(8)&&g.availablePoints()==before,"no learning in run");g.resetTalents();check(g.rank(2)==1,"no midrun respec");g.pause();g.abandon();g.returnCamp();g.resetTalents();check(g.availablePoints()==17,"full refund capped points");
         for(int id:new int[]{2,3,6,7,10,11}){g=ultimate(id);ActionSave.decode(ActionSave.encode(g));}
-        System.out.println("PASS point budget, level/parent gates, six mutually exclusive capstones and camp-only respec");
+        System.out.println("PASS point budget, level/parent gates, one capstone per branch and camp-only respec");
     }
     private static void effects()throws Exception{
         ActionGame g=new ActionGame();learn(g,0,1);near(g.damage(),24,"tempered damage");g.resetTalents();learn(g,8,1);near(g.maxHp(),118,"wick health");g.resetTalents();learn(g,4,1);check(g.speed()>205&&g.dodgePeriod()<1.15,"lightstep speed and dodge");
         g=ultimate(2);arena(g);ActionGame.Enemy e=mob(g,680,600);g.combo=1;g.comboWindow=.7f;tick(g,true,1);check(e.hp<500,"third attack creates shockwave outside sword range");
-        g=ultimate(3);arena(g);float normal=g.damage();g.hp=g.maxHp()*.3f;near(g.damage(),normal*1.4f,"low health capstone boosts damage");
+        g=ultimate(3);arena(g);float normal=g.damage();g.hp=g.maxHp()*.3f;near(g.damage(),normal*1.55f,"low health capstone boosts damage");
         g=ultimate(6);arena(g);e=mob(g,610,600);g.dodge(0,-1);check(e.hp<500&&e.stun>=.45,"dodge pulse has real damage and stun");
         g=ultimate(7);arena(g);mob(g,300,300);g.skillCd=6;g.dodge(0,-1);near(g.skillCd,3.5f,"dodge reduces skill cooldown");g.dodge(0,-1);near(g.skillCd,3.5f,"failed dodge grants no free cooldown reduction");
         g=new ActionGame();points(g);learn(g,4,1);learn(g,5,2);arena(g);e=mob(g,610,600);g.dodge(0,-1);g.rollTime=0;g.x=560;g.y=600;float damage=g.damage();tick(g,true,10);near(500-e.hp,damage*1.3f,"dodge primes one empowered attack");check(g.dodgeCharge==0,"charge consumed once");
         g=ultimate(10);arena(g);mob(g,300,300);g.hp=30;float expected=30+g.maxHp()*.08f;g.skill();near(g.hp,expected,"longlight healing");near(g.shield,12,"warmth shield");near(g.skillCd,6.2f,"warmth cooldown");g.skill();near(g.hp,expected,"cooldown blocks duplicate heal");
-        g=ultimate(11);arena(g);e=mob(g,590,600);g.skill();g.hp=g.maxHp();g.hitStop=0;e.stun=0;e.hp=500;e.state=1;e.timer=.001f;float hp=g.hp;tick(g,false,1);near(g.hp,hp,"shield absorbs melee");near(g.shield,10,"shield is consumed");near(e.hp,493,"mirror reflects half of absorbed damage");
+        g=ultimate(11);arena(g);e=mob(g,590,600);g.skill();g.hp=g.maxHp();g.hitStop=0;e.stun=0;e.hp=500;e.state=1;e.timer=.001f;float hp=g.hp;tick(g,false,1);near(g.hp,hp,"shield absorbs melee");near(g.shield,10,"shield is consumed");near(e.hp,490.9f,"mirror reflects 65 percent of absorbed damage");
         ActionGame a=ActionSave.decode(ActionSave.encode(g));near(a.shield,g.shield,"remaining shield persists");
         g=new ActionGame();points(g);g.selectHero(1);g.experience[1]=1200;learn(g,0,1);learn(g,1,2);arena(g);e=mob(g,720,600);g.combo=1;g.comboWindow=.7f;tick(g,true,1);near(g.shots.get(0).damage,g.damage()*1.59f,"archer benefits from third-beat talent");
         // Each custom character gets only their own earned XP on settlement.

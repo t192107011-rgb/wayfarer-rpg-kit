@@ -34,33 +34,35 @@ public final class BuildSystem {
     public static final Node[] NODES={
         new Node("淬锋","每级所有攻击伤害 +2。",3,-1,1),
         new Node("三拍","每级第三次普攻的伤害倍率 +12%；卡宾枪也计连击。",2,0,2),
-        new Node("裂地回响","第三次普攻同时向周围140范围释放60%伤害震波。",1,1,4),
-        new Node("孤焰","生命低于40%时伤害 +40%；受到伤害始终 +15%。",1,1,4),
+        new Node("裂地回响","第三次普攻同时向周围185范围释放75%伤害震波；与镜火组合时，命中可补充最多4护盾。",1,1,4),
+        new Node("孤焰","生命低于40%时伤害 +55%、近战与范围技能覆盖 +25%；受到伤害始终 +15%。",1,1,4),
         new Node("轻步","每级移速 +3%，闪避冷却 -0.07秒。",3,-1,1),
         new Node("借势","闪避后3秒内下一次普攻每级伤害 +15%，一次消耗。",2,4,2),
-        new Node("残影破","闪避起点85范围造成75%伤害并短暂眩晕。",1,5,4),
-        new Node("回环","每次有效闪避使主动技能剩余冷却减少2.5秒。",1,5,4),
+        new Node("残影破","闪避起点120范围造成105%伤害并短暂眩晕；与镜火组合时有效闪避补6护盾。",1,5,4),
+        new Node("回环","每次有效闪避使主动技能剩余冷却减少2.5秒；追击窗口延长至3秒，追击伤害+20%。",1,5,4),
         new Node("灯芯","每级生命上限 +8。",3,-1,1),
         new Node("余温","每级技能冷却 -0.4秒；施放技能获得6点护盾，上限随等级。",2,8,2),
-        new Node("长明","每次施放主动技能恢复8%最大生命。",1,9,4),
-        new Node("镜火","技能额外获得12点护盾；护盾受击时向100范围反震吸收量的50%。",1,9,4)
+        new Node("长明","每次施放主动技能恢复8%最大生命；追击实际命中再恢复3%，孤焰低血时改为6%；与回环组合时命中追击再减0.8秒技能冷却。",1,9,4),
+        new Node("镜火","技能额外获得12点护盾；护盾受击时向150范围反震吸收量的65%；追击实际命中补6天赋护盾。",1,9,4)
     };
     public static boolean ultimate(int id){return id%4>=2;}
-    public static int points(int xp){return 2+Math.min(14,xp/80);}
+    public static int points(int xp){return 2+Math.min(16,xp/80);}
     public static int spent(int[] ranks){int n=0;for(int v:ranks)n+=v;return n;}
     public static String lockReason(int[] ranks,int xp,int id){
         if(id<0||id>=NODES.length)return "未知天赋";Node n=NODES[id];
         if(ranks[id]>=n.maxRank)return "已学满";
         if(1+Math.min(19,xp/80)<n.minLevel)return "需要角色 Lv."+n.minLevel;
         if(n.parent>=0&&ranks[n.parent]<(ultimate(id)?2:1))return "需要「"+NODES[n.parent].name+"」"+(ultimate(id)?2:1)+"级";
-        if(ultimate(id))for(int i=0;i<12;i++)if(ultimate(i)&&ranks[i]>0)return "终阶天赋只能选择一个，可在营地免费重置";
+        if(ultimate(id))for(int i=id/4*4+2;i<id/4*4+4;i++)if(ranks[i]>0)return "本类别的终阶二选一，其他类别可分别选择；营地可免费重置";
         if(spent(ranks)>=points(xp))return "没有可用天赋点，远征获得经验后再来";
         return "";
     }
     public static void validateTree(int[] ranks,int xp){
-        if(ranks.length!=12||spent(ranks)>points(xp))throw new IllegalArgumentException("天赋点超支");int finals=0;
+        if(ranks.length!=12||spent(ranks)>points(xp))throw new IllegalArgumentException("天赋点超支");int[] finals=new int[3];
         for(int i=0;i<12;i++){Node n=NODES[i];if(ranks[i]<0||ranks[i]>n.maxRank)throw new IllegalArgumentException("天赋等级无效");
-            if(ranks[i]>0){if(1+Math.min(19,xp/80)<n.minLevel||n.parent>=0&&ranks[n.parent]<(ultimate(i)?2:1))throw new IllegalArgumentException("缺少天赋前置");if(ultimate(i))finals++;}}
-        if(finals>1)throw new IllegalArgumentException("终阶天赋互斥");
+            if(ranks[i]>0){if(1+Math.min(19,xp/80)<n.minLevel||n.parent>=0&&ranks[n.parent]<(ultimate(i)?2:1))throw new IllegalArgumentException("缺少天赋前置");if(ultimate(i))finals[i/4]++;}}
+        for(int n:finals)if(n>1)throw new IllegalArgumentException("同类别终阶天赋互斥");
     }
+    public static void validateLegacyTree(int[] ranks,int xp){validateTree(ranks,xp);int n=0;for(int i=0;i<ranks.length;i++)if(ultimate(i)&&ranks[i]>0)n++;if(n>1||spent(ranks)>2+Math.min(14,xp/80))throw new IllegalArgumentException("旧版天赋树不合法");}
+    public static String doctrine(int[] ranks){StringBuilder b=new StringBuilder();for(int branch=0;branch<3;branch++)for(int id=branch*4+2;id<branch*4+4;id++)if(ranks[id]>0){if(b.length()>0)b.append(" / ");b.append(NODES[id].name);}return b.length()==0?"尚未定型 · 每类终阶可选一":b.toString();}
 }

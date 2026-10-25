@@ -8,8 +8,8 @@ android {
         minSdk 26
         testInstrumentationRunner 'io.wayfarer.rpg.SmokeInstrumentation'
         targetSdk 35
-        versionCode 10
-        versionName '0.8.0-black-bell'
+        versionCode 11
+        versionName '0.9.0-endless'
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17

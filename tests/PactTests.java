@@ -8,7 +8,7 @@ public final class PactTests {
     private static void check(boolean v,String why){count++;if(!v)throw new AssertionError(why);}
     private static void near(float a,float b,String why){check(Math.abs(a-b)<.05f,why+": "+a+" vs "+b);}
     private static ActionGame game(int job,int spec){ActionGame g=new ActionGame();g.experience[0]=160;check(g.chooseCareer(job,spec,0,true),"select optional pact");g.start(91);arena(g);return g;}
-    private static void arena(ActionGame g){g.enemies.clear();g.blocks.clear();g.shots.clear();g.x=560;g.y=600;g.enemies.add(new ActionGame.Enemy(g.nextId++,0,620,600,1000));g.enemies.get(0).stun=1;g.invulnerable=0;}
+    private static void arena(ActionGame g){g.enemies.clear();g.blocks.clear();g.shots.clear();g.x=560;g.y=600;g.enemies.add(new ActionGame.Enemy(g.nextId++,0,620,600,1000));g.enemies.get(0).stun=1;g.invulnerable=0;g.threat=1;g.encounterHpFloor=0;g.encounterDamageFloor=0;}
     private static void tick(ActionGame g){for(ActionGame.Enemy e:g.enemies)e.stun=1;g.hitStop=0;g.update(1f/60f,new ActionGame.Input());g.signals.clear();}
     private static void hurt(ActionGame g,float damage){g.invulnerable=0;g.shots.add(new ActionGame.Shot(g.x,g.y,0,0,damage,false));tick(g);}
     private static void hit(ActionGame g,float damage){ActionGame.Enemy e=g.enemies.get(0);g.shots.add(new ActionGame.Shot(e.x,e.y,0,0,damage,true));tick(g);}

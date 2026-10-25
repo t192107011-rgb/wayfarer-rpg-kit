@@ -17,7 +17,7 @@ public final class StoryJournal {
             else if(w<=5)scene(a,w-1);
             else if(w==6)characterMenu(a);
             else if(w==7)read(a,"灰桥的结局",StorySystem.ending(g.storyChoices));
-            else {StringBuilder b=new StringBuilder("主动技能发动后，2秒内再次点击同一技能键可使用一次追击；错过窗口不会退还冷却。\n\n");for(int i=0;i<3;i++)b.append(EncounterSystem.FOLLOWUP_DETAILS[i]).append("\n\n");b.append("光辉追击命中补8辉盾，并净化自身110范围弹丸；禁忌追击消耗2%最大生命、增加12侵蚀，引爆目标的既有诅咒，对附近其他敌人造成次生伤害。\n\n");for(int i=0;i<7;i++)b.append(EncounterSystem.NAMES[i]).append("：").append(EncounterSystem.COUNTERS[i]).append("\n\n");read(a,"敌情与技能衔接",b.toString());}
+            else {StringBuilder b=new StringBuilder("主动技能发动后，2秒内（回环为3秒）再次点击同一技能键可使用一次追击；错过窗口不会退还冷却。\n\n");for(int i=0;i<3;i++)b.append(EncounterSystem.FOLLOWUP_DETAILS[i]).append("\n\n");b.append("光辉追击命中补8辉盾，并净化自身110范围弹丸；禁忌追击消耗2%最大生命、增加12侵蚀，引爆目标的既有诅咒，对附近其他敌人造成次生伤害。\n\n");for(int i=0;i<7;i++)b.append(EncounterSystem.NAMES[i]).append("：").append(EncounterSystem.COUNTERS[i]).append("\n\n");read(a,"敌情与技能衔接",b.toString());}
         }).setNegativeButton("返回",null).show();
     }
     private static void read(MainActivity a,String title,String text){a.storyDialog=new AlertDialog.Builder(a).setTitle(title).setView(body(a,text)).setPositiveButton("返回手记",(d,w)->show(a)).setNegativeButton("关闭",null).show();}

@@ -53,8 +53,8 @@ public final class WorldView extends View implements Choreographer.FrameCallback
                 Fx f=new Fx("number",s.x,s.y-30,.7f,s.value,s.kind.equals("hurt")?0xFFFF917E:s.kind.equals("heal")?0xFFB4E9BA:cream);f.vy=-35;effects.add(f);
                 if(s.kind.equals("hurt"))shake=5;
                 for(int i=0;i<6;i++){Fx spark=new Fx("spark",s.x,s.y,.2f+cosmetic.nextFloat()*.2f,0,s.kind.equals("hurt")?0xFFCE705C:gold);spark.vx=(cosmetic.nextFloat()-.5f)*180;spark.vy=(cosmetic.nextFloat()-.5f)*180;effects.add(spark);}
-            }else if(s.kind.equals("skill")||s.kind.equals("slam")||s.kind.equals("clear")||s.kind.equals("echo")||s.kind.equals("shield"))effects.add(new Fx("ring",s.x,s.y,.45f,s.kind.equals("slam")?185:s.kind.equals("echo")?s.value:s.kind.equals("shield")?45:140,s.kind.equals("slam")?0xFFDC7053:0xFFBCE8C5));
-            else if(s.kind.equals("radiant")||s.kind.equals("forbidden"))effects.add(new Fx("ring",s.x,s.y,.55f,s.value>3?s.value:160,s.kind.equals("radiant")?0xFFF2DD9B:0xFFB991DF));
+            }else if(s.kind.equals("skill")||s.kind.equals("slam")||s.kind.equals("clear")||s.kind.equals("echo")||s.kind.equals("shield"))effects.add(new Fx("ring",s.x,s.y,.45f,s.kind.equals("slam")?185:s.kind.equals("echo")?s.value:s.kind.equals("shield")?45:s.kind.equals("skill")?(int)game.activeRadius():140,s.kind.equals("slam")?0xFFDC7053:0xFFBCE8C5));
+            else if(s.kind.equals("radiant")||s.kind.equals("forbidden"))effects.add(new Fx("ring",s.x,s.y,.55f,s.value>3?s.value:(int)game.activeRadius(),s.kind.equals("radiant")?0xFFF2DD9B:0xFFB991DF));
             else if(s.kind.equals("lance"))effects.add(new Fx("lance",s.x,s.y,.35f,s.value,0xFFFFE8AD));
             else if(s.kind.equals("pact")||s.kind.equals("pactLow")){pactMessage=game.notice;pactMessageTime=3;if(s.kind.equals("pact")){effects.add(new Fx("ring",s.x,s.y,.65f,210,0xFFCF85A0));if(soundOn)host.sound("forbidden");}}
             else if(s.kind.equals("pactBurst")){effects.add(new Fx("ring",s.x,s.y,.55f,s.value,0xFFBD534F));shake=Math.max(shake,3);}
@@ -68,6 +68,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             else if(s.kind.equals("sacrifice")){Fx f=new Fx("number",s.x,s.y-45,.7f,-s.value,0xFFD89DCC);f.vy=-20;effects.add(f);}
             else if(s.kind.equals("revive")){effects.add(new Fx("ring",s.x,s.y,.7f,150,0xFFF2DC9D));if(soundOn)host.sound("heal");}
             else if(s.kind.equals("relic")&&soundOn)host.sound("clear");
+            else if(s.kind.equals("potion")){pactMessage="拾取药瓶 · "+s.value+" / "+ActionGame.MAX_POTIONS;pactMessageTime=2;effects.add(new Fx("ring",s.x,s.y,.4f,40,0xFFB6E1B2));}
             else if(s.kind.equals("coin"))effects.add(new Fx("spark",s.x,s.y,.25f,0,gold));
         }
         game.signals.clear();while(effects.size()>140)effects.remove(0);
@@ -127,8 +128,9 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         button(c,40,365,280,57,"磨刃 +2  ·  "+(game.power>=10?"MAX":game.upgradeCost(game.power)+" 票券"),false);
         button(c,340,365,280,57,"护火 +10 HP  ·  "+(game.vitality>=10?"MAX":game.upgradeCost(game.vitality)+" 票券"),false);
         text(c,"永久攻击 "+game.power+"/10     永久生命 "+game.vitality+"/10",40,445,13,muted,false);
-        button(c,660,365,260,80,"踏入长夜  →",true);
-        text(c,game.notice.length()>54?game.notice.substring(0,54):game.notice,40,465,12,muted,false);
+        button(c,660,365,260,80,"剧情远征  →",true);
+        button(c,660,448,260,27,"无尽远征 · 最深 "+game.bestDepth+"层",false);
+        text(c,game.notice.length()>38?game.notice.substring(0,38):game.notice,40,465,12,muted,false);
         button(c,40,480,100,42,"存档",false);button(c,155,480,110,42,"操作说明",false);
         button(c,280,480,155,42,"角色工坊",false);button(c,450,480,175,42,"技能树 · "+game.availablePoints(),true);
         button(c,650,480,270,42,"灵魂祭坛 · "+SoulSystem.NAMES[game.soulKind()],false);
@@ -158,8 +160,9 @@ public final class WorldView extends View implements Choreographer.FrameCallback
                 if(k>=2)text(c,r>0?"已定型":"终阶 · 择一",a[0]+a[2]/2,a[1]+70,12,r>0?tint:muted,true);
             }
         }
-        text(c,"点击节点查看效果与前置。六个终阶天赋只能选一个。",50,461,14,muted,false);
-        text(c,"初始2点，每80经验+1点，最多16点。各角色独立成长。",50,501,13,gold,false);
+        text(c,BuildSystem.doctrine(game.talents[game.buildId()]),50,446,12,gold,false);
+        text(c,"每个类别终阶二选一，可同时拥有三类终阶。",50,461,14,muted,false);
+        text(c,"初始2点，每80经验+1点，最多18点。各角色独立成长。",50,501,13,gold,false);
         button(c,700,475,210,42,"免费重置天赋",false);
     }
     private void dungeon(Canvas c){
@@ -197,14 +200,14 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         }
         for(ActionGame.Hazard h:game.hazards){int tint=h.warning>0?0xFFEDB374:0xFFE36D54;circle(c,h.x,h.y,h.radius,h.warning>0?0x22E3A65C:0x66B94D37);ring(c,h.x,h.y,h.radius,tint,3);if(h.warning>0){ring(c,h.x,h.y,h.radius*Math.max(.05f,1-h.warning/1.5f),tint,1);text(c,String.format(java.util.Locale.ROOT,"%.1f",h.warning),h.x,h.y,14,tint,true);}else text(c,h.type==0?"灼烧":"裂地",h.x,h.y,12,tint,true);}
         for(ActionGame.Enemy e:game.enemies)if(e.state==1){
-            if(e.type==3&&e.pattern==0){circle(c,e.x,e.y,190,0x33EB936D);ring(c,e.x,e.y,190,0xFFEC9A75,3);}
-            else if(e.type==2||e.type==4){float length=e.type==2?220:177;line(c,e.x,e.y,e.x+e.aimX*length,e.y+e.aimY*length,0x88E5A46F,30);line(c,e.x,e.y,e.x+e.aimX*length,e.y+e.aimY*length,0xFFECD0A1,2);}
-            else if(e.type==1||e.type==3&&e.pattern==1){for(int k=-1;k<=1;k++){double a=Math.atan2(e.aimY,e.aimX)+k*.2;line(c,e.x,e.y,e.x+(float)Math.cos(a)*440,e.y+(float)Math.sin(a)*440,0x99E5A46F,2);}}
-            else if(e.type==5||e.type==3&&e.pattern==2){ring(c,e.targetX,e.targetY,100,0xFFE4A373,2);text(c,"落点",e.targetX,e.targetY-12,12,0xFFE4A373,true);}
+            if(e.type==3&&e.pattern==0){circle(c,e.x,e.y,game.enemyRange(220),0x33EB936D);ring(c,e.x,e.y,game.enemyRange(220),0xFFEC9A75,3);}
+            else if(e.type==2||e.type==4){float length=game.enemySpeed(e.type==2?440:520)*(e.type==2?.5f:.34f);line(c,e.x,e.y,e.x+e.aimX*length,e.y+e.aimY*length,0x88E5A46F,30);line(c,e.x,e.y,e.x+e.aimX*length,e.y+e.aimY*length,0xFFECD0A1,2);}
+            else if(e.type==1||e.type==3&&e.pattern==1){for(int k=-1;k<=1;k++){double a=Math.atan2(e.aimY,e.aimX)+k*.2;line(c,e.x,e.y,e.x+(float)Math.cos(a)*game.enemyRange(520),e.y+(float)Math.sin(a)*game.enemyRange(520),0x99E5A46F,2);}}
+            else if(e.type==5||e.type==3&&e.pattern==2){ring(c,e.targetX,e.targetY,game.enemyRange(e.type==5?100:120),0xFFE4A373,2);text(c,"落点",e.targetX,e.targetY-12,12,0xFFE4A373,true);}
             else if(e.type==6)ring(c,e.x,e.y,260,0xAA8AC4D6,2);
-            else {circle(c,e.x,e.y,82,0x33EB936D);ring(c,e.x,e.y,82,0xCCEB936D,2);}
+            else {circle(c,e.x,e.y,game.enemyRange(110),0x33EB936D);ring(c,e.x,e.y,game.enemyRange(110),0xCCEB936D,2);}
         }
-        for(ActionGame.Drop d:game.drops){glow(c,d.x,d.y,18,d.heal?0x556BCAB7:0x55EFC16A);box(c,d.x-4,d.y-5,8,8,d.heal?0xFFAAE1B3:gold);}
+        for(ActionGame.Drop d:game.drops){if(d.potion){glow(c,d.x,d.y,25,0x66A7E8A9);box(c,d.x-6,d.y-6,12,16,0xFF8FCE9B);box(c,d.x-3,d.y-11,6,5,0xFFE6D6A9);text(c,"药",d.x,d.y+24,12,0xFFDAEEC9,true);continue;}glow(c,d.x,d.y,18,d.heal?0x556BCAB7:0x55EFC16A);box(c,d.x-4,d.y-5,8,8,d.heal?0xFFAAE1B3:gold);}
         ArrayList<ActionGame.Enemy> sorted=new ArrayList<>(game.enemies);sorted.sort(Comparator.comparingDouble(a->a.y));boolean drawn=false;
         for(ActionGame.Enemy e:sorted){if(!drawn&&e.y>game.y){player(c);drawn=true;}enemy(c,e);}if(!drawn)player(c);
         for(ActionGame.Shot s:game.shots){line(c,s.x-s.vx*.025f,s.y-s.vy*.025f,s.x,s.y,s.effect==2?0xFFC48DE5:s.friendly?0xFFF3DDA5:0xFFDB8273,s.friendly?3:5);circle(c,s.x,s.y,s.radius,s.effect==2?0xFFE4B9FF:s.friendly?0xFFFFEBC3:0xFFF5BA8B);}
@@ -228,7 +231,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         if(game.rollTime>0)for(int i=1;i<=3;i++){circle(c,game.x-game.rollX*i*12,game.y-game.rollY*i*12,13,0x223FCAA7);}
         sprite(c,game.x,game.y,game.hero,game.faceX,game.faceY,game.invulnerable>0&&((int)(visualTime*18)%2==0),1,game.mode==ActionGame.Mode.PLAY?visualTime:0,game.profile());
         if(game.attackAnim>0&&game.hero!=1){
-            float angle=(float)Math.toDegrees(Math.atan2(game.faceY,game.faceX));float radius=game.hero==0?83:67;
+            float angle=(float)Math.toDegrees(Math.atan2(game.faceY,game.faceX));float radius=game.meleeReach();
             color(0xFFEDD6A4);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(game.combo==2?9:6);rect.set(game.x-radius,game.y-radius,game.x+radius,game.y+radius);
             c.drawArc(rect,angle-80+(1-game.attackAnim/.24f)*45,105,false,p);p.setStyle(Paint.Style.FILL);
         }
@@ -278,7 +281,8 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     private void hud(Canvas c){
         rounded(c,17,13,308,66,10,0xDC12242B);text(c,game.heroName()+"  Lv."+game.heroLevel(),30,36,15,cream,false);
         box(c,30,47,220,10,0xFF37464A);box(c,30,47,220*Math.max(0,game.hp/game.maxHp()),10,0xFFBA705D);text(c,(int)game.hp+" / "+(int)game.maxHp(),263,57,12,cream,false);
-        text(c,"第 "+game.room+" / 5 区域  ·  "+(game.room>0?ActionGame.ROOM_NAMES[game.room-1]:""),480,28,16,cream,true);
+        text(c,(game.endless?"无尽第 "+game.endlessDepth+" 层 · ":"第 "+game.room+" / 5 区域 · ")+(game.room>0?ActionGame.ROOM_NAMES[game.room-1]:""),480,28,16,cream,true);
+        text(c,game.threatLabel(),480,115,11,0xFFE5AC85,true);
         if(game.time<7&&game.room>0&&game.mode==ActionGame.Mode.PLAY){rounded(c,325,119,520,38,7,0xDD18272D);text(c,WorldSetting.REPORTS[game.room-1],585,143,12,cream,true);}
         text(c,"票券 "+game.loot+"   ·   敌人 "+game.enemies.size(),480,50,13,gold,true);
         if(game.soulKind()>0){
@@ -326,7 +330,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     private void rewards(Canvas c){
         shade(c);text(c,"封 锁 线 补 给",480,126,29,cream,true);text(c,"选择一项本轮增益，再选择出口继续前进",480,160,16,muted,true);
         if(game.room>0)text(c,WorldSetting.REPORTS[game.room-1],480,190,12,gold,true);
-        String[] titles={"锋芒","生息","轻羽"};String[] body={"所有攻击伤害 +4","生命上限 +20，基础恢复35","移动速度 +8%，技能就绪"};
+        String[] titles={"锋芒","生息","轻羽"};String[] body={game.damageBonus>=40?"伤害增益已满，票券 +12":"所有攻击伤害 +4（上限40）",game.healthBonus>=200?"生命增益已满，基础恢复35":"生命上限 +20，基础恢复35",game.speedBonus>=6?"移速增益已满，技能就绪":"移动速度 +8%，技能就绪"};
         for(int i=0;i<3;i++){rounded(c,45+i*300,211,270,165,12,0xFF2D4545);text(c,titles[i],180+i*300,266,26,gold,true);text(c,body[i],180+i*300,311,15,cream,true);text(c,"点击获取",180+i*300,351,13,muted,true);}
         button(c,260,391,440,43,"现场线索 · "+StorySystem.TITLES[game.room-1],true);
         if(game.lastRelic!=0){text(c,game.relicDiscovery(),480,457,16,gold,true);text(c,"圣遗物收藏永久保留；本轮携行不变",480,486,13,muted,true);}
@@ -339,7 +343,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         button(c,330,337,300,50,"结束本轮并返回营地",false);button(c,330,403,300,45,"操作说明",false);
     }
     private void result(Canvas c){shade(c);text(c,game.won?"长 夜 已 尽":"灯 火 尚 存",480,155,34,game.won?gold:cream,true);
-        text(c,game.notice,480,212,20,cream,true);text(c,"击败 "+game.kills+" 名敌人 · 抵达第 "+game.room+" 区域",480,258,17,muted,true);
+        text(c,game.notice,480,212,20,cream,true);text(c,"击败 "+game.kills+" 名敌人 · "+(game.endless?"无尽第 "+game.endlessDepth+" 层":"抵达第 "+game.room+" 区域"),480,258,17,muted,true);
         text(c,game.won?"带回全部票券，并获得通关奖励。":"带回已拾取票券的 70%，角色经验仍然保留。",480,298,16,muted,true);
         if(game.lastRelic!=0)text(c,game.relicDiscovery(),480,330,14,gold,true);
         button(c,340,359,280,65,"返回营地",true);
@@ -360,6 +364,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             if(inside(x,y,40,126,130,32)){customRoster=false;return;}
             if(inside(x,y,185,126,130,32)){customRoster=true;return;}
             for(int i=0;i<3;i++)if(inside(x,y,40+i*300,170,280,165)){if(customRoster)game.selectCustom(i);else game.selectHero(i);host.save();return;}
+            if(inside(x,y,660,448,260,27)){game.startEndless(System.nanoTime());resetInput();host.save();return;}
             if(inside(x,y,40,365,280,57)){game.upgrade(false);host.save();}
             else if(inside(x,y,340,365,280,57)){game.upgrade(true);host.save();}
             else if(inside(x,y,660,365,260,80)){game.start(System.nanoTime());resetInput();host.save();}

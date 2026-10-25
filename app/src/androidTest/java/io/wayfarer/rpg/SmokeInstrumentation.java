@@ -22,6 +22,8 @@ public final class SmokeInstrumentation extends Instrumentation {
             Intent launch=new Intent(getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK);
             activity=(MainActivity)startActivitySync(launch);waitForIdleSync();SystemClock.sleep(700);
             ui(()->{activity.world.replace(new ActionGame());check(activity.world.getWidth()>activity.world.getHeight(),"landscape viewport");});
+            endlessFlow();
+            ui(()->activity.world.replace(new ActionGame()));
             challengeFlow();
             ui(()->{activity.world.replace(new ActionGame());activity.world.startFrames();});
             pactFlow();
@@ -63,9 +65,31 @@ public final class SmokeInstrumentation extends Instrumentation {
                 ActionGame.Enemy s=new ActionGame.Enemy(g.nextId++,1,400,260,80);s.state=1;s.aimX=.78f;s.aimY=.62f;s.timer=.8f;g.enemies.add(s);
                 g.mode=ActionGame.Mode.PLAY;activity.world.stopFrames();});
             screenshot("04-combat-render.png");
-            result.putString("stream","ARPG_SMOKE_OK: main and personal story choices, once-only rewards, personal passive and AtomicFile; real two-touch combo and blocked third touch; legal-cast 100 erosion; real burner zones and bell shields with snapshot; launch, landscape, character selection, simultaneous move/attack, dodge, skill, pause, atomic save and resume; custom editor save/cancel, cross-class skill, talent purchase/locks and profile persistence; soul binding/cancel, independent soul button, radiant domain, forbidden pact, corruption costs and soul snapshot persistence; relic cabinet equip/cancel, duplicate guard, character isolation, checkpoint discovery and relic manual save; career level gate, save/cancel, specialization persistence, class-independent weapon, background/skill shields, dodge charge and atomic snapshot; 1887 setting dossier; all eight ordinary career selections, doctor treatment and potion, merchant actual upgrade price, miner protection and v6 manual save; optional pact cancel/confirm, job-change opt-out, separate pact/soul touch buttons, healing lock, frozen penalty, AtomicFile persistence and local-only merchant payment; all eight rewritten arts mark real test victims, donor damage and healing, pulse snapshot and machine/burial rendering.\n");
+            result.putString("stream","ARPG_SMOKE_OK: independent three-final purchases and same-category locks; actual endless entry, fifth-boss reward and sixth-floor exit; full bag potion pickup after drinking; v10 AtomicFile floor, threat and build; main and personal story choices, once-only rewards, personal passive and AtomicFile; real two-touch combo and blocked third touch; legal-cast 100 erosion; real burner zones and bell shields with snapshot; launch, landscape, character selection, simultaneous move/attack, dodge, skill, pause, atomic save and resume; custom editor save/cancel, cross-class skill, talent purchase/locks and profile persistence; soul binding/cancel, independent soul button, radiant domain, forbidden pact, corruption costs and soul snapshot persistence; relic cabinet equip/cancel, duplicate guard, character isolation, checkpoint discovery and relic manual save; career level gate, save/cancel, specialization persistence, class-independent weapon, background/skill shields, dodge charge and atomic snapshot; 1887 setting dossier; all eight ordinary career selections, doctor treatment and potion, merchant actual upgrade price, miner protection and v6 manual save; optional pact cancel/confirm, job-change opt-out, separate pact/soul touch buttons, healing lock, frozen penalty, AtomicFile persistence and local-only merchant payment; all eight rewritten arts mark real test victims, donor damage and healing, pulse snapshot and machine/burial rendering.\n");
             finish(Activity.RESULT_OK,result);
         }catch(Throwable t){result.putString("stream","ARPG_SMOKE_FAILED: "+t+"\n");finish(Activity.RESULT_CANCELED,result);}
+    }
+    private void buyNode(int id){
+        int tier=id%4;tap(50+(id/4)*305+(tier==3?190:tier<2?125:60),tier==0?165:tier==1?268:380);waitForIdleSync();
+        ui(()->{check(activity.talentDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled(),"node purchasable "+id);activity.talentDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();});waitForIdleSync();
+        ui(()->check(activity.world.game.rank(id)>0,"node purchased "+id));
+    }
+    private void endlessFlow(){
+        ui(()->{activity.world.stopFrames();activity.world.game.experience[0]=1280;activity.world.game.hp=activity.world.game.maxHp();});
+        tap(540,500);for(int b=0;b<3;b++){buyNode(b*4);buyNode(b*4+1);buyNode(b*4+1);buyNode(b*4+(b==2?3:2));}
+        ui(()->{ActionGame g=activity.world.game;check(g.rank(2)==1&&g.rank(6)==1&&g.rank(11)==1&&g.availablePoints()==6,"all three finals coexist");});
+        tap(240,380);waitForIdleSync();ui(()->{check(!activity.talentDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled(),"same-category alternative locked");activity.talentDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();});waitForIdleSync();
+        screenshot("27-three-finals.png");tap(900,38);tap(790,461);
+        ui(()->{ActionGame g=activity.world.game;check(g.endless&&g.endlessDepth==1&&g.threat>1,"actual camp endless button starts dynamic run");
+            // Controlled clear fixture follows the real boss/reward/exit path; it is not a player balance run.
+            for(int floor=1;floor<=5;floor++){for(ActionGame.Enemy e:g.enemies)e.hp=0;g.hitStop=0;g.update(.016f,new ActionGame.Input());check(g.mode==ActionGame.Mode.REWARD,"endless boss also offers reward");g.chooseReward(0);g.x=300;g.y=70;g.hitStop=0;g.update(.016f,new ActionGame.Input());}
+            check(g.endlessDepth==6&&g.room==1&&g.bestDepth==5,"fifth boss leads to sixth floor");g.x=560;g.y=430;for(ActionGame.Enemy e:g.enemies)e.stun=1;});
+        screenshot("28-endless-sixth-floor.png");
+        ui(()->{ActionGame g=activity.world.game;g.blocks.clear();g.enemies.clear();g.shots.clear();g.drops.clear();g.hp=g.maxHp()-50;g.potions=5;ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,800,250,500);e.stun=1;g.enemies.add(e);
+            // Pickup fixture isolates bag capacity; seeded death probability is tested in EndlessTests.
+            ActionGame.Drop bottle=new ActionGame.Drop(g.x+12,g.y+12,1,false);bottle.potion=true;g.drops.add(bottle);g.hitStop=0;g.update(.016f,new ActionGame.Input());check(g.potions==5&&g.drops.size()==1,"full bag bottle stays visible");});
+        screenshot("29-potion-pickup-fixture.png");tap(648,456);
+        ui(()->{ActionGame g=activity.world.game;check(g.potions==4,"actual potion button drinks");g.hitStop=0;g.update(.016f,new ActionGame.Input());check(g.potions==5&&g.drops.isEmpty(),"open slot collects bottle once");g.pause();try{SaveStore store=new SaveStore(activity);store.write(3,g);ActionGame a=store.read(3);check(a.endless&&a.endlessDepth==6&&a.bestDepth==5&&a.potions==5&&a.threat==g.threat&&a.rank(2)==1&&a.rank(6)==1&&a.rank(11)==1,"v10 AtomicFile restores complete endless build");}catch(IOException e){throw new RuntimeException(e);}});
     }
     private void journalItem(int index){ui(()->{ListView list=activity.storyDialog.getListView();list.performItemClick(null,index,index);});waitForIdleSync();}
     private void storyButton(int which){ui(()->activity.storyDialog.getButton(which).performClick());waitForIdleSync();}
