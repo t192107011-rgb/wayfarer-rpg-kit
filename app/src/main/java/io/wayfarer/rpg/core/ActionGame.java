@@ -573,7 +573,6 @@ public final class ActionGame {
             boolean gone=p.life<=0||!free(nx,ny,p.radius)||!lineClear(ox,oy,nx,ny);
             if(!gone&&p.friendly){for(Enemy e:enemies)if(e.hp>0&&!p.hitIds.contains(e.id)&&segmentDistance(e.x,e.y,ox,oy,nx,ny)<e.radius()+p.radius){
                 p.hitIds.add(e.id);hit(e,p.damage);if(p.effect==2)e.hex=3;
-                if(!reporterShareHit&&careerSkillMode==4&&careerSkillTime>0&&p.friendly){int markedCount=0;for(Enemy q:enemies)if(q.hp>0)markedCount++;if(markedCount>1){reporterShareHit=true;for(Enemy q:enemies)if(q.hp>0&&q!=e)hit(q,p.damage*.70f,false);reporterShareHit=false;}}
                 if(p.friendly&&jHunterActive()&&e.hp>0){for(Enemy q:enemies)if(q!=e&&q.hp>0&&len(q.x-e.x,q.y-e.y)<55)hit(q,p.damage*.45f,false);}
                 if(p.pierce<=0){gone=true;break;}p.pierce--;
             }}
