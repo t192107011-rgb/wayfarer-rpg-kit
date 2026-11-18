@@ -14,7 +14,7 @@ public final class ActionGame {
     public int endlessDepth=0,bestDepth=0;
     public float threat=1,pressure=0,encounterHpFloor=0,encounterDamageFloor=0,roomDamage=0,roomElapsed=0;
     public float enemyRange(float base){return base*(1+Math.min(.2f,(threat-1)*.04f));}
-    public float enemySpeed(float base){return base*(1+Math.min(.3f,(threat-1)*.055f));}
+    public float enemySpeed(float base){return base*(1+Math.min(.45f,(threat-1)*.08f));}
     public float enemyPower(Enemy e,float base){return Math.max(base*threat,encounterDamageFloor)*enemyForce(e);}
     public float reachFactor(){return rank(3)>0&&hp<maxHp()*.4f?1.25f:1;}
     public float meleeReach(){return (hero==0?120:100)*reachFactor()*(job()==HUNTER&&careerSkillTime>0?1.35f:1);}
