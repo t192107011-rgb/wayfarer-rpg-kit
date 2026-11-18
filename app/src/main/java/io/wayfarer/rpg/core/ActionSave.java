@@ -126,7 +126,7 @@ public final class ActionSave {
                 e.hp=range(a[5],0,e.maxHp);e.state=integer(a[2],0,version>=9?3:2);e.timer=range(a[7],-.1f,2);e.aimX=range(a[8],-1,1);e.aimY=range(a[9],-1,1);e.stun=range(a[10],0,1);e.flash=range(a[11],0,1);e.struck=integer(a[12],0,1)==1;
                 if(version>=9){float[] t=array(p,"enemyTactics"+i,4);e.guard=range(t[0],0,40);e.targetX=range(t[1],64,1056);e.targetY=range(t[2],64,696);e.pattern=integer(t[3],0,e.type==3?2:0);if(e.state==3&&e.type!=2&&e.type!=4)throw new IllegalArgumentException("敌人恢复状态无效");}
                 if(version>=3)e.hex=f(p,"hex"+i,0,3);
-enemy pact decode                if(!g.free(e.x,e.y,e.radius()))throw new IllegalArgumentException("敌人位置无效");g.enemies.add(e);
+                if(!g.free(e.x,e.y,e.radius()))throw new IllegalArgumentException("敌人位置无效");g.enemies.add(e);
             }
             count=n(p,"shots",0,160);for(int i=0;i<count;i++){
                 float[] a=array(p,"s"+i,8);ActionGame.Shot s=new ActionGame.Shot(range(a[0],0,1120),range(a[1],0,760),range(a[2],-1000,1000),range(a[3],-1000,1000),range(a[5],1,version>=9?800:500),integer(a[7],0,1)==1);
