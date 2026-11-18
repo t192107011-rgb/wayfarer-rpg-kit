@@ -17,7 +17,7 @@ public final class ActionGame {
     public float enemySpeed(float base){return base*(1+Math.min(.3f,(threat-1)*.055f));}
     public float enemyPower(Enemy e,float base){return Math.max(base*threat,encounterDamageFloor)*enemyForce(e);}
     public float reachFactor(){return rank(3)>0&&hp<maxHp()*.4f?1.25f:1;}
-    public float meleeReach(){return (hero==0?120:100)*reachFactor();}
+    public float meleeReach(){return (hero==0?120:100)*reachFactor()*(job()==HUNTER&&careerSkillTime>0?1.35f:1);}
     public float activeRadius(){int k=soulKind();return (skillStyle()==0?(k==1?235:k==2?260:200):(k==1?180:k==2?190:160))*reachFactor();}
     public float followUpDuration(){return rank(7)>0?3:2;}
     public float talentShieldLimit(){return rank(9)*6+(rank(11)>0?12:0);}
@@ -32,9 +32,13 @@ public final class ActionGame {
     public final int[][] talents=new int[6][12];
     public float shield=0,dodgeCharge=0;
     public final int[][] careers=new int[6][3];
-    public float careerWard=0,careerCharge=0;
+    public float careerWard=0,careerCharge=0;careerSkillTime=0;careerSkillDeathCd=0;careerSkillMode=0;
     public final boolean[] careerPacts=new boolean[6];
     public float pactCd=0,pactTime=0,pactWard=0;
+    // Career active skill runtime. Mode: 1 hunter, 2 assassin, 3 detective, 4 reporter.
+    public float careerSkillTime=0,careerSkillDeathCd=0;
+    public int careerSkillMode=0;
+    private boolean reporterShareHit=false;
     public boolean pactEnabled(){return careerPacts[buildId()];}
     public boolean pactActive(int job){return job()==job&&pactEnabled()&&pactTime>0;}
     private void clearPactRuntime(){pactCd=0;pactTime=0;pactWard=0;}
@@ -191,9 +195,9 @@ public final class ActionGame {
     public int heroLevel(){return 1+Math.min(19,heroXp()/80);}
     public float maxHp(){return (hero==0?110:hero==1?85:90)+vitality*10+healthBonus+(heroLevel()-1)*3+rank(8)*(soulKind()==1?10:8)+originHp()-(custom>=0&&profile().trait==2?8:0)+(hasRelic(1)?12:0)+(job()==1?16:job()==MINER?12:0)+(isSpec(MECHANIC,2)?10:0)+characterTrait(1)*4;}
     public float baseDamage(){return (hero==0?22:hero==1?18:15)+power*2+damageBonus+(heroLevel()-1)+rank(0)*2+(custom>=0&&profile().origin==2?2:0)+(job()==SOLDIER?3:0)+characterTrait(2);}
-    public float damage(){return baseDamage()*(rank(3)>0&&hp<maxHp()*.4f?1.55f:1)*(soulBuff>0?1.25f:1)*(soulKind()==2?(ruptureTime>0?1.4f:corruption>=75?1.25f:corruption>=50?1.15f:1):1);}
-    public float speed(){return (hero==2?240:hero==1?215:205)*(1+speedBonus*.08f+rank(4)*.03f)*(custom<0?1:profile().origin==0?.95f:profile().origin==1?1.07f:1)*(job()==2?1.06f:job()==REPORTER?1.03f:1)*(isSpec(POLICE,1)||isSpec(MERCHANT,1)?1.05f:1)*(background()==2?1.03f:1)*(background()==3&&hp<maxHp()*.35f?1.12f:1)*(pactActive(POLICE)?.65f:pactActive(MINER)?.7f:1);}
-    public float attackPeriod(){return (hero==0?.48f:hero==1?.4f:.29f)*(custom>=0&&profile().trait==0?1.06f:1)*(soulBuff>0?.8f:1)*(job()==BOXER&&hero!=1?.94f:1)*(isSpec(SOLDIER,2)&&hero==1?.9f:1)*(pactActive(SOLDIER)?.55f:pactActive(MECHANIC)?.85f:pactActive(BOXER)&&hero!=1?.7f:1);}
+    public float damage(){return baseDamage()*(job()==ASSASSIN&&careerSkillTime>0?1.5f:1)*(rank(3)>0&&hp<maxHp()*.4f?1.55f:1)*(soulBuff>0?1.25f:1)*(soulKind()==2?(ruptureTime>0?1.4f:corruption>=75?1.25f:corruption>=50?1.15f:1):1);}
+    public float speed(){return (hero==2?240:hero==1?215:205)*(1+speedBonus*.08f+rank(4)*.03f)*(custom<0?1:profile().origin==0?.95f:profile().origin==1?1.07f:1)*(job()==2?1.06f:job()==REPORTER?1.03f:1)*(isSpec(POLICE,1)||isSpec(MERCHANT,1)?1.05f:1)*(background()==2?1.03f:1)*(background()==3&&hp<maxHp()*.35f?1.12f:1)*(job()==ASSASSIN&&careerSkillTime>0?1.25f:1)*(pactActive(POLICE)?.65f:pactActive(MINER)?.7f:1);}
+    public float attackPeriod(){return (hero==0?.48f:hero==1?.4f:.29f)*(custom>=0&&profile().trait==0?1.06f:1)*(soulBuff>0?.8f:1)*(job()==ASSASSIN&&careerSkillTime>0?.78f:1)*(job()==BOXER&&hero!=1?.94f:1)*(isSpec(SOLDIER,2)&&hero==1?.9f:1)*(pactActive(SOLDIER)?.55f:pactActive(MECHANIC)?.85f:pactActive(BOXER)&&hero!=1?.7f:1);}
     public int upgradeCost(int rank){int base=30+rank*25;return isSpec(MERCHANT,2)?(base*85+99)/100:base;}
     public int random(int bound){rngState^=rngState<<13;rngState^=rngState>>>7;rngState^=rngState<<17;return (int)Long.remainderUnsigned(rngState,bound);}
     public void signal(String kind,float x,float y,int amount){if(signals.size()<64)signals.add(new Signal(kind,x,y,amount));}
@@ -263,7 +267,35 @@ public final class ActionGame {
     public void skill(){
         if(mode!=Mode.PLAY||rollTime>0)return;
         if(skillCd>0){if(followUpWindow>0)followUp();return;}
-        if(pactActive(MECHANIC)){float cost=maxHp()*.04f;if(hp<=cost){notice="超载施法需要支付4%最大生命并存活。";signal("pactLow",x,y,0);return;}payPact(cost);}
+        int j=job();
+        // Profession active skills. Timekeeper is intentionally left untouched.
+        if(j==HUNTER||j==ASSASSIN||j==12||j==13||j==REPORTER){
+            skillCd=skillPeriod();
+            careerSkillDeathCd=0;
+            if(j==HUNTER){
+                careerSkillMode=1;careerSkillTime=5f;
+                signal("careerSkill",x,y,2);
+                notice="猎人：火力强化";
+            }else if(j==ASSASSIN||j==12){
+                careerSkillMode=2;careerSkillTime=5f;
+                shield=Math.max(shield,maxHp()*.40f);
+                signal("careerSkill",x,y,3);
+                notice="刺客：狂袭";
+            }else if(j==13){
+                careerSkillMode=3;careerSkillTime=3.5f;
+                signal("careerSkill",x,y,4);
+                notice="侦探：引力场";
+            }else{
+                careerSkillMode=4;careerSkillTime=5f;
+                int alive=0;for(Enemy e:enemies)if(e.hp>0)alive++;
+                float burst=alive==1?damage()*2f:damage();
+                for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<360)hit(e,burst,false);
+                signal("careerSkill",x,y,5);
+                notice="记者：群体曝光";
+            }
+            return;
+        }
+        // Legacy careers keep their existing active skill until their dedicated redesign is assigned.
         aimAtNearest(640);int kind=soulKind(),style=skillStyle();
         if(kind==2)payForbidden(.04f,18);
         skillCd=skillPeriod();followUpWindow=followUpDuration();signal(kind==1?"radiant":kind==2?"forbidden":"skill",x,y,style);
@@ -274,20 +306,8 @@ public final class ActionGame {
         if(isSpec(3,1)){careerWard=Math.max(careerWard,8);heal(maxHp()*.03f);}
         if(isSpec(DOCTOR,1))heal(maxHp()*.04f);
         float activeDamage=damage()*(isSpec(3,2)?1.15f:1);
-        if(style==1){
-            double base=Math.atan2(faceY,faceX);int half=kind==1?1:kind==2?3:2;
-            for(int i=-half;i<=half;i++)fire((float)Math.cos(base+i*(kind==1?.18:.14)),(float)Math.sin(base+i*(kind==1?.18:.14)),activeDamage*(kind==1?1.5f:kind==2?1.05f:1.3f),kind,kind==1?2:0);
-        }else{
-            float range=activeRadius();
-            float multiplier=style==0?(kind==1?1.65f:kind==2?1.5f:1.8f):(kind==1?1.8f:kind==2?2.6f:2.2f);
-            for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<range){
-                hit(e,activeDamage*multiplier);e.stun=kind==1?.9f:.7f;
-                if(kind==2){e.hex=3;if(style==0)pull(e,x,y,55);}
-            }
-            if(kind==1)cleanse(x,y,range);
-            if(style==2)invulnerable=Math.max(invulnerable,kind==1?.85f:kind==2?.35f:.65f);
-            hitStop=.045f;
-        }
+        if(style==1){double base=Math.atan2(faceY,faceX);int half=kind==1?1:kind==2?3:2;for(int i=-half;i<=half;i++)fire((float)Math.cos(base+i*(kind==1?.18:.14)),(float)Math.sin(base+i*(kind==1?.18:.14)),activeDamage*(kind==1?1.5f:kind==2?1.05f:1.3f),kind,kind==1?2:0);}
+        else{float range=activeRadius();float multiplier=style==0?(kind==1?1.65f:kind==2?1.5f:1.8f):(kind==1?1.8f:kind==2?2.6f:2.2f);for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<range){hit(e,activeDamage*multiplier);e.stun=kind==1?.9f:.7f;if(kind==2){e.hex=3;if(style==0)pull(e,x,y,55);}}if(kind==1)cleanse(x,y,range);if(style==2)invulnerable=Math.max(invulnerable,kind==1?.85f:kind==2?.35f:.65f);hitStop=.045f;}
     }
     private void followUp(){
         if(pactActive(MECHANIC)){float cost=maxHp()*.04f;if(hp<=cost){notice="机匣追击需要支付4%最大生命并存活。";signal("pactLow",x,y,0);return;}payPact(cost);}
@@ -393,8 +413,9 @@ public final class ActionGame {
     }
     private void updateSoul(float dt){
         soulCd=dec(soulCd,dt);soulBuff=dec(soulBuff,dt);
-        float quiet=Math.min(soulQuiet,dt);soulQuiet=dec(soulQuiet,dt);if(soulKind()==2&&soulBuff<=0&&soulFields.isEmpty())corruption=Math.max(0,corruption-(dt-quiet));
-        if(corruption<70&&ruptureTime<=0)ruptureLatched=false;
+        soulQuiet=dec(soulQuiet,dt);
+        if(soulKind()==2&&soulBuff<=0&&soulFields.isEmpty())corruption=Math.max(0,corruption-dt);
+        if(corruption>=100&&!ruptureLatched){ruptureLatched=true;ruptureTime=5f;ruptureTick=0;signal("rupture",x,y,0);soulBuff=5f;}
         if(ruptureTime>0){float elapsed=Math.min(dt,ruptureTime);ruptureTime=dec(ruptureTime,elapsed);ruptureTick-=elapsed;
             if(ruptureTick<=.0001f){ruptureTick+=1.5f;float before=hp;hp=Math.max(Math.min(1,hp),hp-maxHp()*.03f);signal("sacrifice",x,y,(int)(before-hp));}
             if(ruptureTime<=0)ruptureTick=0;
@@ -417,7 +438,7 @@ public final class ActionGame {
         combo=comboWindow>0?(combo+1)%3:0;comboWindow=.85f;swingHits.clear();
         swingBoost=(dodgeCharge>0?1+rank(5)*(soulKind()==2?.20f:.15f):1)*(combo==2?1.35f+rank(1)*(soulKind()==2?.18f:.12f)+(isSpec(BOXER,1)&&hero!=1?.25f:0):1);dodgeCharge=0;
         if(combo==2&&rank(2)>0){boolean connected=false;for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<185){float before=e.hp;hit(e,damage()*.75f);connected|=e.hp<before;}if(connected&&rank(11)>0)shield=Math.min(talentShieldLimit(),shield+4);signal("echo",x,y,185);}
-        if(hero==1)fire(faceX,faceY,damage()*swingBoost);signal(hero==1?"bow":"swing",x,y,combo);
+        if(hero==1)fire(faceX,faceY,damage()*swingBoost);else if(hero==2){attackAnim=.16f;invulnerable=Math.max(invulnerable,.16f);careerSkillMode=careerSkillMode;signal("daggerDash",x,y,combo);}signal(hero==1?"bow":"swing",x,y,combo);
     }
     private void fire(float dx,float dy,float value){fire(dx,dy,value,0,0);}
     private void fire(float dx,float dy,float value,int effect,int pierce){if(shots.size()<160){Shot s=new Shot(x+dx*20,y+dy*20,dx*640,dy*640,value,true);s.effect=effect;s.pierce=pierce;shots.add(s);}}
@@ -430,19 +451,22 @@ public final class ActionGame {
         if(mode!=Mode.PLAY)return;
         if(!Float.isFinite(dt)||dt<=0)return;dt=Math.min(dt,.05f);
         if(hitStop>0){hitStop=Math.max(0,hitStop-dt);return;}
-        roomElapsed=Math.min(10000000,roomElapsed+dt);followUpWindow=dec(followUpWindow,dt);updatePacts(dt);
+        roomElapsed=Math.min(10000000,roomElapsed+dt);followUpWindow=dec(followUpWindow,dt);updatePacts(dt);careerSkillTime=dec(careerSkillTime,dt);careerSkillDeathCd=dec(careerSkillDeathCd,dt);if(careerSkillTime<=0)careerSkillMode=0;
         updateSoul(dt);relicEcho=dec(relicEcho,dt);careerCharge=dec(careerCharge,dt);time+=dt;attackCd=dec(attackCd,dt);rollCd=dec(rollCd,dt);skillCd=dec(skillCd,dt);invulnerable=dec(invulnerable,dt);comboWindow=dec(comboWindow,dt);dodgeCharge=dec(dodgeCharge,dt);
         float mx=Float.isFinite(in.mx)?in.mx:0,my=Float.isFinite(in.my)?in.my:0,mag=len(mx,my);
         if(mag>1){mx/=mag;my/=mag;mag=1;}
         motionX=mx*speed();motionY=my*speed();
-        if(rollTime>0){movePlayer(rollX*530*dt,rollY*530*dt);rollTime=dec(rollTime,dt);}
+        if(rollTime>0){movePlayer(rollX*530*dt,rollY*530*dt);rollTime=dec(rollTime,dt);}else if(hero==2&&attackAnim>0&&attackCd>0&&careerSkillMode==0){movePlayer(faceX*520*dt,faceY*520*dt);}
         else {
             if(mag>.1f){if(attackAnim<=0){faceX=mx/mag;faceY=my/mag;}float slow=attackAnim>0?.65f:1;movePlayer(mx*speed()*slow*dt,my*speed()*slow*dt);}
             if(in.attack&&attackCd<=0)beginAttack();
         }
         if(attackAnim>0){
             attackAnim=dec(attackAnim,dt);
-            if(hero!=1&&attackAnim<.18f&&attackAnim>.04f){
+            if(hero==2&&attackAnim>0){
+                movePlayer(faceX*520*dt,faceY*520*dt);
+                for(Enemy e:enemies)if(e.hp>0&&!swingHits.contains(e.id)&&segmentDistance(e.x,e.y,x-faceX*35,y-faceY*35,x+faceX*35,y+faceY*35)<e.radius()+24){swingHits.add(e.id);hit(e,damage()*swingBoost);}
+            }else if(hero!=1&&attackAnim<.18f&&attackAnim>.04f){
                 float range=meleeReach(),cos=hero==0?-.05f:.1f;
                 for(Enemy e:enemies){float dx=e.x-x,dy=e.y-y,d=len(dx,dy);
                     if(e.hp>0&&!swingHits.contains(e.id)&&d<range+e.radius()&&(d<.01f||(dx*faceX+dy*faceY)/d>cos)&&lineClear(x,y,e.x,e.y)){
@@ -455,7 +479,7 @@ public final class ActionGame {
         if(mode!=Mode.PLAY)return;
         updateHazards(dt);if(mode!=Mode.PLAY)return;updateShots(dt);if(mode!=Mode.PLAY)return;
         Iterator<Enemy> it=enemies.iterator();while(it.hasNext()){
-            Enemy e=it.next();if(e.hp<=0){it.remove();kills=Math.min(99999,kills+1);drops.add(new Drop(e.x,e.y,(e.type==3?55:5+room)+(background()==6?2:0)+(job()==MERCHANT?1:0),false));if(background()==5){heal(1);gainSoul(e.type==3?8:2);}if(random(6)==0)drops.add(new Drop(e.x+15,e.y,15,true));if(random(100)<ThreatSystem.potionChance(e.type)){Drop bottle=new Drop(e.x-15,e.y,1,false);bottle.potion=true;drops.add(bottle);}signal("defeat",e.x,e.y,e.type);}
+            Enemy e=it.next();if(e.hp<=0){if(careerSkillMode==3&&careerSkillTime>0&&careerSkillDeathCd<=0){careerSkillDeathCd=2f;for(Enemy q:enemies)if(q!=e&&q.hp>0&&len(q.x-e.x,q.y-e.y)<190)hit(q,damage()*.65f,false);signal("detectiveBurst",e.x,e.y,190);}it.remove();kills=Math.min(99999,kills+1);drops.add(new Drop(e.x,e.y,(e.type==3?55:5+room)+(background()==6?2:0)+(job()==MERCHANT?1:0),false));if(background()==5){heal(1);gainSoul(e.type==3?8:2);}if(random(6)==0)drops.add(new Drop(e.x+15,e.y,15,true));if(random(100)<ThreatSystem.potionChance(e.type)){Drop bottle=new Drop(e.x-15,e.y,1,false);bottle.potion=true;drops.add(bottle);}signal("defeat",e.x,e.y,e.type);}
         }
         Iterator<Drop> d=drops.iterator();while(d.hasNext()){
             Drop p=d.next();float dist=len(p.x-x,p.y-y);if(dist<100&&dist>1){float speed=270*dt;p.x+=(x-p.x)/dist*Math.min(speed,dist);p.y+=(y-p.y)/dist*Math.min(speed,dist);}
@@ -532,6 +556,7 @@ public final class ActionGame {
         }
         for(Enemy other:enemies)if(other!=e&&other.hp>0){float sx=e.x-other.x,sy=e.y-other.y,d=len(sx,sy),min=e.radius()+other.radius();if(d>.1&&d<min)moveEnemy(e,sx/d*30*dt,sy/d*30*dt);}
     }
+    private boolean jHunterActive(){return job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0;}
     private float enemyForce(Enemy e){return marked(e)&&job()==BOXER&&e.pactStacks>=3?.5f:1;}
     private void enemyShot(Enemy e,float dx,float dy,float speed,float damage){if(shots.size()<160)shots.add(new Shot(e.x+dx*24,e.y+dy*24,dx*enemySpeed(speed),dy*enemySpeed(speed),enemyPower(e,damage),false));}
     private void updateShots(float dt){
@@ -540,6 +565,8 @@ public final class ActionGame {
             boolean gone=p.life<=0||!free(nx,ny,p.radius)||!lineClear(ox,oy,nx,ny);
             if(!gone&&p.friendly){for(Enemy e:enemies)if(e.hp>0&&!p.hitIds.contains(e.id)&&segmentDistance(e.x,e.y,ox,oy,nx,ny)<e.radius()+p.radius){
                 p.hitIds.add(e.id);hit(e,p.damage);if(p.effect==2)e.hex=3;
+                if(!reporterShareHit&&careerSkillMode==4&&careerSkillTime>0&&p.friendly){int markedCount=0;for(Enemy q:enemies)if(q.hp>0)markedCount++;if(markedCount>1){reporterShareHit=true;for(Enemy q:enemies)if(q.hp>0&&q!=e)hit(q,p.damage*.70f,false);reporterShareHit=false;}}
+                if(p.friendly&&jHunterActive()&&e.hp>0){for(Enemy q:enemies)if(q!=e&&q.hp>0&&len(q.x-e.x,q.y-e.y)<55)hit(q,p.damage*.45f,false);}
                 if(p.pierce<=0){gone=true;break;}p.pierce--;
             }}
             else if(!gone&&segmentDistance(x,y,ox,oy,nx,ny)<PLAYER_RADIUS+p.radius){hurt(p.damage);gone=true;}
@@ -575,7 +602,7 @@ public final class ActionGame {
     }
     private void hurt(float value){
         if(invulnerable>0||mode!=Mode.PLAY)return;
-        value*= (custom>=0&&profile().trait==1?1.12f:1)*(rank(3)>0?1.15f:1)*(soulKind()==2?1+corruption*.004f:1)*(job()==1?.92f:job()==POLICE||isSpec(MECHANIC,2)?.95f:1)*(pactActive(POLICE)?.5f:pactActive(SOLDIER)?1.4f:pactActive(BOXER)?1.5f:pactActive(DOCTOR)||pactActive(MERCHANT)?1.25f:pactActive(REPORTER)?1.35f:1);
+        value*= (custom>=0&&profile().trait==1?1.12f:1)*(job()==ASSASSIN&&careerSkillTime>0?.20f:1)*(rank(3)>0?1.15f:1)*(soulKind()==2?1+corruption*.004f:1)*(job()==1?.92f:job()==POLICE||isSpec(MECHANIC,2)?.95f:1)*(pactActive(POLICE)?.5f:pactActive(SOLDIER)?1.4f:pactActive(BOXER)?1.5f:pactActive(DOCTOR)||pactActive(MERCHANT)?1.25f:pactActive(REPORTER)?1.35f:1);
         float wardTaken=Math.min(soulWard,value);soulWard-=wardTaken;value-=wardTaken;
         float pactTaken=Math.min(pactWard,value);pactWard-=pactTaken;value-=pactTaken;
         float careerTaken=Math.min(careerWard,value);careerWard-=careerTaken;value-=careerTaken;
