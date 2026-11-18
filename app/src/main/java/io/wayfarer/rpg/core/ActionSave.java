@@ -104,7 +104,7 @@ public final class ActionSave {
                 if(g.mode==ActionGame.Mode.CAMP&&g.careerWard>0)throw new IllegalArgumentException("营地职能状态无效");
                 if(g.soulCd>g.soulPeriod()+.0001f)throw new IllegalArgumentException("魂技冷却与专精不符");
             }
-            if(version>=7){g.careerSkillTime=f(p,"careerSkillTime",0,10);g.careerSkillDeathCd=f(p,"careerSkillDeathCd",0,2);g.careerSkillMode=n(p,"careerSkillMode",0,4);}
+            if(version>=11){g.careerSkillTime=f(p,"careerSkillTime",0,10);g.careerSkillDeathCd=f(p,"careerSkillDeathCd",0,2);g.careerSkillMode=n(p,"careerSkillMode",0,4);}else{g.careerSkillTime=0;g.careerSkillDeathCd=0;g.careerSkillMode=0;g.skillCd=0;g.followUpWindow=0;}
             if(version>=9){
                 g.followUpWindow=f(p,"followUpWindow",0,version>=10?g.followUpDuration():2);g.ruptureTime=f(p,"ruptureTime",0,6);g.ruptureTick=f(p,"ruptureTick",0,1.5f);g.ruptureLatched=bool(p,"ruptureLatched");
                 if(g.soulKind()!=2&&(g.ruptureTime>0||g.ruptureTick>0||g.ruptureLatched)||g.ruptureTime>0&&!g.ruptureLatched||g.ruptureTime==0&&g.ruptureTick>0)throw new IllegalArgumentException("侵蚀失控状态无效");
