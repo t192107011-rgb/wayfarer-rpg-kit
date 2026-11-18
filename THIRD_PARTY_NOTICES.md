@@ -13,6 +13,10 @@ Android Gradle Plugin, Android SDK, Gradle and JDK are build tools provided by
 their respective owners. They are downloaded at build time and are not
 redistributed in this repository, except for the Gradle Wrapper files above.
 
+The six short WAV effects are original procedurally synthesized audio under MIT.
+Children of Morta is a gameplay reference only; no game assets or source are bundled.
+
 There are no third-party runtime libraries, art assets, music, fonts, ads or
 analytics SDKs packaged with this application. Core tests have no third-party
 dependencies. The Android platform supplies system fonts and UI components.
+
