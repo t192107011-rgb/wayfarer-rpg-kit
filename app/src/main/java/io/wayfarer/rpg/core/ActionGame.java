@@ -502,8 +502,14 @@ public final class ActionGame {
     private void updateHazards(float dt){
         Iterator<Hazard> it=hazards.iterator();while(it.hasNext()){
             Hazard h=it.next();float wait=Math.min(h.warning,dt);h.warning=dec(h.warning,wait);float active=dt-wait;
-            if(h.warning<=0&&active>0){float step=Math.min(h.life,active);h.life=dec(h.life,step);h.tick-=step;
-                if(h.tick<=.0001f){h.tick+=.65f;if(len(x-h.x,y-h.y)<h.radius+PLAYER_RADIUS&&lineClear(h.x,h.y,x,y))hurt(h.damage);signal("hazard",h.x,h.y,(int)h.radius);}
+            if(h.warning<=0&&active>0){
+                if(h.type==0){
+                    if(len(x-h.x,y-h.y)<h.radius+PLAYER_RADIUS&&lineClear(h.x,h.y,x,y))hurt(h.damage);
+                    h.life=0;signal("hazard",h.x,h.y,(int)h.radius);
+                }else{
+                    float step=Math.min(h.life,active);h.life=dec(h.life,step);h.tick-=step;
+                    if(h.tick<=.0001f){h.tick+=.65f;if(len(x-h.x,y-h.y)<h.radius+PLAYER_RADIUS&&lineClear(h.x,h.y,x,y))hurt(h.damage);signal("hazard",h.x,h.y,(int)h.radius);}
+                }
             }
             if(h.warning<=0&&h.life<=0)it.remove();if(mode!=Mode.PLAY)return;
         }
