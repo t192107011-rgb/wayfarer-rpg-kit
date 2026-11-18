@@ -27,7 +27,7 @@ public final class CareerHall {
         TextView pactDetails=text(a,right,"",14);pactDetails.setTag("career-pact-details");
         Spinner background=picker(a,right,"背景经历 · 提供独立被动","career-background",CareerSystem.BACKGROUNDS,draft[2]);
         TextView passive=text(a,right,"",15);
-        text(a,right,"警员、军人、医生、机械师、矿工、拳击手、商人与记者均可选；专精来自工作经验或训练。背景经历可与任意职业组合。原有出身与特质继续保留；这里选择曾经的经历带来的额外能力。\n\n每个角色独立保存，营地可免费调整。确认才提交，取消保留原配置。",13);
+        text(a,right,"目前仅保留猎人、刺客、侦探、记者四种职业。背景经历与职业独立，可自由组合；原有出身与特质继续保留。\n\n每个角色独立保存，营地可免费调整。确认才提交，取消保留原配置。",13);
         TextView level=text(a,right,"",14),error=text(a,right,"",13);
         AlertDialog dialog=new AlertDialog.Builder(a).setTitle(g.heroName()+" · 职业与历练").setView(row)
             .setPositiveButton("确认历练",(d,w)->{if(g.chooseCareer(draft[0],draft[1],draft[2],pact[0])){a.save();a.world.invalidate();}}).setNegativeButton("取消",null).create();
