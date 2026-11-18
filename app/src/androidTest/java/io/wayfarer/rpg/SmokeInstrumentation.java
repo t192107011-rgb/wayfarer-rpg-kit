@@ -102,13 +102,13 @@ public final class SmokeInstrumentation extends Instrumentation {
         int[] bank={0};ui(()->bank[0]=activity.world.game.bank);storyButton(AlertDialog.BUTTON_POSITIVE);ui(()->check(activity.world.game.storyChoices[0]==1&&activity.world.game.bank==bank[0]+12,"main choice commits actual once-only reward"));
         tap(480,412);waitForIdleSync();journalItem(1);
         ui(()->check(activity.world.game.bank==bank[0]+12,"rereading cannot duplicate main reward"));storyButton(AlertDialog.BUTTON_NEGATIVE);ui(()->{ActionGame g=activity.world.game;g.chooseReward(0);g.pause();g.abandon();g.returnCamp();});
-        tap(835,105);waitForIdleSync();journalItem(6);journalItem(0);screenshotNativeDialog("24-doctor-story-fixture.png",activity.storyDialog);
+        tap(835,105);waitForIdleSync();journalItem(6);journalItem(0);screenshotNativeDialog("24-hunter-story-fixture.png",activity.storyDialog);
         float[] personalHp={0};ui(()->personalHp[0]=activity.world.game.maxHp());storyButton(AlertDialog.BUTTON_POSITIVE);
         ui(()->{ActionGame g=activity.world.game;check(g.maxHp()==personalHp[0]+4,"personal decision grants actual persistent passive");try{SaveStore store=new SaveStore(activity);store.write(2,g);ActionGame loaded=store.read(2);check(loaded.storyChoices[0]==1&&loaded.characterJobs[0]==CareerSystem.HUNTER&&loaded.characterChoices[0][0]==1&&loaded.maxHp()==g.maxHp(),"story and derived health survive AtomicFile");}catch(IOException e){throw new RuntimeException(e);}activity.world.replace(new ActionGame());});
         ui(()->{ActionGame g=new ActionGame();g.bindSoul(2,0);g.start(91);g.blocks.clear();g.enemies.clear();g.x=560;g.y=430;ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,100,100,1000);g.enemies.add(e);
-            // No injected erosion: real casts and natural cooldown updates, with a frozen distant actor.
-            for(int cast=0;cast<4;cast++){g.skill();g.skill();if(cast<3)for(int t=0;t<391;t++){e.stun=1;g.hitStop=0;g.update(1f/60,new ActionGame.Input());g.signals.clear();}}
-            check(g.corruption==100&&g.ruptureTime>0,"legal cast sequence reaches actual 100 erosion");activity.world.replace(g);g.resume();});
+            // No injected erosion: five real forbidden-soul casts, legal 40-energy cost and full cooldown between casts.
+            for(int cast=0;cast<5;cast++){g.soulEnergy=40;g.soulSkill();if(cast<4)for(int t=0;t<481;t++){e.stun=1;g.hitStop=0;g.update(1f/60,new ActionGame.Input());g.signals.clear();}}
+            check(g.corruption==100&&g.ruptureTime>0,"legal soul-art sequence reaches actual 100 erosion");activity.world.replace(g);g.resume();});
         screenshot("25-erosion-100-fixture.png");
         ui(()->{ActionGame g=activity.world.game;g.enemies.clear();g.shots.clear();g.signals.clear();g.hitStop=0;g.room=4;
             ActionGame.Enemy hunter=new ActionGame.Enemy(g.nextId++,4,710,320,130);hunter.state=1;hunter.timer=.5f;hunter.aimX=-.8f;hunter.aimY=.6f;hunter.targetX=g.x;hunter.targetY=g.y;g.enemies.add(hunter);
