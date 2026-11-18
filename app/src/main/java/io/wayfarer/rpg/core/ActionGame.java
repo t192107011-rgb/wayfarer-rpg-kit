@@ -298,6 +298,11 @@ public final class ActionGame {
             return;
         }
         // Legacy careers keep their existing active skill until their dedicated redesign is assigned.
+        if(pactActive(MECHANIC)){
+            float cost=maxHp()*.04f;
+            if(hp<=cost){notice="机匣超频需要支付4%最大生命并存活。";signal("pactLow",x,y,0);return;}
+            payPact(cost);
+        }
         aimAtNearest(640);int kind=soulKind(),style=skillStyle();
         if(kind==2)payForbidden(.04f,18);
         skillCd=skillPeriod();followUpWindow=followUpDuration();signal(kind==1?"radiant":kind==2?"forbidden":"skill",x,y,style);
