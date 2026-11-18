@@ -19,8 +19,8 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     private int movePointer=-1,attackPointer=-1;
     private float joyX=0,joyY=0,scale=1,offsetX=0,offsetY=0,cameraX=0,cameraY=0;
     private long lastFrame=0;
-    private float accumulator=0,saveElapsed=0,visualTime=0,shake=0,soulMessageTime=0,pactMessageTime=0;
-    private String pactMessage="";
+    private float accumulator=0,saveElapsed=0,visualTime=0,shake=0,soulMessageTime=0,eventMessageTime=0;
+    private String eventMessage="";
     private boolean running=false;
     public boolean soundOn=true,showTalents=false,customRoster=false;
     private int bg=Color.rgb(13,24,29),cream=Color.rgb(232,228,202),muted=Color.rgb(155,180,171),gold=Color.rgb(222,186,111);
@@ -28,12 +28,12 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     public WorldView(Context c,ActionGame game,Host host){super(c);this.game=game;this.host=host;customRoster=game.custom>=0;setFocusable(true);setFocusableInTouchMode(true);setContentDescription("灯下归途：横屏即时动作地牢。左侧摇杆移动，右侧攻击、闪避、技能和药水。暂停键位于右上角。");}
     public void startFrames(){if(!running){running=true;lastFrame=0;Choreographer.getInstance().postFrameCallback(this);}}
     public void stopFrames(){running=false;lastFrame=0;resetInput();Choreographer.getInstance().removeFrameCallback(this);}
-    public void replace(ActionGame restored){game=restored;showTalents=false;customRoster=game.custom>=0;effects.clear();pactMessageTime=0;resetInput();if(game.mode==ActionGame.Mode.PLAY)game.pause();invalidate();}
+    public void replace(ActionGame restored){game=restored;showTalents=false;customRoster=game.custom>=0;effects.clear();eventMessageTime=0;resetInput();if(game.mode==ActionGame.Mode.PLAY)game.pause();invalidate();}
     public void resetInput(){movePointer=-1;attackPointer=-1;joyX=0;joyY=0;input.mx=0;input.my=0;input.attack=false;}
     @Override public void onWindowFocusChanged(boolean hasFocus){super.onWindowFocusChanged(hasFocus);if(!hasFocus){resetInput();game.pause();host.save();}lastFrame=0;}
     @Override public void doFrame(long now){
         if(!running)return;
-        float elapsed=lastFrame==0?0:Math.min(.0833f,(now-lastFrame)/1_000_000_000f);lastFrame=now;visualTime+=elapsed;soulMessageTime=Math.max(0,soulMessageTime-elapsed);if(game.mode==ActionGame.Mode.PLAY)pactMessageTime=Math.max(0,pactMessageTime-elapsed);
+        float elapsed=lastFrame==0?0:Math.min(.0833f,(now-lastFrame)/1_000_000_000f);lastFrame=now;visualTime+=elapsed;soulMessageTime=Math.max(0,soulMessageTime-elapsed);if(game.mode==ActionGame.Mode.PLAY)eventMessageTime=Math.max(0,eventMessageTime-elapsed);
         ActionGame.Mode old=game.mode;int room=game.room;
         accumulator+=elapsed;int steps=0;
         while(accumulator>=1f/60f&&steps++<5){game.update(1f/60f,input);accumulator-=1f/60f;}
@@ -56,11 +56,9 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             }else if(s.kind.equals("skill")||s.kind.equals("slam")||s.kind.equals("clear")||s.kind.equals("echo")||s.kind.equals("shield"))effects.add(new Fx("ring",s.x,s.y,.45f,s.kind.equals("slam")?185:s.kind.equals("echo")?s.value:s.kind.equals("shield")?45:s.kind.equals("skill")?(int)game.activeRadius():140,s.kind.equals("slam")?0xFFDC7053:0xFFBCE8C5));
             else if(s.kind.equals("radiant")||s.kind.equals("forbidden"))effects.add(new Fx("ring",s.x,s.y,.55f,s.value>3?s.value:(int)game.activeRadius(),s.kind.equals("radiant")?0xFFF2DD9B:0xFFB991DF));
             else if(s.kind.equals("lance"))effects.add(new Fx("lance",s.x,s.y,.35f,s.value,0xFFFFE8AD));
-            else if(s.kind.equals("pact")||s.kind.equals("pactLow")){pactMessage=game.notice;pactMessageTime=3;if(s.kind.equals("pact")){effects.add(new Fx("ring",s.x,s.y,.65f,210,0xFFCF85A0));if(soundOn)host.sound("forbidden");}}
-            else if(s.kind.equals("pactBurst")){effects.add(new Fx("ring",s.x,s.y,.55f,s.value,0xFFBD534F));shake=Math.max(shake,3);}
             else if(s.kind.equals("sentence")||s.kind.equals("fracture")||s.kind.equals("obituary")){effects.add(new Fx("ring",s.x,s.y,.4f,55,0xFFE6A5A1));}
             else if(s.kind.equals("grind")||s.kind.equals("bury")||s.kind.equals("drain")){for(int i=0;i<4;i++){Fx f=new Fx("spark",s.x,s.y,.3f,0,0xFFB95F68);f.vx=(cosmetic.nextFloat()-.5f)*80;f.vy=-40-cosmetic.nextFloat()*50;effects.add(f);}}
-            else if(s.kind.equals("rupture")){pactMessage="侵蚀100 · 失控：伤害暴涨，生命持续流失";pactMessageTime=4;effects.add(new Fx("ring",s.x,s.y,1,260,0xFFE66D87));if(soundOn)host.sound("forbidden");}
+            else if(s.kind.equals("rupture")){eventMessage="侵蚀100 · 失控：伤害暴涨，生命持续流失";eventMessageTime=4;effects.add(new Fx("ring",s.x,s.y,1,260,0xFFE66D87));if(soundOn)host.sound("forbidden");}
             else if(s.kind.equals("followup")){effects.add(new Fx("ring",s.x,s.y,.35f,s.value==0?130:80,0xFF91D5CE));if(soundOn)host.sound("skill");}
             else if(s.kind.equals("enemyWard")||s.kind.equals("enemyShield"))effects.add(new Fx("ring",s.x,s.y,.35f,s.kind.equals("enemyWard")?s.value:35,0xFF89BDD4));
             else if(s.kind.equals("hazard"))effects.add(new Fx("ring",s.x,s.y,.3f,s.value,0xFFE68D62));
@@ -68,7 +66,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             else if(s.kind.equals("sacrifice")){Fx f=new Fx("number",s.x,s.y-45,.7f,-s.value,0xFFD89DCC);f.vy=-20;effects.add(f);}
             else if(s.kind.equals("revive")){effects.add(new Fx("ring",s.x,s.y,.7f,150,0xFFF2DC9D));if(soundOn)host.sound("heal");}
             else if(s.kind.equals("relic")&&soundOn)host.sound("clear");
-            else if(s.kind.equals("potion")){pactMessage="拾取药瓶 · "+s.value+" / "+ActionGame.MAX_POTIONS;pactMessageTime=2;effects.add(new Fx("ring",s.x,s.y,.4f,40,0xFFB6E1B2));}
+            else if(s.kind.equals("potion")){eventMessage="拾取药瓶 · "+s.value+" / "+ActionGame.MAX_POTIONS;eventMessageTime=2;effects.add(new Fx("ring",s.x,s.y,.4f,40,0xFFB6E1B2));}
             else if(s.kind.equals("coin"))effects.add(new Fx("spark",s.x,s.y,.25f,0,gold));
         }
         game.signals.clear();while(effects.size()>140)effects.remove(0);
@@ -292,7 +290,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             text(c,game.careerName()+" / "+CareerSystem.BACKGROUNDS[game.background()],30,yy,11,0xFFAACDDC,false);
             if(game.careerWard>0)text(c,"职能护盾 "+(int)game.careerWard,30,yy+18,11,0xFFAACDDC,false);
         }
-        if(pactMessageTime>0&&game.mode==ActionGame.Mode.PLAY){rounded(c,330,168,500,35,6,0xE0251F2A);text(c,pactMessage,580,191,12,0xFFE8B8BF,true);}
+        if(eventMessageTime>0&&game.mode==ActionGame.Mode.PLAY){rounded(c,330,168,500,35,6,0xE0251F2A);text(c,eventMessage,580,191,12,0xFFE8B8BF,true);}
         if(soulMessageTime>0)text(c,"魂能不足，需要40点",480,170,17,gold,true);
         if(game.ruptureTime>0)text(c,"失控 "+(int)Math.ceil(game.ruptureTime)+"秒 · 生命流失",480,71,13,0xFFFF879B,true);
         if(game.followUpWindow>0&&game.skillCd>0)text(c,EncounterSystem.FOLLOWUPS[game.skillStyle()]+" · "+String.format(java.util.Locale.ROOT,"%.1f",game.followUpWindow),835,225,12,0xFFADE1D0,true);
