@@ -5,6 +5,9 @@ public final class CareerSystem {
     private CareerSystem(){}
     public static final int SPECIALIZATION_XP=160;
     public static final int POLICE=4,SOLDIER=5,DOCTOR=6,MECHANIC=7,MINER=8,BOXER=9,MERCHANT=10,REPORTER=11,ASSASSIN=12,DETECTIVE=13,HUNTER=2;
+    public static final int[] SELECTABLE_JOBS={HUNTER,ASSASSIN,DETECTIVE,REPORTER};
+    public static final String[] SELECTABLE_NAMES={"边地猎人","刺客","侦探","记者"};
+    public static int selectableIndex(int job){for(int i=0;i<SELECTABLE_JOBS.length;i++)if(SELECTABLE_JOBS[i]==job)return i;return 0;}
     public static final String[] CLASSES={"无职业","护路卫士","边地猎人","秘仪学者","警员","退役军人","医生","机械师","矿工","拳击手","商人","记者","刺客","侦探"};
     public static final String[] CLASS_DETAILS={"保持原有战斗属性。","护路巡逻磨练体魄。最大生命 +16，敌方伤害减少 8%。不减免禁忌献祭。","边地追踪训练。移动速度 +6%，可使用任意武器。","秘密结社的仪式训练。主动技能冷却缩短 0.4 秒，可使用任意武器。",
         "巡逻与制止冲突的训练。受到敌方伤害减少5%，不减免献祭。",
@@ -43,7 +46,7 @@ public final class CareerSystem {
         "每名敌人的票券掉落额外 +2，首领也生效。仅增加敌人掉落，不增加门、圣遗物补偿或结算奖励。"
     };
     public static String invalid(int job,int spec,int background,int xp){
-        if(job<0||job>=CLASSES.length||spec<0||spec>=SPECS[job].length||background<0||background>=BACKGROUNDS.length)return "职业、专精或背景编号无效";
+        if(job<0||job>=CLASSES.length||selectableIndex(job)==0&&job!=HUNTER||spec<0||spec>=SPECS[job].length||background<0||background>=BACKGROUNDS.length)return "职业、专精或背景编号无效";
         if(spec>0&&xp<SPECIALIZATION_XP)return "专精需要角色 Lv.3（160经验）";
         return "";
     }
