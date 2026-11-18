@@ -17,7 +17,7 @@ public final class CareerHall {
         LinearLayout row=new LinearLayout(a);row.setOrientation(LinearLayout.HORIZONTAL);row.setPadding(dp(a,18),0,dp(a,18),0);
         LinearLayout left=new LinearLayout(a),right=new LinearLayout(a);left.setOrientation(LinearLayout.VERTICAL);right.setOrientation(LinearLayout.VERTICAL);right.setPadding(dp(a,18),0,0,0);
         ScrollView ls=new ScrollView(a),rs=new ScrollView(a);ls.addView(left);rs.addView(right);ls.setScrollbarFadingEnabled(false);rs.setScrollbarFadingEnabled(false);row.addView(ls,new LinearLayout.LayoutParams(0,-1,1));row.addView(rs,new LinearLayout.LayoutParams(0,-1,1));
-        Spinner job=picker(a,left,"职业 · "+(CareerSystem.CLASSES.length-1)+"种可选，不限制武器","career-job",CareerSystem.CLASSES,draft[0]);
+        Spinner job=picker(a,left,"职业 · 仅开放四种职业","career-job",CareerSystem.SELECTABLE_NAMES,CareerSystem.selectableIndex(draft[0]));
         TextView base=text(a,left,"",14);
         Spinner spec=picker(a,left,"专精 · 角色 Lv.3 后择一","career-spec",CareerSystem.SPECS[draft[0]],draft[1]);
         TextView special=text(a,left,"",14);
@@ -39,7 +39,7 @@ public final class CareerHall {
         };
         forbidden.setOnCheckedChangeListener((button,checked)->{pact[0]=checked;refresh.run();});
         spec.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onItemSelected(AdapterView<?> p,View v,int pos,long id){draft[1]=pos<CareerSystem.SPECS[draft[0]].length?pos:0;refresh.run();}public void onNothingSelected(AdapterView<?> p){}});
-        job.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onItemSelected(AdapterView<?> p,View v,int pos,long id){if(pos!=draft[0]){draft[0]=pos;draft[1]=0;pact[0]=false;forbidden.setChecked(false);spec.setAdapter(adapter(a,CareerSystem.SPECS[pos]));spec.setSelection(0);}refresh.run();}public void onNothingSelected(AdapterView<?> p){}});
+        job.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onItemSelected(AdapterView<?> p,View v,int pos,long id){int selected=CareerSystem.SELECTABLE_JOBS[pos];if(selected!=draft[0]){draft[0]=selected;draft[1]=0;pact[0]=false;forbidden.setChecked(false);spec.setAdapter(adapter(a,CareerSystem.SPECS[selected]));spec.setSelection(0);}refresh.run();}public void onNothingSelected(AdapterView<?> p){}});
         background.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onItemSelected(AdapterView<?> p,View v,int pos,long id){draft[2]=pos;refresh.run();}public void onNothingSelected(AdapterView<?> p){}});
         dialog.setOnShowListener(d->{Window window=dialog.getWindow();if(window!=null)window.setLayout((int)(a.getResources().getDisplayMetrics().widthPixels*.94f),(int)(a.getResources().getDisplayMetrics().heightPixels*.94f));refresh.run();});dialog.show();return dialog;
     }
