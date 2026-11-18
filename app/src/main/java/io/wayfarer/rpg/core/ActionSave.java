@@ -109,7 +109,7 @@ public final class ActionSave {
                 g.followUpWindow=f(p,"followUpWindow",0,version>=10?g.followUpDuration():2);g.ruptureTime=f(p,"ruptureTime",0,6);g.ruptureTick=f(p,"ruptureTick",0,1.5f);g.ruptureLatched=bool(p,"ruptureLatched");
                 if(g.soulKind()!=2&&(g.ruptureTime>0||g.ruptureTick>0||g.ruptureLatched)||g.ruptureTime>0&&!g.ruptureLatched||g.ruptureTime==0&&g.ruptureTick>0)throw new IllegalArgumentException("侵蚀失控状态无效");
                 g.storyUnlocked=n(p,"storyUnlocked",0,31);for(int j=0;j<5;j++){g.storyChoices[j]=n(p,"storyChoice"+j,0,2);if(g.storyChoices[j]>0&&(g.storyUnlocked&(1<<j))==0)throw new IllegalArgumentException("主线选择未解锁");}
-                for(int j=0;j<6;j++){g.characterUnlocked[j]=n(p,"characterUnlocked"+j,0,7);g.characterJobs[j]=n(p,"characterJob"+j,-1,11);
+                for(int j=0;j<6;j++){g.characterUnlocked[j]=n(p,"characterUnlocked"+j,0,7);int recordedJob=n(p,"characterJob"+j,-1,version>=11?3:13);g.characterJobs[j]=recordedJob<0?-1:version>=11?recordedJob:CareerSystem.HUNTER;
                     if(g.characterUnlocked[j]!=0&&g.characterUnlocked[j]!=1&&g.characterUnlocked[j]!=3&&g.characterUnlocked[j]!=7||(g.characterUnlocked[j]==0)!=(g.characterJobs[j]==-1))throw new IllegalArgumentException("人物线来源无效");
                     for(int k=0;k<3;k++){g.characterChoices[j][k]=n(p,"characterChoice"+j+"."+k,0,2);if(g.characterChoices[j][k]>0&&(g.characterUnlocked[j]&(1<<k))==0)throw new IllegalArgumentException("人物选择未解锁");}
                 }
