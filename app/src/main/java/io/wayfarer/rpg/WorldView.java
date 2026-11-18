@@ -319,7 +319,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     }
     private void pausePanel(Canvas c){shade(c);text(c,"灯火暂歇",480,125,30,cream,true);text(c,"暂停期间，战斗与冷却均停止",480,162,15,muted,true);
         if(game.soulKind()>0)text(c,SoulSystem.NAMES[game.soulKind()]+" · "+game.skillName()+" / "+game.soulArtName(),480,187,13,gold,true);
-        text(c,game.careerName()+" / "+CareerSystem.BACKGROUNDS[game.background()]+(game.pactEnabled()?" · "+game.pactStatus():""),480,481,12,muted,true);
+        text(c,game.careerName()+" / "+CareerSystem.BACKGROUNDS[game.background()],480,481,12,muted,true);
         if(game.room>0)text(c,WorldSetting.REPORTS[game.room-1],480,510,12,muted,true);
         button(c,330,205,300,53,"继续冒险",true);button(c,330,272,140,50,"存档",false);button(c,490,272,140,50,soundOn?"音效：开":"音效：关",false);
         button(c,330,337,300,50,"结束本轮并返回营地",false);button(c,330,403,300,45,"操作说明",false);
