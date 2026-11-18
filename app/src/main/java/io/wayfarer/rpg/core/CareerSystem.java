@@ -5,7 +5,7 @@ public final class CareerSystem {
     private CareerSystem(){}
     public static final int SPECIALIZATION_XP=160;
     public static final int POLICE=4,SOLDIER=5,DOCTOR=6,MECHANIC=7,MINER=8,BOXER=9,MERCHANT=10,REPORTER=11,ASSASSIN=12,DETECTIVE=13,HUNTER=2;
-    public static final String[] CLASSES={"无职业","护路卫士","边地猎人","秘仪学者","警员","退役军人","医生","机械师","矿工","拳击手","商人","记者"};
+    public static final String[] CLASSES={"无职业","护路卫士","边地猎人","秘仪学者","警员","退役军人","医生","机械师","矿工","拳击手","商人","记者","刺客","侦探"};
     public static final String[] CLASS_DETAILS={"保持原有战斗属性。","护路巡逻磨练体魄。最大生命 +16，敌方伤害减少 8%。不减免禁忌献祭。","边地追踪训练。移动速度 +6%，可使用任意武器。","秘密结社的仪式训练。主动技能冷却缩短 0.4 秒，可使用任意武器。",
         "巡逻与制止冲突的训练。受到敌方伤害减少5%，不减免献祭。",
         "服役留下的武器训练。基础伤害+3，再应用伤害倍率。",
