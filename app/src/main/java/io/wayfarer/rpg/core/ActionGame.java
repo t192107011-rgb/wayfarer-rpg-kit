@@ -116,7 +116,7 @@ public final class ActionGame {
     public float healingFactor(){return pactActive(DOCTOR)?0:ordinaryHealingFactor();}
     private float ordinaryHealingFactor(){return (soulKind()==1?1.15f:soulKind()==2?1-corruption*.003f:1)*(hasRelic(4)?1.1f:1)*(isSpec(DOCTOR,2)?1.12f:1);}
     private void heal(float amount){float restored=Math.min(maxHp()-hp,Math.max(0,amount)*healingFactor());hp+=restored;if(restored>.01f)signal("heal",x,y,(int)restored);}
-    private void payForbidden(float ratio,float debt){if(hasRelic(6))ratio*=.75f;float before=hp;hp=Math.max(Math.min(1,hp),hp-maxHp()*ratio);corruption=Math.min(100,corruption+debt);soulQuiet=8;if(corruption>=100&&!ruptureLatched){ruptureLatched=true;ruptureTime=6;ruptureTick=1.5f;signal("rupture",x,y,0);}signal("sacrifice",x,y,(int)(before-hp));}
+    private void payForbidden(float ratio,float debt){if(hasRelic(6))ratio*=.75f;float before=hp;hp=Math.max(Math.min(1,hp),hp-maxHp()*ratio);corruption=Math.min(100,corruption+debt);triggerRupture();signal("sacrifice",x,y,(int)(before-hp));}
     public float followUpWindow=0,ruptureTime=0,ruptureTick=0;
     public boolean ruptureLatched=false;
     private float motionX=0,motionY=0;
@@ -197,7 +197,7 @@ public final class ActionGame {
     public float baseDamage(){return (hero==0?22:hero==1?18:15)+power*2+damageBonus+(heroLevel()-1)+rank(0)*2+(custom>=0&&profile().origin==2?2:0)+(job()==SOLDIER?3:0)+characterTrait(2);}
     public float damage(){return baseDamage()*(job()==ASSASSIN&&careerSkillTime>0?1.5f:1)*(rank(3)>0&&hp<maxHp()*.4f?1.55f:1)*(soulBuff>0?1.25f:1)*(soulKind()==2?(ruptureTime>0?1.4f:corruption>=75?1.25f:corruption>=50?1.15f:1):1);}
     public float speed(){return (hero==2?240:hero==1?215:205)*(1+speedBonus*.08f+rank(4)*.03f)*(custom<0?1:profile().origin==0?.95f:profile().origin==1?1.07f:1)*(job()==2?1.06f:job()==REPORTER?1.03f:1)*(isSpec(POLICE,1)||isSpec(MERCHANT,1)?1.05f:1)*(background()==2?1.03f:1)*(background()==3&&hp<maxHp()*.35f?1.12f:1)*(job()==ASSASSIN&&careerSkillTime>0?1.25f:1)*(pactActive(POLICE)?.65f:pactActive(MINER)?.7f:1);}
-    public float attackPeriod(){return (hero==0?.48f:hero==1?.4f:.10f)*(custom>=0&&profile().trait==0?1.06f:1)*(soulBuff>0?.8f:1)*(job()==ASSASSIN&&careerSkillTime>0?.78f:1)*(job()==BOXER&&hero!=1?.94f:1)*(isSpec(SOLDIER,2)&&hero==1?.9f:1)*(pactActive(SOLDIER)?.55f:pactActive(MECHANIC)?.85f:pactActive(BOXER)&&hero!=1?.7f:1);}
+    public float attackPeriod(){return (hero==0?.48f:hero==1?.4f:.10f)*(hero==0?1.1f:1)*(custom>=0&&profile().trait==0?1.06f:1)*(soulBuff>0?.8f:1)*(job()==ASSASSIN&&careerSkillTime>0?.78f:1)*(job()==BOXER&&hero!=1?.94f:1)*(isSpec(SOLDIER,2)&&hero==1?.9f:1)*(pactActive(SOLDIER)?.55f:pactActive(MECHANIC)?.85f:pactActive(BOXER)&&hero!=1?.7f:1);}
     public int upgradeCost(int rank){int base=30+rank*25;return isSpec(MERCHANT,2)?(base*85+99)/100:base;}
     public int random(int bound){rngState^=rngState<<13;rngState^=rngState>>>7;rngState^=rngState<<17;return (int)Long.remainderUnsigned(rngState,bound);}
     public void signal(String kind,float x,float y,int amount){if(signals.size()<64)signals.add(new Signal(kind,x,y,amount));}
@@ -261,7 +261,7 @@ public final class ActionGame {
     public void potion(){
         if(mode!=Mode.PLAY)return;
         if(pactActive(DOCTOR)){notice="活体取材期间只能掠取生命，暂时不能喝药。";signal("pactLow",x,y,0);return;}
-        if(mode!=Mode.PLAY||potions<=0||hp>=maxHp()&&!(hasRelic(4)&&soulKind()==2&&corruption>0))return;
+        if(potions<=0||hp>=maxHp()&&!(hasRelic(4)&&soulKind()==2&&corruption>0))return;
         potions--;if(hasRelic(4)){if(soulKind()==1)soulWard=Math.max(soulWard,12);if(soulKind()==2)corruption=Math.max(0,corruption-20);}heal(maxHp()*potionRatio()+(background()==4?6:0)+(job()==DOCTOR?8:0));
     }
     public void skill(){
@@ -269,19 +269,19 @@ public final class ActionGame {
         if(skillCd>0){if(followUpWindow>0)followUp();return;}
         int j=job();
         // Profession active skills. Timekeeper is intentionally left untouched.
-        if(j==HUNTER||j==ASSASSIN||j==12||j==13||j==REPORTER){
+        if(j==HUNTER||j==ASSASSIN||j==DETECTIVE||j==REPORTER){
             skillCd=skillPeriod();
             careerSkillDeathCd=0;
             if(j==HUNTER){
                 careerSkillMode=1;careerSkillTime=5f;
                 signal("careerSkill",x,y,2);
                 notice="猎人：火力强化";
-            }else if(j==ASSASSIN||j==12){
+            }else if(j==ASSASSIN){
                 careerSkillMode=2;careerSkillTime=5f;
                 shield=Math.max(shield,maxHp()*.40f);
                 signal("careerSkill",x,y,3);
                 notice="刺客：狂袭";
-            }else if(j==13){
+            }else if(j==DETECTIVE){
                 careerSkillMode=3;careerSkillTime=3.5f;
                 signal("careerSkill",x,y,4);
                 notice="侦探：引力场";
@@ -418,14 +418,14 @@ public final class ActionGame {
         float length=Math.min(d-45,distance)*(e.type==3?.2f:1);int steps=Math.max(1,(int)Math.ceil(length/6));
         for(int i=0;i<steps;i++){float mx=dx/d*length/steps,my=dy/d*length/steps;if(free(e.x+mx,e.y,e.radius()))e.x+=mx;if(free(e.x,e.y+my,e.radius()))e.y+=my;}
     }
+    private void triggerRupture(){if(corruption>=100&&!ruptureLatched){ruptureLatched=true;ruptureTime=5f;ruptureTick=1.5f;soulBuff=5f;signal("rupture",x,y,0);}}
     private void updateSoul(float dt){
         soulCd=dec(soulCd,dt);soulBuff=dec(soulBuff,dt);
-        soulQuiet=dec(soulQuiet,dt);
-        if(soulKind()==2&&soulBuff<=0&&soulFields.isEmpty())corruption=Math.max(0,corruption-dt);
-        if(corruption>=100&&!ruptureLatched){ruptureLatched=true;ruptureTime=5f;ruptureTick=0;signal("rupture",x,y,0);soulBuff=5f;}
+        if(soulKind()==2)corruption=Math.max(0,corruption-dt);
+        triggerRupture();
         if(ruptureTime>0){float elapsed=Math.min(dt,ruptureTime);ruptureTime=dec(ruptureTime,elapsed);ruptureTick-=elapsed;
             if(ruptureTick<=.0001f){ruptureTick+=1.5f;float before=hp;hp=Math.max(Math.min(1,hp),hp-maxHp()*.03f);signal("sacrifice",x,y,(int)(before-hp));}
-            if(ruptureTime<=0)ruptureTick=0;
+            if(ruptureTime<=0){ruptureTick=0;if(corruption<100)ruptureLatched=false;}
         }
         Iterator<SoulField> it=soulFields.iterator();while(it.hasNext()){
             SoulField f=it.next();float elapsed=Math.min(dt,f.life);f.life=Math.max(0,f.life-elapsed);f.tick-=elapsed;
@@ -445,7 +445,7 @@ public final class ActionGame {
         combo=comboWindow>0?(combo+1)%3:0;comboWindow=.85f;swingHits.clear();
         swingBoost=(dodgeCharge>0?1+rank(5)*(soulKind()==2?.20f:.15f):1)*(combo==2?1.35f+rank(1)*(soulKind()==2?.18f:.12f)+(isSpec(BOXER,1)&&hero!=1?.25f:0):1);dodgeCharge=0;
         if(combo==2&&rank(2)>0){boolean connected=false;for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<185){float before=e.hp;hit(e,damage()*.75f);connected|=e.hp<before;}if(connected&&rank(11)>0)shield=Math.min(talentShieldLimit(),shield+4);signal("echo",x,y,185);}
-        if(hero==1)fire(faceX,faceY,damage()*swingBoost);else if(hero==2){attackAnim=.16f;invulnerable=Math.max(invulnerable,.16f);careerSkillMode=careerSkillMode;signal("daggerDash",x,y,combo);}signal(hero==1?"bow":"swing",x,y,combo);
+        if(hero==1)fire(faceX,faceY,damage()*swingBoost);else if(hero==2){attackAnim=.16f;invulnerable=Math.max(invulnerable,.16f);signal("daggerDash",x,y,combo);}signal(hero==1?"bow":"swing",x,y,combo);
     }
     private void fire(float dx,float dy,float value){fire(dx,dy,value,0,0);}
     private void fire(float dx,float dy,float value,int effect,int pierce){if(shots.size()<160){Shot s=new Shot(x+dx*20,y+dy*20,dx*640,dy*640,value,true);s.effect=effect;s.pierce=pierce;shots.add(s);}}
@@ -463,7 +463,7 @@ public final class ActionGame {
         float mx=Float.isFinite(in.mx)?in.mx:0,my=Float.isFinite(in.my)?in.my:0,mag=len(mx,my);
         if(mag>1){mx/=mag;my/=mag;mag=1;}
         motionX=mx*speed();motionY=my*speed();
-        if(rollTime>0){movePlayer(rollX*530*dt,rollY*530*dt);rollTime=dec(rollTime,dt);}else if(hero==2&&attackAnim>0&&attackCd>0&&careerSkillMode==0){movePlayer(faceX*520*dt,faceY*520*dt);}
+        if(rollTime>0){movePlayer(rollX*530*dt,rollY*530*dt);rollTime=dec(rollTime,dt);}else if(hero==2&&attackAnim>0){}
         else {
             if(mag>.1f){if(attackAnim<=0){faceX=mx/mag;faceY=my/mag;}float slow=attackAnim>0?.65f:1;movePlayer(mx*speed()*slow*dt,my*speed()*slow*dt);}
             if(in.attack&&attackCd<=0)beginAttack();
