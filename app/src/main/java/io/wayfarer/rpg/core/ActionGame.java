@@ -186,8 +186,8 @@ public final class ActionGame {
     public float maxHp(){return (hero==0?110:hero==1?85:90)+vitality*10+healthBonus+(heroLevel()-1)*3+rank(8)*(soulKind()==1?10:8)+originHp()-(custom>=0&&profile().trait==2?8:0)+(hasRelic(1)?12:0)+characterTrait(1)*4;}
     public float baseDamage(){return (hero==0?22:hero==1?18:15)+power*2+damageBonus+(heroLevel()-1)+rank(0)*2+(custom>=0&&profile().origin==2?2:0)+characterTrait(2);}
     public float damage(){return baseDamage()*(job()==ASSASSIN&&careerSkillTime>0?1.5f:1)*(rank(3)>0&&hp<maxHp()*.4f?1.55f:1)*(soulBuff>0?1.25f:1)*(soulKind()==2?(ruptureTime>0?1.4f:corruption>=75?1.25f:corruption>=50?1.15f:1):1);}
-    public float speed(){return (hero==2?240:hero==1?215:205)*(1+speedBonus*.08f+rank(4)*.03f)*(custom<0?1:profile().origin==0?.95f:profile().origin==1?1.07f:1)*(job()==REPORTER?1.03f:1)*(background()==2?1.03f:1)*(background()==3&&hp<maxHp()*.35f?1.12f:1)*(job()==ASSASSIN&&careerSkillTime>0?1.25f:1);}
-    public float attackPeriod(){return (hero==0?.48f:hero==1?.4f:.10f)*(hero==0?1.1f:1)*(custom>=0&&profile().trait==0?1.06f:1)*(soulBuff>0?.8f:1)*(job()==ASSASSIN&&careerSkillTime>0?.78f:1);}
+    public float speed(){return (hero==2?240:hero==1?215:205)*(1+speedBonus*.08f+rank(4)*.03f)*(custom<0?1:profile().origin==0?.95f:profile().origin==1?1.07f:1)*(background()==2?1.03f:1)*(background()==3&&hp<maxHp()*.35f?1.12f:1)*(job()==ASSASSIN&&careerSkillTime>0?1.25f:1);}
+    public float attackPeriod(){return (hero==0?.48f:hero==1?.4f:.10f)*(hero==0?1.1f:1)*(custom>=0&&profile().trait==0?1.06f:1)*(soulBuff>0?.8f:1);}
     public int upgradeCost(int rank){return 30+rank*25;}
     public int random(int bound){rngState^=rngState<<13;rngState^=rngState>>>7;rngState^=rngState<<17;return (int)Long.remainderUnsigned(rngState,bound);}
     public void signal(String kind,float x,float y,int amount){if(signals.size()<64)signals.add(new Signal(kind,x,y,amount));}
