@@ -172,7 +172,7 @@ public final class SmokeInstrumentation extends Instrumentation {
         ui(()->check(activity.world.game.soulArt()==1,"reopening altar preserves selected second art"));
         tap(785,405);float[] hp={0};ui(()->hp[0]=activity.world.game.hp);tap(735,332);
         ui(()->check(activity.world.game.soulBuff>0&&activity.world.game.corruption==30&&activity.world.game.hp<hp[0],"forbidden pact has actual cost and buff"));
-        tap(855,298);SystemClock.sleep(100);screenshot("12-forbidden-pact.png");
+        tap(855,298);SystemClock.sleep(100);screenshot("12-forbidden-soul-art.png");
         ui(()->{check(activity.world.game.corruption>=47&&activity.world.game.skillCd>0,"mutated active increases corruption");try{ActionGame g=ActionSave.decode(ActionSave.encode(activity.world.game));check(g.soulBuff>0&&g.soulArt()==1,"forbidden runtime persists");}catch(IOException e){throw new RuntimeException(e);}});
     }
     private void screenshotSoulDialog(String name){ui(()->{try{View v=activity.soulDialog.getWindow().getDecorView();Bitmap b=Bitmap.createBitmap(v.getWidth(),v.getHeight(),Bitmap.Config.ARGB_8888);v.draw(new Canvas(b));writeBitmap(b,name);}catch(IOException e){throw new RuntimeException(e);}});}
@@ -182,13 +182,12 @@ public final class SmokeInstrumentation extends Instrumentation {
         ui(()->{AlertDialog d=activity.workshopDialog;check(d!=null&&d.isShowing(),"editor opens from camp");View root=d.getWindow().getDecorView();
             ((EditText)root.findViewWithTag("profile-name")).setText("暮灯艾文");
             ((Spinner)root.findViewWithTag("profile-weapon")).setSelection(1);
-            ((Spinner)root.findViewWithTag("profile-skill")).setSelection(0);
             ((Spinner)root.findViewWithTag("profile-color")).setSelection(4);
             ((Spinner)root.findViewWithTag("profile-hair")).setSelection(2);
         });waitForIdleSync();SystemClock.sleep(150);
         screenshotDialog("05-character-workshop.png");
         ui(()->activity.workshopDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick());waitForIdleSync();
-        ui(()->{ActionGame g=activity.world.game;check(g.heroName().equals("暮灯艾文")&&g.hero==1&&g.skillStyle()==0&&g.profile().color==4&&g.profile().hair==2,"native editor commits customization");});
+        ui(()->{ActionGame g=activity.world.game;check(g.heroName().equals("暮灯艾文")&&g.hero==1&&g.skillName().equals("火力强化")&&g.profile().color==4&&g.profile().hair==2,"native editor commits customization");});
         tap(350,500);waitForIdleSync();ui(()->{View root=activity.workshopDialog.getWindow().getDecorView();((EditText)root.findViewWithTag("profile-name")).setText("取消的修改");activity.workshopDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();});
         ui(()->check(activity.world.game.heroName().equals("暮灯艾文"),"cancel preserves profile"));
         tap(530,500);ui(()->check(activity.world.showTalents,"tree opens"));tap(175,164);
