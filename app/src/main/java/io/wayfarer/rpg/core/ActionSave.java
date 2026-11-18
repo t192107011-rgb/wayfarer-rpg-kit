@@ -60,12 +60,12 @@ public final class ActionSave {
             for(int i=0;i<3;i++)g.experience[i]=n(p,"xp"+i,0,1000000);
             // v1 migration: preserve every original field; new profiles and empty trees use defaults.
             if(version>=2){
-                g.custom=n(p,"custom",-1,2);g.shield=f(p,"shield",0,24);g.dodgeCharge=f(p,"dodgeCharge",0,3);
+                g.custom=n(p,"custom",-1,2);g.shield=f(p,"shield",0,200);g.dodgeCharge=f(p,"dodgeCharge",0,3);
                 for(int i=0;i<3;i++){BuildSystem.Profile b=g.profiles[i];String k="profile"+i+".";b.name=required(p,k+"name");float[] a=array(p,k+"data",8);
                     b.weapon=integer(a[0],0,2);b.skill=integer(a[1],0,2);b.origin=integer(a[2],0,2);b.trait=integer(a[3],0,2);b.color=integer(a[4],0,5);b.skin=integer(a[5],0,2);b.hair=integer(a[6],0,2);b.xp=integer(a[7],0,1000000);BuildSystem.validate(b);}
                 for(int b=0;b<6;b++){for(int t=0;t<12;t++)g.talents[b][t]=n(p,"talent"+b+"."+t,0,BuildSystem.NODES[t].maxRank);if(version>=10)BuildSystem.validateTree(g.talents[b],b<3?g.experience[b]:g.profiles[b-3].xp);else BuildSystem.validateLegacyTree(g.talents[b],b<3?g.experience[b]:g.profiles[b-3].xp);}
                 if(g.custom>=0&&g.hero!=g.profile().weapon)throw new IllegalArgumentException("角色与武器不一致");
-                if(g.shield>g.rank(9)*6+(g.rank(11)>0?12:0)||g.dodgeCharge>0&&g.rank(5)==0)throw new IllegalArgumentException("天赋状态无效");
+                if(g.dodgeCharge>0&&g.rank(5)==0)throw new IllegalArgumentException("天赋状态无效");
             }
             // v1/v2 migration leaves every soul unbound and adds no combat debt or resource.
             if(version>=3){
@@ -105,6 +105,7 @@ public final class ActionSave {
                 if(g.soulCd>g.soulPeriod()+.0001f)throw new IllegalArgumentException("魂技冷却与专精不符");
             }
             if(version>=11){g.careerSkillTime=f(p,"careerSkillTime",0,10);g.careerSkillDeathCd=f(p,"careerSkillDeathCd",0,2);g.careerSkillMode=n(p,"careerSkillMode",0,4);}else{g.careerSkillTime=0;g.careerSkillDeathCd=0;g.careerSkillMode=0;g.skillCd=0;g.followUpWindow=0;}
+            float shieldLimit=g.rank(9)*6+(g.rank(11)>0?12:0);if(version<11)g.shield=Math.min(g.shield,shieldLimit);else if(g.job()==CareerSystem.ASSASSIN)shieldLimit=Math.max(shieldLimit,g.maxHp()*.4f);if(g.shield>shieldLimit)throw new IllegalArgumentException("护盾来源无效");
             if(version>=9){
                 g.followUpWindow=f(p,"followUpWindow",0,version>=10?g.followUpDuration():2);g.ruptureTime=f(p,"ruptureTime",0,6);g.ruptureTick=f(p,"ruptureTick",0,1.5f);g.ruptureLatched=bool(p,"ruptureLatched");
                 if(g.soulBuff>0&&g.soulArt()!=1&&g.ruptureTime<=0)throw new IllegalArgumentException("灵魂强化来源无效");
