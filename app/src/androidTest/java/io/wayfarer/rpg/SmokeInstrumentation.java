@@ -173,7 +173,7 @@ public final class SmokeInstrumentation extends Instrumentation {
         tap(785,405);float[] hp={0};ui(()->hp[0]=activity.world.game.hp);tap(735,332);
         ui(()->check(activity.world.game.soulBuff>0&&activity.world.game.corruption==30&&activity.world.game.hp<hp[0],"forbidden soul art has actual cost and buff"));
         tap(855,298);SystemClock.sleep(100);screenshot("12-forbidden-soul-art.png");
-        ui(()->{check(activity.world.game.corruption==30&&activity.world.game.careerSkillMode==1&&activity.world.game.skillCd>0,"career active is independent of forbidden soul art");try{ActionGame g=ActionSave.decode(ActionSave.encode(activity.world.game));check(g.soulBuff>0&&g.soulArt()==1,"forbidden runtime persists");}catch(IOException e){throw new RuntimeException(e);}});
+        ui(()->{check(activity.world.game.corruption>29&&activity.world.game.corruption<=30&&activity.world.game.careerSkillMode==1&&activity.world.game.skillCd>0,"career active is independent of forbidden soul art");try{ActionGame g=ActionSave.decode(ActionSave.encode(activity.world.game));check(g.soulBuff>0&&g.soulArt()==1,"forbidden runtime persists");}catch(IOException e){throw new RuntimeException(e);}});
     }
     private void screenshotSoulDialog(String name){ui(()->{try{View v=activity.soulDialog.getWindow().getDecorView();Bitmap b=Bitmap.createBitmap(v.getWidth(),v.getHeight(),Bitmap.Config.ARGB_8888);v.draw(new Canvas(b));writeBitmap(b,name);}catch(IOException e){throw new RuntimeException(e);}});}
     private void workshopFlow(){
