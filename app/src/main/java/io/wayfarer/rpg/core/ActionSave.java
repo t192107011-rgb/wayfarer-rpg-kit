@@ -15,7 +15,7 @@ public final class ActionSave {
         for(int i=0;i<ik.length;i++)put(p,ik[i],iv[i]);for(int i=0;i<3;i++)put(p,"xp"+i,g.experience[i]);
         for(int b=0;b<6;b++)for(int slot=0;slot<3;slot++)put(p,"career"+b+"."+slot,g.careers[b][slot]);
         for(int b=0;b<6;b++)p.setProperty("careerPact"+b,Boolean.toString(g.careerPacts[b]));
-        put(p,"pactCd",g.pactCd);put(p,"pactTime",g.pactTime);put(p,"pactWard",g.pactWard);
+        put(p,"pactCd",g.pactCd);put(p,"pactTime",g.pactTime);put(p,"pactWard",g.pactWard);put(p,"careerSkillTime",g.careerSkillTime);put(p,"careerSkillDeathCd",g.careerSkillDeathCd);put(p,"careerSkillMode",g.careerSkillMode);
         put(p,"careerWard",g.careerWard);put(p,"careerCharge",g.careerCharge);
         put(p,"relicOwned",g.relicOwned);put(p,"relicAwards",g.relicAwards);put(p,"lastRelic",g.lastRelic);put(p,"relicEcho",g.relicEcho);p.setProperty("relicRevived",Boolean.toString(g.relicRevived));
         for(int b=0;b<6;b++)for(int slot=0;slot<2;slot++)put(p,"relic"+b+"."+slot,g.relics[b][slot]);
@@ -107,7 +107,7 @@ public final class ActionSave {
             // v1-v6 opt out of occupational forbidden arts; existing souls remain unchanged.
             if(version>=7){
                 for(int b=0;b<6;b++){g.careerPacts[b]=bool(p,"careerPact"+b);int xp=b<3?g.experience[b]:g.profiles[b-3].xp;if(g.careerPacts[b]&&(!ProfessionPacts.available(g.careers[b][0])||xp<CareerSystem.SPECIALIZATION_XP))throw new IllegalArgumentException("职业禁术归属或等级无效");}
-                g.pactCd=f(p,"pactCd",0,g.pactEnabled()?ProfessionPacts.COOLDOWN[g.job()]:0);g.pactTime=f(p,"pactTime",0,g.pactEnabled()?ProfessionPacts.DURATION[g.job()]:0);
+                g.pactCd=f(p,"pactCd",0,g.pactEnabled()&&ProfessionPacts.available(g.job())?ProfessionPacts.COOLDOWN[g.job()]:0);g.pactTime=f(p,"pactTime",0,g.pactEnabled()&&ProfessionPacts.available(g.job())?ProfessionPacts.DURATION[g.job()]:0);g.careerSkillTime=f(p,"careerSkillTime",0,10);g.careerSkillDeathCd=f(p,"careerSkillDeathCd",0,2);g.careerSkillMode=n(p,"careerSkillMode",0,4);
                 g.pactWard=f(p,"pactWard",0,g.pactActive(CareerSystem.MINER)?35:0);
                 if(g.pactTime>g.pactCd+.0001f||g.pactActive(CareerSystem.BOXER)&&g.hero==1||g.mode==ActionGame.Mode.CAMP&&(g.pactCd>0||g.pactTime>0||g.pactWard>0))throw new IllegalArgumentException("职业禁术状态无效");
             }
