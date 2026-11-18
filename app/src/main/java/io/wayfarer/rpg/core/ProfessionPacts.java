@@ -41,9 +41,9 @@ public final class ProfessionPacts {
         "300范围强签命债，造成1.2倍基础伤害。8秒内有效命中标记者按实际伤害的30%吸取生命；生命不高于20%的普通债务人被直接收命。标记者死亡额外兑现12票券，首领30。代价：先付本轮30票券，期间受伤+25%；不扣共享存款。冷却36秒。",
         "400范围点名并打断普通敌人。6秒内有效命中任一标记者，将实际伤害的50%传给其余标记者，并把35%累积为该目标的死讯伤害（上限1000），结束时结算。传播不继续传播，首领不被强制打断。代价：支付12%最大生命，受伤+35%。冷却28秒。"
     };
-    public static final float[] RANGE={0,0,0,0,260,360,220,260,210,130,300,400};
+    public static final float[] RANGE={0,0,0,0,2600,3600,2200,2600,2100,1300,3000,4000};
     public static final float[] COST={0,0,0,0,.12f,.15f,0,.10f,.18f,.12f,0,.12f};
     public static final float[] DURATION={0,0,0,0,6,6,8,6,8,5,8,6};
-    public static final float[] COOLDOWN={0,0,0,0,26,30,36,30,32,24,36,28};
+    public static final float[] COOLDOWN={0,0,0,0,13,15,18,15,16,12,18,14};
     public static boolean available(int job){return job>=CareerSystem.POLICE&&job<=CareerSystem.REPORTER;}
 }
