@@ -96,7 +96,7 @@ public final class ActionGame {
     }
     public int soulKind(){return custom<0?presetSouls[hero]:profile().soul;}
     public int soulArt(){return custom<0?presetArts[hero]:profile().soulArt;}
-    public String skillName(){return SoulSystem.SKILLS[soulKind()][skillStyle()];}
+    public String skillName(){return CareerSystem.SKILL_NAMES[job()];}
     public String soulArtName(){return SoulSystem.ARTS[soulKind()][soulArt()];}
     public boolean bindSoul(int kind,int art){
         if(mode!=Mode.CAMP)return false;SoulSystem.validate(kind,art);
