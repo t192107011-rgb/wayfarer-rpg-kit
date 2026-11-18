@@ -222,7 +222,6 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         box(c,x-32,y-18,64,46,open?0x885AA899:0xFF15262C);if(open){glow(c,x,y,80,0x554DCEAB);text(c,name,x,y+57,14,tint,true);}else for(int i=-2;i<=2;i++)box(c,x+i*12-2,y-18,4,46,0xFF687575);
     }
     private void player(Canvas c){
-        if(game.pactTime>0)ring(c,game.x,game.y-10,39,0xFFD4859D,3);
         if(game.careerWard>0)ring(c,game.x,game.y-10,35,0xFF9CBBC6,2);
         if(game.soulWard>0)ring(c,game.x,game.y-10,31,0xFFEFDC9D,3);
         if(game.soulBuff>0)ring(c,game.x,game.y-10,32,0xFFD994E0,3);
@@ -255,18 +254,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     }
     private void enemy(Canvas c,ActionGame.Enemy e){
         if(e.guard>0){ring(c,e.x,e.y-16,e.radius()+11,0xFF92C3DB,3);text(c,"盾 "+(int)e.guard,e.x,e.y-49,10,0xFF92C3DB,true);}
-        if(e.type>=4&&e.pactMark<=0)text(c,EncounterSystem.NAMES[e.type],e.x,e.y-65,11,0xFFE4C8A4,true);
-        if(e.pactMark>0&&e.hp>0){
-            int job=game.job(),tint=0xFFDA858A;float xx=e.x,yy=e.y;
-            text(c,ProfessionPacts.MARKS[job]+(job==CareerSystem.BOXER?" "+e.pactStacks+"/3":""),xx,yy-(e.type==3?105:65),13,tint,true);
-            if(job==CareerSystem.DOCTOR){line(c,game.x,game.y-15,xx,yy-15,0xFF773C49,3);float t=(visualTime*.9f)%1;circle(c,xx+(game.x-xx)*t,yy-15+(game.y-yy)*t,4,0xFFE39A9E);ring(c,xx,yy,25,tint,2);}
-            else if(job==CareerSystem.MECHANIC){ring(c,xx,yy,33,0xFFB9A18D,4);for(int i=0;i<8;i++){double a=i*Math.PI/4+visualTime*3;line(c,xx+(float)Math.cos(a)*27,yy+(float)Math.sin(a)*27,xx+(float)Math.cos(a)*41,yy+(float)Math.sin(a)*41,0xFFBA887C,5);}}
-            else if(job==CareerSystem.MINER){circle(c,xx,yy,34,0xDD110F19);for(int i=-2;i<=2;i++)line(c,xx+i*12,yy+15,xx+i*8,yy-14,0xFF806B65,5);}
-            else if(job==CareerSystem.POLICE){line(c,xx-28,yy-40,xx+28,yy+5,tint,3);line(c,xx+28,yy-40,xx-28,yy+5,tint,3);}
-            else if(job==CareerSystem.SOLDIER){ring(c,xx,yy-20,30,tint,2);line(c,xx-40,yy-20,xx+40,yy-20,tint,1);line(c,xx,yy-60,xx,yy+20,tint,1);}
-            else if(job==CareerSystem.BOXER){for(int i=0;i<e.pactStacks;i++)line(c,xx-16+i*14,yy-48,xx-23+i*14,yy-38,tint,4);}
-            else {box(c,xx+19,yy-47,21,29,job==CareerSystem.MERCHANT?0xFFB89B65:0xFFCCC0A5);text(c,job==CareerSystem.MERCHANT?"债":"讣",xx+29,yy-27,13,0xFF492B35,true);}
-        }
+        if(e.type>=4)text(c,EncounterSystem.NAMES[e.type],e.x,e.y-65,11,0xFFE4C8A4,true);
         if(e.hex>0){ring(c,e.x,e.y,22,0xFFBA7CD9,2);text(c,"咒",e.x,e.y-52,12,0xFFDAACEE,true);}
         c.save();c.translate(e.x,e.y);float s=e.type==3?2.1f:1;c.scale(s,s);color(0x880B151B);c.drawOval(-19,-2,19,11,p);
         int tint=e.flash>0?0xFFF4E4BD:e.type==0?0xFF936C65:e.type==1?0xFF6F8B91:e.type==2?0xFFA18A60:e.type==4?0xFF877D9F:e.type==5?0xFFB37348:e.type==6?0xFF779B91:0xFF967967;
@@ -299,15 +287,10 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             text(c,"遗物："+game.relicLoadout(),30,game.soulKind()>0?193:122,11,gold,false);
             if(game.relicEcho>0||game.hasRelic(8))text(c,(game.relicEcho>0?"铜铃待发  ":"")+(game.hasRelic(8)?(game.relicRevived?"沙漏已用":"沙漏待命"):""),30,game.soulKind()>0?210:140,11,muted,false);
         }
-        if(game.job()!=0||game.background()!=0){
+        if(game.background()!=0||game.job()>=0){
             float yy=game.soulKind()>0?233:164;
             text(c,game.careerName()+" / "+CareerSystem.BACKGROUNDS[game.background()],30,yy,11,0xFFAACDDC,false);
-            if(game.careerWard>0||game.careerCharge>0)text(c,"职能护盾 "+(int)game.careerWard+(game.careerCharge>0?" · 强化命中就绪":""),30,yy+18,11,0xFFAACDDC,false);
-        }
-        if(game.pactEnabled()){
-            float yy=game.soulKind()>0?274:205;
-            text(c,ProfessionPacts.NAMES[game.job()],30,yy,12,0xFFE4A0B0,false);
-            text(c,game.pactStatus(),30,yy+18,11,0xFFE4A0B0,false);
+            if(game.careerWard>0)text(c,"职能护盾 "+(int)game.careerWard,30,yy+18,11,0xFFAACDDC,false);
         }
         if(pactMessageTime>0&&game.mode==ActionGame.Mode.PLAY){rounded(c,330,168,500,35,6,0xE0251F2A);text(c,pactMessage,580,191,12,0xFFE8B8BF,true);}
         if(soulMessageTime>0)text(c,"魂能不足，需要40点",480,170,17,gold,true);
@@ -323,7 +306,6 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         text(c,"移动",117,519,12,muted,true);
         control(c,850,420,58,"攻击",0,input.attack);control(c,737,456,37,"闪避",game.rollCd,false);control(c,855,298,38,game.followUpWindow>0?"追击":"技能",game.followUpWindow>0?0:game.skillCd,false);
         control(c,648,456,29,"药×"+game.potions,0,false);
-        if(game.pactEnabled()){control(c,648,332,33,"禁术",game.pactCd,false);ring(c,648,332,33,0xFFBC7890,2);}
         if(game.soulKind()>0){control(c,735,332,40,game.soulEnergy<40?"蓄能":"魂技",game.soulCd,false);ring(c,735,332,43,game.soulKind()==1?0xFFE8D493:0xFFBE8FDC,2);text(c,game.soulArtName(),735,389,12,game.soulKind()==1?gold:0xFFCAA9E2,true);}
     }
     private void shade(Canvas c){box(c,0,0,960,540,0xD50C1820);}
@@ -392,7 +374,6 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             else if(ActionGame.len(x-737,y-456)<45)game.dodge(input.mx,input.my);
             else if(ActionGame.len(x-855,y-298)<46)game.skill();
             else if(ActionGame.len(x-648,y-456)<35)game.potion();
-            else if(game.pactEnabled()&&ActionGame.len(x-648,y-332)<39)game.professionPact();
             else if(game.soulKind()>0&&ActionGame.len(x-735,y-332)<47)game.soulSkill();
         }else if(action==MotionEvent.ACTION_MOVE){
             int mi=event.findPointerIndex(movePointer);if(mi>=0)joystick((event.getX(mi)-offsetX)/scale,(event.getY(mi)-offsetY)/scale);
