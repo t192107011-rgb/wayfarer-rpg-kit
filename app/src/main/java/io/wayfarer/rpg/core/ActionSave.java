@@ -76,7 +76,7 @@ public final class ActionSave {
                 g.soulEnergy=f(p,"soulEnergy",0,100);g.soulCd=f(p,"soulCd",0,SoulSystem.COOLDOWNS[g.soulKind()][g.soulArt()]);g.soulWard=f(p,"soulWard",0,30);g.corruption=f(p,"corruption",0,100);g.soulQuiet=f(p,"soulQuiet",0,version>=9?8:3);g.soulBuff=f(p,"soulBuff",0,6);
                 int fields=n(p,"soulFields",0,1);for(int j=0;j<fields;j++){float[] a=array(p,"field"+j,6);int type=integer(a[0],1,2);ActionGame.SoulField f=new ActionGame.SoulField(type,range(a[1],48,1072),range(a[2],48,712),range(a[5],1,300));f.life=range(a[3],0,type==1?5:4);f.tick=range(a[4],0,type==1?1:.5f);
                     if(type!=g.soulKind()||g.soulArt()!=0||f.life<=0)throw new IllegalArgumentException("领域与灵魂配置不符");g.soulFields.add(f);}
-                if(g.soulKind()!=1&&g.soulWard>0||g.soulKind()!=2&&(g.corruption>0||g.soulQuiet>0||g.soulBuff>0)||g.soulBuff>0&&g.soulArt()!=1||g.soulKind()==0&&g.soulEnergy>0)throw new IllegalArgumentException("灵魂状态无效");
+                if(g.soulKind()!=1&&g.soulWard>0||g.soulKind()!=2&&(g.corruption>0||g.soulQuiet>0||g.soulBuff>0)||g.soulKind()==0&&g.soulEnergy>0)throw new IllegalArgumentException("灵魂状态无效");
                 if(g.mode==ActionGame.Mode.CAMP&&(g.soulEnergy>0||g.soulCd>0||g.soulWard>0||g.corruption>0||g.soulQuiet>0||g.soulBuff>0||fields>0))throw new IllegalArgumentException("营地灵魂状态无效");
             }
             // Older saves receive starter collection but empty loadouts: no retroactive combat bonuses.
@@ -107,6 +107,7 @@ public final class ActionSave {
             if(version>=11){g.careerSkillTime=f(p,"careerSkillTime",0,10);g.careerSkillDeathCd=f(p,"careerSkillDeathCd",0,2);g.careerSkillMode=n(p,"careerSkillMode",0,4);}else{g.careerSkillTime=0;g.careerSkillDeathCd=0;g.careerSkillMode=0;g.skillCd=0;g.followUpWindow=0;}
             if(version>=9){
                 g.followUpWindow=f(p,"followUpWindow",0,version>=10?g.followUpDuration():2);g.ruptureTime=f(p,"ruptureTime",0,6);g.ruptureTick=f(p,"ruptureTick",0,1.5f);g.ruptureLatched=bool(p,"ruptureLatched");
+                if(g.soulBuff>0&&g.soulArt()!=1&&g.ruptureTime<=0)throw new IllegalArgumentException("灵魂强化来源无效");
                 if(g.soulKind()!=2&&(g.ruptureTime>0||g.ruptureTick>0||g.ruptureLatched)||g.ruptureTime>0&&!g.ruptureLatched||g.ruptureTime==0&&g.ruptureTick>0)throw new IllegalArgumentException("侵蚀失控状态无效");
                 g.storyUnlocked=n(p,"storyUnlocked",0,31);for(int j=0;j<5;j++){g.storyChoices[j]=n(p,"storyChoice"+j,0,2);if(g.storyChoices[j]>0&&(g.storyUnlocked&(1<<j))==0)throw new IllegalArgumentException("主线选择未解锁");}
                 for(int j=0;j<6;j++){g.characterUnlocked[j]=n(p,"characterUnlocked"+j,0,7);int recordedJob=n(p,"characterJob"+j,-1,version>=11?3:13);g.characterJobs[j]=recordedJob<0?-1:version>=11?recordedJob:CareerSystem.HUNTER;
