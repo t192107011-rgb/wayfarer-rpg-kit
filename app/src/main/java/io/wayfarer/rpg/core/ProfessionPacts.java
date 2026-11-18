@@ -45,5 +45,5 @@ public final class ProfessionPacts {
     public static final float[] COST={0,0,0,0,.12f,.15f,0,.10f,.18f,.12f,0,.12f};
     public static final float[] DURATION={0,0,0,0,6,6,8,6,8,5,8,6};
     public static final float[] COOLDOWN={0,0,0,0,13,15,18,15,16,12,18,14};
-    public static boolean available(int job){return job>=CareerSystem.POLICE&&job<=CareerSystem.REPORTER;}
+    public static boolean available(int job){return job==CareerSystem.REPORTER;}
 }
