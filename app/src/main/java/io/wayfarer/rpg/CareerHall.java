@@ -26,7 +26,7 @@ public final class CareerHall {
         text(a,right,"职业主动技能由职业决定；背景经历与职业独立组合。原有角色、武器、灵魂、出身与特质均保留。旧职业存档已统一重置为猎人。",13);
         TextView level=text(a,right,"",14),error=text(a,right,"",13);
         AlertDialog dialog=new AlertDialog.Builder(a).setTitle(g.heroName()+" · 职业").setView(row)
-            .setPositiveButton("确认更换",(d,w)->{if(g.chooseCareer(draft[0],draft[1],draft[2])){a.save();a.world.invalidate();}})
+            .setPositiveButton("确认更换",(d,w)->{draft[0]=job.getSelectedItemPosition();draft[1]=Math.min(spec.getSelectedItemPosition(),CareerSystem.SPECS[draft[0]].length-1);draft[2]=background.getSelectedItemPosition();if(g.chooseCareer(draft[0],draft[1],draft[2])){a.save();a.world.invalidate();}})
             .setNegativeButton("取消",null).create();
         Runnable refresh=()->{
             base.setText(CareerSystem.CLASS_DETAILS[draft[0]]);
