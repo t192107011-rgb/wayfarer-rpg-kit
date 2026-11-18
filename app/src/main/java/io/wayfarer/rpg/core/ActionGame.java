@@ -197,7 +197,7 @@ public final class ActionGame {
     public float baseDamage(){return (hero==0?22:hero==1?18:15)+power*2+damageBonus+(heroLevel()-1)+rank(0)*2+(custom>=0&&profile().origin==2?2:0)+(job()==SOLDIER?3:0)+characterTrait(2);}
     public float damage(){return baseDamage()*(job()==ASSASSIN&&careerSkillTime>0?1.5f:1)*(rank(3)>0&&hp<maxHp()*.4f?1.55f:1)*(soulBuff>0?1.25f:1)*(soulKind()==2?(ruptureTime>0?1.4f:corruption>=75?1.25f:corruption>=50?1.15f:1):1);}
     public float speed(){return (hero==2?240:hero==1?215:205)*(1+speedBonus*.08f+rank(4)*.03f)*(custom<0?1:profile().origin==0?.95f:profile().origin==1?1.07f:1)*(job()==2?1.06f:job()==REPORTER?1.03f:1)*(isSpec(POLICE,1)||isSpec(MERCHANT,1)?1.05f:1)*(background()==2?1.03f:1)*(background()==3&&hp<maxHp()*.35f?1.12f:1)*(job()==ASSASSIN&&careerSkillTime>0?1.25f:1)*(pactActive(POLICE)?.65f:pactActive(MINER)?.7f:1);}
-    public float attackPeriod(){return (hero==0?.48f:hero==1?.4f:.29f)*(custom>=0&&profile().trait==0?1.06f:1)*(soulBuff>0?.8f:1)*(job()==ASSASSIN&&careerSkillTime>0?.78f:1)*(job()==BOXER&&hero!=1?.94f:1)*(isSpec(SOLDIER,2)&&hero==1?.9f:1)*(pactActive(SOLDIER)?.55f:pactActive(MECHANIC)?.85f:pactActive(BOXER)&&hero!=1?.7f:1);}
+    public float attackPeriod(){return (hero==0?.48f:hero==1?.4f:.10f)*(custom>=0&&profile().trait==0?1.06f:1)*(soulBuff>0?.8f:1)*(job()==ASSASSIN&&careerSkillTime>0?.78f:1)*(job()==BOXER&&hero!=1?.94f:1)*(isSpec(SOLDIER,2)&&hero==1?.9f:1)*(pactActive(SOLDIER)?.55f:pactActive(MECHANIC)?.85f:pactActive(BOXER)&&hero!=1?.7f:1);}
     public int upgradeCost(int rank){int base=30+rank*25;return isSpec(MERCHANT,2)?(base*85+99)/100:base;}
     public int random(int bound){rngState^=rngState<<13;rngState^=rngState>>>7;rngState^=rngState<<17;return (int)Long.remainderUnsigned(rngState,bound);}
     public void signal(String kind,float x,float y,int amount){if(signals.size()<64)signals.add(new Signal(kind,x,y,amount));}
@@ -468,6 +468,7 @@ public final class ActionGame {
                 for(Enemy e:enemies)if(e.hp>0&&!swingHits.contains(e.id)&&segmentDistance(e.x,e.y,x-faceX*35,y-faceY*35,x+faceX*35,y+faceY*35)<e.radius()+24){swingHits.add(e.id);hit(e,damage()*swingBoost);}
             }else if(hero!=1&&attackAnim<.18f&&attackAnim>.04f){
                 float range=meleeReach(),cos=hero==0?-.05f:.1f;
+                if(hero==0){final float r=meleeReach();final float c=.0f;shots.removeIf(p->{if(p.friendly)return false;float dx=p.x-x,dy=p.y-y,d=len(dx,dy);return d<r&&(d<.01f||(dx*faceX+dy*faceY)/d>c);});}
                 for(Enemy e:enemies){float dx=e.x-x,dy=e.y-y,d=len(dx,dy);
                     if(e.hp>0&&!swingHits.contains(e.id)&&d<range+e.radius()&&(d<.01f||(dx*faceX+dy*faceY)/d>cos)&&lineClear(x,y,e.x,e.y)){
                         swingHits.add(e.id);hit(e,damage()*swingBoost);hitStop=.025f;
@@ -475,6 +476,7 @@ public final class ActionGame {
                 }
             }
         }
+        if(careerSkillMode==3&&careerSkillTime>0){for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<330){pull(e,x,y,45);hit(e,damage()*.05f*dt,false);}}
         for(Enemy e:enemies)if(e.hp>0)updateEnemy(e,dt);
         if(mode!=Mode.PLAY)return;
         updateHazards(dt);if(mode!=Mode.PLAY)return;updateShots(dt);if(mode!=Mode.PLAY)return;
