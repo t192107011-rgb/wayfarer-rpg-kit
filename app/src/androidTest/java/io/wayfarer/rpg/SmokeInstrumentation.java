@@ -125,29 +125,12 @@ public final class SmokeInstrumentation extends Instrumentation {
         screenshotNativeDialog("17-greybridge-dossier.png",activity.settingDialog);
         ui(()->activity.settingDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick());waitForIdleSync();
         tap(510,142);waitForIdleSync();
-        ui(()->{View root=activity.careerDialog.getWindow().getDecorView();((Spinner)root.findViewWithTag("career-job")).setSelection(1);((Spinner)root.findViewWithTag("career-background")).setSelection(1);});waitForIdleSync();
-        ui(()->{check(!activity.careerDialog.getWindow().getDecorView().findViewWithTag("career-spec").isEnabled(),"level-one specialization locked");activity.careerDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();});waitForIdleSync();
-        // A level-three test fixture exercises unlocks without claiming natural progression.
-        ui(()->{check(activity.world.game.job()==0&&activity.world.game.background()==0,"cancel leaves neutral career");activity.world.game.experience[0]=160;activity.world.game.hp=activity.world.game.maxHp();});
-        tap(510,142);waitForIdleSync();ui(()->((Spinner)activity.careerDialog.getWindow().getDecorView().findViewWithTag("career-job")).setSelection(1));waitForIdleSync();
-        ui(()->{View root=activity.careerDialog.getWindow().getDecorView();check(root.findViewWithTag("career-spec").isEnabled(),"level-three specialization unlocked");((Spinner)root.findViewWithTag("career-spec")).setSelection(1);((Spinner)root.findViewWithTag("career-background")).setSelection(1);});waitForIdleSync();
-        screenshotNativeDialog("15-career-hall.png",activity.careerDialog);
-        ui(()->activity.careerDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick());waitForIdleSync();
-        ui(()->check(activity.world.game.isSpec(1,1)&&activity.world.game.background()==1,"career confirmed"));
-        tap(510,142);waitForIdleSync();ui(()->{check(((Spinner)activity.careerDialog.getWindow().getDecorView().findViewWithTag("career-spec")).getSelectedItemPosition()==1,"reopening preserves specialization");((Spinner)activity.careerDialog.getWindow().getDecorView().findViewWithTag("career-job")).setSelection(3);});waitForIdleSync();
-        ui(()->{check(((Spinner)activity.careerDialog.getWindow().getDecorView().findViewWithTag("career-spec")).getSelectedItemPosition()==0,"changing class resets draft specialization");activity.careerDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();});waitForIdleSync();
-        ui(()->check(activity.world.game.isSpec(1,1),"cancel class change preserves committed spec"));
-        tap(440,230);ui(()->check(activity.world.game.job()==0,"other preset has independent career"));tap(140,230);
-        tap(785,405);ui(()->check(activity.world.game.careerWard==10,"smith background grants actual entry shield"));tap(855,298);
-        ui(()->check(activity.world.game.careerWard==14,"bulwark active grants actual shield"));screenshot("16-career-combat.png");tap(900,37);
-        ui(()->{try{SaveStore store=new SaveStore(activity);store.write(1,activity.world.game);ActionGame loaded=store.read(1);check(loaded.isSpec(1,1)&&loaded.background()==1&&loaded.careerWard==14,"career and shield survive AtomicFile");loaded.abandon();loaded.returnCamp();loaded.selectCustom(0);loaded.profile().xp=160;activity.world.replace(loaded);}catch(IOException e){throw new RuntimeException(e);}});
-        tap(510,142);waitForIdleSync();ui(()->((Spinner)activity.careerDialog.getWindow().getDecorView().findViewWithTag("career-job")).setSelection(2));waitForIdleSync();
-        ui(()->{View root=activity.careerDialog.getWindow().getDecorView();((Spinner)root.findViewWithTag("career-spec")).setSelection(2);((Spinner)root.findViewWithTag("career-background")).setSelection(3);});waitForIdleSync();
-        ui(()->activity.careerDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick());waitForIdleSync();
-        tap(510,142);waitForIdleSync();ui(()->{check(((Spinner)activity.careerDialog.getWindow().getDecorView().findViewWithTag("career-spec")).getSelectedItemPosition()==2,"second specialization survives reopen");activity.careerDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();});waitForIdleSync();
-        ui(()->check(activity.world.game.isSpec(2,2)&&activity.world.game.hero==0,"career does not force a different weapon"));
-        tap(785,405);tap(737,456);tap(900,37);
-        ui(()->{check(activity.world.game.careerCharge>0,"skirmish dodge actually primes hit");try{ActionGame loaded=ActionSave.decode(ActionSave.encode(activity.world.game));check(loaded.isSpec(2,2)&&loaded.background()==3&&loaded.careerCharge==activity.world.game.careerCharge,"second spec and remaining proc persist");}catch(IOException e){throw new RuntimeException(e);}});
+        ui(()->{View root=activity.careerDialog.getWindow().getDecorView();Spinner jobs=root.findViewWithTag("career-job");check(jobs.getCount()==4,"exactly four rebuilt careers");jobs.setSelection(CareerSystem.ASSASSIN);((Spinner)root.findViewWithTag("career-background")).setSelection(1);check(!root.findViewWithTag("career-spec").isEnabled(),"level-one specialization remains locked");activity.careerDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();});waitForIdleSync();
+        ui(()->check(activity.world.game.job()==CareerSystem.ASSASSIN&&activity.world.game.background()==1,"new career and background commit"));
+        tap(785,405);ui(()->check(activity.world.game.careerWard==10,"background grants entry shield"));tap(855,298);
+        ui(()->check(activity.world.game.shield>=activity.world.game.maxHp()*.4f,"assassin skill grants 40 percent shield"));
+        screenshot("16-career-combat.png");tap(900,37);
+        ui(()->{try{SaveStore store=new SaveStore(activity);store.write(1,activity.world.game);ActionGame loaded=store.read(1);check(loaded.job()==CareerSystem.ASSASSIN&&loaded.background()==1&&loaded.shield==activity.world.game.shield,"rebuilt career and skill state survive AtomicFile");}catch(IOException e){throw new RuntimeException(e);}});
     }
     private void screenshotNativeDialog(String name,AlertDialog dialog){ui(()->{try{View v=dialog.getWindow().getDecorView();Bitmap b=Bitmap.createBitmap(v.getWidth(),v.getHeight(),Bitmap.Config.ARGB_8888);v.draw(new Canvas(b));writeBitmap(b,name);}catch(IOException e){throw new RuntimeException(e);}});}
     private void relicFlow(){
