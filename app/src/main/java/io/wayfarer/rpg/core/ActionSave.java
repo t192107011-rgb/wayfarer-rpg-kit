@@ -47,7 +47,7 @@ public final class ActionSave {
         if(data==null||data.length==0||data.length>131072)throw new IOException("存档大小不正确");
         try{
             Properties p=new Properties();p.load(new ByteArrayInputStream(data));
-            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,10);
+            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,11);
             ActionGame g=new ActionGame();g.mode=ActionGame.Mode.valueOf(required(p,"mode"));g.rngState=Long.parseLong(required(p,"rng"));if(g.rngState==0)throw new IllegalArgumentException("随机状态无效");
             g.won=bool(p,"won");g.roomCleared=bool(p,"cleared");g.hero=n(p,"hero",0,2);g.bank=n(p,"bank",0,999999);g.power=n(p,"power",0,10);g.vitality=n(p,"vitality",0,10);g.runs=n(p,"runs",0,999999);g.wins=n(p,"wins",0,g.runs);
             g.room=n(p,"room",0,5);g.loot=n(p,"loot",0,99999);g.kills=n(p,"kills",0,99999);g.potions=n(p,"potions",0,version>=10?ActionGame.MAX_POTIONS:2);g.damageBonus=n(p,"damageBonus",0,version>=10?40:16);g.healthBonus=n(p,"healthBonus",0,version>=10?200:80);g.speedBonus=n(p,"speedBonus",0,version>=10?6:4);g.combo=n(p,"combo",0,2);g.nextId=n(p,"nextId",1,Integer.MAX_VALUE-1);
