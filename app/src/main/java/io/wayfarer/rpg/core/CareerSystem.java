@@ -46,7 +46,7 @@ public final class CareerSystem {
         "每名敌人的票券掉落额外 +2，首领也生效。仅增加敌人掉落，不增加门、圣遗物补偿或结算奖励。"
     };
     public static String invalid(int job,int spec,int background,int xp){
-        if(job<0||job>=CLASSES.length||selectableIndex(job)==0&&job!=HUNTER||spec<0||spec>=SPECS[job].length||background<0||background>=BACKGROUNDS.length)return "职业、专精或背景编号无效";
+        if(job<0||job>=CLASSES.length||spec<0||spec>=SPECS[job].length||background<0||background>=BACKGROUNDS.length)return "职业、专精或背景编号无效";
         if(spec>0&&xp<SPECIALIZATION_XP)return "专精需要角色 Lv.3（160经验）";
         return "";
     }
