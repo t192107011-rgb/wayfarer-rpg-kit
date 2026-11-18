@@ -31,7 +31,6 @@ Android Studio 可以直接打开仓库。主包输出为 `app/build/outputs/apk
 | 战斗、移动、流程、结算 | `core/ActionGame.java` | 全部实际游戏规则，保持 Android 无关 |
 | 角色配置与技能树 | `core/BuildSystem.java`、`CharacterWorkshop.java` | 定义、前置校验、外观与配置草稿 |
 | 职业、专精、背景 | `core/CareerSystem.java`、`CareerHall.java` | 4种新职业、专精、6背景；职业主动技能独立于魂技 |
-| 职业禁术 | `core/ProfessionPacts.java` | 8种可选越界能力的文案、代价和冷却；效果由核心执行 |
 | 灵魂 | `core/SoulSystem.java`、`SoulAltar.java` | 光辉/禁忌变体与魂技选择 |
 | 圣遗物 | `core/RelicSystem.java`、`RelicCabinet.java` | 收藏、双槽装配与条目定义 |
 | 敌群与追击说明 | `core/EncounterSystem.java` | 稳定敌人ID、五区组合、应对说明、三种追击文案 |
@@ -180,7 +179,6 @@ flowchart TD
 |---|---|---|---|
 | 主线、人物选择、收藏、经验 | 保留 | 保留 | 不重发奖励 |
 | 侵蚀、消退等待、失控相位/锁、魂技冷却 | 保留 | 重置 | 按剩余值恢复 |
-| 职业禁术持续时间和冷却 | 保留；旧敌人的标记随旧房间实体移除 | 重置 | 不重复支付或抽取 |
 | 追击窗口、敌人/弹丸、危险区 | 清理/重新生成；普通技能冷却也重置 | 清理/重置 | 恢复当前战斗状态 |
 | 灵魂领域、辉盾、血契 | 清理 | 清理 | 当前房间剩余状态恢复 |
 | 遗物本轮救命次数 | 保留 | 重置 | 不补充已用次数 |
@@ -231,7 +229,6 @@ flowchart TD
 - [0.8.0战斗与剧情规则](BLACK_BELL.md)
 - [角色配置与天赋](CHARACTER_BUILDS.md)
 - [职业、专精与背景](CAREERS.md)
-- [职业禁术](PROFESSION_PACTS.md)
 - [灵魂机制](SOULS.md)
 - [圣遗物](RELICS.md)
 - [1887灰桥设定](SETTING.md)
