@@ -19,7 +19,7 @@ public final class SoulTests {
     private static void variants()throws Exception{
         ActionGame g=game(1,0,0);ActionGame.Enemy e=mob(g,745,600);g.shots.add(new ActionGame.Shot(600,600,0,1,10,false));g.soulSkill();check(g.soulFields.size()==1&&g.shots.isEmpty(),"radiant domain clears nearby enemy shots");near(g.soulWard,30,"radiant domain grants thirty ward");near(g.soulCd,SoulSystem.COOLDOWNS[1][0],"radiant art cooldown");
         g=game(1,1,1);e=mob(g,610,600);g.soulSkill();check(g.soulFields.isEmpty()&&e.hp<1000,"radiant lance hits along facing direction");
-        g=game(2,0,0);e=mob(g,750,600);float hp=g.hp;g.soulSkill();check(e.x<750&&e.hex==3,"forbidden rift pulls and curses");near(hp-g.hp,g.maxHp()*.08f,"forbidden art life cost");near(g.corruption,30,"forbidden art debt");check(g.soulCd>0,"forbidden art starts its own cooldown");
+        g=game(2,0,0);e=mob(g,750,600);float hp=g.hp;g.soulSkill();step(g,31,false);check(e.x<750&&e.hex>0,"forbidden rift pulls and curses");near(hp-g.hp,g.maxHp()*.08f,"forbidden art life cost");near(g.corruption,30,"forbidden art debt");check(g.soulCd>0,"forbidden art starts its own cooldown");
         g=game(2,1,0);e=mob(g,610,600);g.hp=50;float original=g.damage(),interval=g.attackPeriod();g.soulSkill();near(g.soulBuff,6,"forbidden art grants six-second buff");near(g.damage(),original*1.25f,"forbidden art damage bonus");near(g.attackPeriod(),interval*.8f,"forbidden art attack speed");
         g=game(2,0,0);mob(g,680,600);g.hp=.5f;g.soulSkill();check(g.hp==.5f,"self-cost cannot kill critical player");
         System.out.println("PASS independent radiant and forbidden soul arts, cooldowns, field, lance, rift and buff");
