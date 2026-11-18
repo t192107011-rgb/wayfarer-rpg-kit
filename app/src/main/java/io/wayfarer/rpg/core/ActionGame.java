@@ -286,10 +286,12 @@ public final class ActionGame {
                 signal("careerSkill",x,y,4);
                 notice="侦探：引力场";
             }else{
-                careerSkillMode=4;careerSkillTime=5f;
+                careerSkillMode=0;
+                careerSkillTime=5f;
                 int alive=0;for(Enemy e:enemies)if(e.hp>0)alive++;
                 float burst=alive==1?damage()*2f:damage();
                 for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<360)hit(e,burst,false);
+                careerSkillMode=4;
                 signal("careerSkill",x,y,5);
                 notice="记者：群体曝光";
             }
