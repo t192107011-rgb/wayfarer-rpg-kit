@@ -15,7 +15,7 @@ public final class CareerHall {
     public static AlertDialog show(MainActivity a){
         ActionGame g=a.world.game;int[] draft=g.careers[g.buildId()].clone();
         LinearLayout row=new LinearLayout(a);row.setOrientation(LinearLayout.HORIZONTAL);row.setPadding(dp(a,18),0,dp(a,18),0);
-        LinearLayout left=new LinearLayout(a),right=new LinearLayout(a);left.setOrientation(1);right.setOrientation(1);right.setPadding(dp(a,18),0,0,0);
+        LinearLayout left=new LinearLayout(a),right=new LinearLayout(a);left.setOrientation(LinearLayout.VERTICAL);right.setOrientation(LinearLayout.VERTICAL);right.setPadding(dp(a,18),0,0,0);
         ScrollView ls=new ScrollView(a),rs=new ScrollView(a);ls.addView(left);rs.addView(right);row.addView(ls,new LinearLayout.LayoutParams(0,-1,1));row.addView(rs,new LinearLayout.LayoutParams(0,-1,1));
         Spinner job=picker(a,left,"职业 · 仅四种","career-job",CareerSystem.CLASSES,draft[0]);
         TextView base=text(a,left,"",14);
