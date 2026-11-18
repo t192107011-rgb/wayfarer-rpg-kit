@@ -606,6 +606,15 @@ public final class ActionGame {
             if(job()==REPORTER){e.pactDebt=Math.min(1000,e.pactDebt+dealt*.35f);for(Enemy other:enemies)if(other!=e&&other.hp>0&&marked(other)){hit(other,dealt*.5f,false);signal("obituary",other.x,other.y,0);}}
         }
         if(e.hp<=0)pactDeath(e);
+        if(echoEligible&&careerSkillMode==4&&careerSkillTime>0&&!reporterShareHit){
+            int alive=0;for(Enemy q:enemies)if(q.hp>0)alive++;
+            if(alive==1){/* single target receives 200% of the original attack */ }
+            else{
+                reporterShareHit=true;
+                for(Enemy q:enemies)if(q.hp>0&&q!=e)hit(q,dealt*.70f,false,false);
+                reporterShareHit=false;
+            }
+        }
         if(charge&&dealt>0){gainSoul(Math.min(4,dealt*.08f));if(soulBuff>0)heal(Math.min(maxHp()*.015f,dealt*.08f));}
     }
     private void hurt(float value){
