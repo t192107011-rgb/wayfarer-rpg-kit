@@ -13,7 +13,7 @@ public final class CareerHall {
     private static ArrayAdapter<String> adapter(MainActivity a,String[] names){ArrayAdapter<String> d=new ArrayAdapter<>(a,android.R.layout.simple_spinner_item,names);d.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);return d;}
     private static Spinner picker(MainActivity a,LinearLayout parent,String label,String tag,String[] names,int chosen){text(a,parent,label,14);Spinner s=new Spinner(a);s.setTag(tag);s.setContentDescription(label);s.setAdapter(adapter(a,names));s.setSelection(chosen);parent.addView(s,new LinearLayout.LayoutParams(-1,dp(a,48)));return s;}
     public static AlertDialog show(MainActivity a){
-        ActionGame g=a.world.game;int[] draft=g.careers[g.buildId()].clone();boolean[] pact={g.pactEnabled()};
+        ActionGame g=a.world.game;int[] draft=g.careers[g.buildId()].clone();if(CareerSystem.selectableIndex(draft[0])==0&&draft[0]!=CareerSystem.HUNTER){draft[0]=CareerSystem.HUNTER;draft[1]=0;}boolean[] pact={g.pactEnabled()&&draft[0]==g.job()};
         LinearLayout row=new LinearLayout(a);row.setOrientation(LinearLayout.HORIZONTAL);row.setPadding(dp(a,18),0,dp(a,18),0);
         LinearLayout left=new LinearLayout(a),right=new LinearLayout(a);left.setOrientation(LinearLayout.VERTICAL);right.setOrientation(LinearLayout.VERTICAL);right.setPadding(dp(a,18),0,0,0);
         ScrollView ls=new ScrollView(a),rs=new ScrollView(a);ls.addView(left);rs.addView(right);ls.setScrollbarFadingEnabled(false);rs.setScrollbarFadingEnabled(false);row.addView(ls,new LinearLayout.LayoutParams(0,-1,1));row.addView(rs,new LinearLayout.LayoutParams(0,-1,1));
