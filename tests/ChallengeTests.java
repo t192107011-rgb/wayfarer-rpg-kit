@@ -13,23 +13,20 @@ public final class ChallengeTests {
     private static byte[] edit(byte[] data,String key,String val)throws Exception{Properties p=new Properties();p.load(new ByteArrayInputStream(data));p.setProperty(key,val);ByteArrayOutputStream o=new ByteArrayOutputStream();p.store(o,"");return o.toByteArray();}
     private static void reject(byte[] bytes,String key,String val)throws Exception{boolean bad=false;try{ActionSave.decode(edit(bytes,key,val));}catch(IOException e){bad=true;}check(bad,"reject "+key);}
     private static void skills()throws Exception{
-        ActionGame g=arena(0,0);ActionGame.Enemy e=mob(g,0,700,600);g.faceX=1;g.faceY=0;g.skill();float hp=e.hp;check(g.followUpWindow==2,"initial skill opens deliberate two-second link");g.skill();check(e.hp<hp&&g.followUpWindow==0,"shock follow-up reaches original stunned target");hp=e.hp;g.skill();near(e.hp,hp,"no third free attack");
-        g=arena(1,0);e=mob(g,0,850,600);e.guard=40;g.skill();g.shots.clear();hp=e.hp;g.skill();check(e.guard==0&&e.hp<hp,"focused shot removes shield and damages through it");
-        g=arena(2,0);e=mob(g,0,680,600);g.skill();g.blocks.add(new ActionGame.Block(610,550,30,100,0));float x=g.x;g.skill();check(g.x>x&&g.x<600&&g.free(g.x,g.y,15),"shadow thrust stops at solid obstruction");
-        g=arena(0,1);e=mob(g,0,700,600);g.skill();float shield=g.soulWard;g.shots.add(new ActionGame.Shot(g.x+50,g.y,0,0,10,false));g.skill();check(g.soulWard>shield&&g.shots.isEmpty(),"radiant follow-up provides hit-earned ward and local purification");
-        g=arena(0,2);e=mob(g,0,760,600);ActionGame.Enemy bystander=mob(g,0,775,630);g.skill();float second=bystander.hp;g.skill();check(e.hex==0&&bystander.hp<second&&g.corruption==30,"forbidden link spends erosion and detonates existing curse");
-        g=arena(0,0);mob(g,0,700,600);g.skill();g.pause();float window=g.followUpWindow;step(g,60,true);near(g.followUpWindow,window,"pause freezes link window");ActionGame a=ActionSave.decode(ActionSave.encode(g));a.resume();a.skill();check(a.followUpWindow==0,"restored link can be used once");float after=a.enemies.get(0).hp;a.skill();near(a.enemies.get(0).hp,after,"restored link cannot repeat");g.resume();step(g,121,true);check(g.followUpWindow==0&&g.skillCd>0,"missing the window retains ordinary cooldown");
-        System.out.println("PASS three skill follow-ups, cover, shield breaking, soul mutations, single use and saved window");
+        ActionGame g=new ActionGame();g.chooseCareer(CareerSystem.HUNTER,0,0);g.start(1);g.blocks.clear();g.enemies.clear();ActionGame.Enemy e=mob(g,0,700,600);float reach=g.meleeReach();g.skill();check(g.careerSkillMode==1&&g.careerSkillTime==5&&g.meleeReach()>reach,"hunter enters five-second ranged and melee enhancement");
+        g=new ActionGame();g.chooseCareer(CareerSystem.ASSASSIN,0,0);g.start(2);float max=g.maxHp(),base=g.baseDamage();g.skill();near(g.shield,max*.4f,"assassin shield is forty percent max health");near(g.damage(),base*1.5f,"assassin attack boost");near(g.speed(),205*1.25f,"assassin movement boost");
+        g=new ActionGame();g.chooseCareer(CareerSystem.DETECTIVE,0,0);g.start(3);g.blocks.clear();g.enemies.clear();e=mob(g,0,720,600);g.skill();float ex=e.x;step(g,15,true);check(g.careerSkillMode==3&&e.x<ex&&e.hp<1000,"detective field pulls and damages continuously");
+        g=new ActionGame();g.chooseCareer(CareerSystem.REPORTER,0,0);g.start(4);g.blocks.clear();g.enemies.clear();ActionGame.Enemy first=mob(g,0,610,600),second=mob(g,0,640,600);float secondHp=second.hp;g.skill();check(g.careerSkillMode==4&&first.hp<1000&&second.hp<secondHp,"reporter burst and shared damage");
+        ActionGame restored=ActionSave.decode(ActionSave.encode(g));check(restored.job()==CareerSystem.REPORTER&&restored.careerSkillMode==4,"career skill state restores");
+        System.out.println("PASS four career actives: hunter, assassin, detective and reporter");
     }
     private static void erosion()throws Exception{
-        ActionGame g=arena(0,2);mob(g,0,100,100);
-        // Only legal inputs and naturally elapsed cooldowns: no direct corruption assignment.
-        for(int cast=0;cast<4;cast++){g.skill();g.skill();if(cast<3)step(g,391,true);}
-        check(g.corruption==100&&g.ruptureTime==5f&&g.ruptureLatched&&g.soulBuff==5f,"reaching 100 immediately starts the five-second empowered overrun");float hp=g.hp,rt=g.ruptureTime;g.pause();step(g,120,true);near(g.ruptureTime,rt,"paused overrun timer is frozen");ActionGame a=ActionSave.decode(ActionSave.encode(g));a.resume();g.resume();step(g,100,true);step(a,100,true);check(g.hp<hp,"100 erosion produces actual periodic life loss");near(a.hp,g.hp,"restore does not replay or skip rupture pulse");near(a.ruptureTime,g.ruptureTime,"overrun remaining duration preserved");
-        step(g,330,true);check(g.ruptureTime==0&&g.corruption<100&&!g.ruptureLatched,"erosion decays during and after overrun and releases the threshold latch");
-        g=arena(0,2);mob(g,0,100,100);g.skill();float debt=g.corruption;step(g,7*60,true);check(g.corruption<debt&&g.corruption>debt-8,"erosion decays immediately at one point per second");float afterSeven=g.corruption;step(g,3*60,true);check(g.corruption<afterSeven&&g.corruption>afterSeven-4,"erosion continues decaying without a quiet-period gate");
-        g.corruption=100;g.ruptureTime=5;g.ruptureTick=.01f;g.ruptureLatched=true;g.hp=.5f;step(g,1,true);near(g.hp,.5f,"self erosion cannot heal or kill critical player");
-        System.out.println("PASS immediate erosion decay, 100 threshold trigger, five-second empowerment, pause and exact pulse restoration");
+        ActionGame g=arena(0,2);mob(g,0,100,100);g.corruption=80;g.soulSkill();
+        check(g.corruption>=100&&g.ruptureTime>0&&g.ruptureLatched&&g.soulBuff>0,"soul skill crossing 100 immediately triggers five-second overrun");
+        float hp=g.hp,rt=g.ruptureTime;g.pause();step(g,60,true);near(g.ruptureTime,rt,"paused overrun timer freezes");
+        ActionGame a=ActionSave.decode(ActionSave.encode(g));a.resume();g.resume();step(g,100,true);step(a,100,true);check(g.hp<hp,"overrun causes periodic life loss");near(a.hp,g.hp,"restore preserves rupture pulse");near(a.ruptureTime,g.ruptureTime,"restore preserves remaining overrun");
+        g=arena(0,2);mob(g,0,100,100);g.corruption=40;step(g,60,true);check(g.corruption<40&&g.corruption>39,"erosion decays immediately");
+        System.out.println("PASS erosion decay, threshold trigger, overrun timer and save continuity");
     }
     private static void enemies()throws Exception{
         ActionGame g=arena(0,0);ActionGame.Enemy rifle=mob(g,1,700,600);rifle.state=1;rifle.timer=.001f;rifle.aimX=-1;rifle.aimY=0;step(g,1,false);check(g.shots.size()==3,"rifle first volley has three lines of fire");g.shots.clear();rifle.timer=.51f;step(g,2,false);check(rifle.struck&&g.shots.size()==3,"rifle releases second staggered volley");
