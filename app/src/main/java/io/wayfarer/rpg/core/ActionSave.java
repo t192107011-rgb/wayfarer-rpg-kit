@@ -7,16 +7,15 @@ import java.util.*;
 public final class ActionSave {
     private ActionSave(){}
     public static byte[] encode(ActionGame g) throws IOException {
-        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",10);
+        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",11);
         p.setProperty("endless",Boolean.toString(g.endless));put(p,"endlessDepth",g.endlessDepth);put(p,"bestDepth",g.bestDepth);put(p,"threat",g.threat);put(p,"pressure",g.pressure);put(p,"encounterHpFloor",g.encounterHpFloor);put(p,"encounterDamageFloor",g.encounterDamageFloor);put(p,"roomDamage",g.roomDamage);put(p,"roomElapsed",g.roomElapsed);
         p.setProperty("mode",g.mode.name());p.setProperty("rng",Long.toString(g.rngState));p.setProperty("won",Boolean.toString(g.won));p.setProperty("cleared",Boolean.toString(g.roomCleared));
         String[] ik={"hero","bank","power","vitality","runs","wins","room","loot","kills","potions","damageBonus","healthBonus","speedBonus","combo","nextId"};
         int[] iv={g.hero,g.bank,g.power,g.vitality,g.runs,g.wins,g.room,g.loot,g.kills,g.potions,g.damageBonus,g.healthBonus,g.speedBonus,g.combo,g.nextId};
         for(int i=0;i<ik.length;i++)put(p,ik[i],iv[i]);for(int i=0;i<3;i++)put(p,"xp"+i,g.experience[i]);
         for(int b=0;b<6;b++)for(int slot=0;slot<3;slot++)put(p,"career"+b+"."+slot,g.careers[b][slot]);
-        for(int b=0;b<6;b++)p.setProperty("careerPact"+b,Boolean.toString(g.careerPacts[b]));
-        put(p,"pactCd",g.pactCd);put(p,"pactTime",g.pactTime);put(p,"pactWard",g.pactWard);put(p,"careerSkillTime",g.careerSkillTime);put(p,"careerSkillDeathCd",g.careerSkillDeathCd);put(p,"careerSkillMode",g.careerSkillMode);
-        put(p,"careerWard",g.careerWard);put(p,"careerCharge",g.careerCharge);
+        put(p,"careerSkillTime",g.careerSkillTime);put(p,"careerSkillDeathCd",g.careerSkillDeathCd);put(p,"careerSkillMode",g.careerSkillMode);
+        put(p,"careerWard",g.careerWard);
         put(p,"relicOwned",g.relicOwned);put(p,"relicAwards",g.relicAwards);put(p,"lastRelic",g.lastRelic);put(p,"relicEcho",g.relicEcho);p.setProperty("relicRevived",Boolean.toString(g.relicRevived));
         for(int b=0;b<6;b++)for(int slot=0;slot<2;slot++)put(p,"relic"+b+"."+slot,g.relics[b][slot]);
         put(p,"followUpWindow",g.followUpWindow);put(p,"ruptureTime",g.ruptureTime);put(p,"ruptureTick",g.ruptureTick);p.setProperty("ruptureLatched",Boolean.toString(g.ruptureLatched));
@@ -33,14 +32,14 @@ public final class ActionSave {
         float[] fv={g.x,g.y,g.hp,g.faceX,g.faceY,g.time,g.attackCd,g.rollTime,g.rollCd,g.skillCd,g.invulnerable,g.comboWindow,g.rollX,g.rollY};
         for(int i=0;i<fk.length;i++)put(p,fk[i],fv[i]);
         put(p,"enemies",g.enemies.size());int i=0;
-        for(ActionGame.Enemy e:g.enemies){p.setProperty("enemyTactics"+i,csv(e.guard,e.targetX,e.targetY,e.pattern));p.setProperty("pactEnemy"+i,csv(e.pactMark,e.pactTick,e.pactStacks,e.pactDebt));put(p,"hex"+i,e.hex);p.setProperty("e"+i++,csv(e.id,e.type,e.state,e.x,e.y,e.hp,e.maxHp,e.timer,e.aimX,e.aimY,e.stun,e.flash,e.struck?1:0));}
+        for(ActionGame.Enemy e:g.enemies){p.setProperty("enemyTactics"+i,csv(e.guard,e.targetX,e.targetY,e.pattern));put(p,"hex"+i,e.hex);p.setProperty("e"+i++,csv(e.id,e.type,e.state,e.x,e.y,e.hp,e.maxHp,e.timer,e.aimX,e.aimY,e.stun,e.flash,e.struck?1:0));}
         put(p,"shots",g.shots.size());i=0;
         for(ActionGame.Shot s:g.shots){put(p,"shotEffect"+i,s.effect);put(p,"shotPierce"+i,s.pierce);StringJoiner hits=new StringJoiner(",");for(int id:s.hitIds)hits.add(Integer.toString(id));p.setProperty("shotHits"+i,hits.toString());p.setProperty("s"+i++,csv(s.x,s.y,s.vx,s.vy,s.life,s.damage,s.radius,s.friendly?1:0));}
         put(p,"blocks",g.blocks.size());i=0;
         for(ActionGame.Block b:g.blocks)p.setProperty("b"+i++,csv(b.x,b.y,b.w,b.h,b.style));
         put(p,"drops",g.drops.size());i=0;
         for(ActionGame.Drop d:g.drops){p.setProperty("dropPotion"+i,Boolean.toString(d.potion));p.setProperty("d"+i++,csv(d.x,d.y,d.amount,d.heal?1:0));}
-        ByteArrayOutputStream out=new ByteArrayOutputStream();p.store(out,"Wayfarer Action save v10");return out.toByteArray();
+        ByteArrayOutputStream out=new ByteArrayOutputStream();p.store(out,"Wayfarer Action save v11");return out.toByteArray();
     }
     private static void put(Properties p,String k,Number value){p.setProperty(k,value.toString());}
     private static String csv(Number... values){StringJoiner j=new StringJoiner(",");for(Number n:values)j.add(n.toString());return j.toString();}
@@ -97,20 +96,15 @@ public final class ActionSave {
             // v1-v4: keep all original combat values; opt in to careers in camp.
             if(version>=5){
                 for(int b=0;b<6;b++){
-                    g.careers[b][0]=n(p,"career"+b+".0",0,version>=6?CareerSystem.CLASSES.length-1:3);g.careers[b][1]=n(p,"career"+b+".1",0,2);g.careers[b][2]=n(p,"career"+b+".2",0,6);
+                    if(version>=11){g.careers[b][0]=n(p,"career"+b+".0",0,3);g.careers[b][1]=n(p,"career"+b+".1",0,2);g.careers[b][2]=n(p,"career"+b+".2",0,6);}
+                    else{g.careers[b][0]=CareerSystem.HUNTER;g.careers[b][1]=0;g.careers[b][2]=version>=5?n(p,"career"+b+".2",0,6):0;}
                     String error=CareerSystem.invalid(g.careers[b][0],g.careers[b][1],g.careers[b][2],b<3?g.experience[b]:g.profiles[b-3].xp);if(!error.isEmpty())throw new IllegalArgumentException(error);
                 }
-                g.careerWard=f(p,"careerWard",0,g.careerWardLimit());g.careerCharge=f(p,"careerCharge",0,g.careerChargeLimit());
-                if(g.mode==ActionGame.Mode.CAMP&&(g.careerWard>0||g.careerCharge>0))throw new IllegalArgumentException("营地职能状态无效");
+                g.careerWard=version>=11?f(p,"careerWard",0,g.careerWardLimit()):0;
+                if(g.mode==ActionGame.Mode.CAMP&&g.careerWard>0)throw new IllegalArgumentException("营地职能状态无效");
                 if(g.soulCd>g.soulPeriod()+.0001f)throw new IllegalArgumentException("魂技冷却与专精不符");
             }
-            // v1-v6 opt out of occupational forbidden arts; existing souls remain unchanged.
-            if(version>=7){
-                for(int b=0;b<6;b++){g.careerPacts[b]=bool(p,"careerPact"+b);int xp=b<3?g.experience[b]:g.profiles[b-3].xp;if(g.careerPacts[b]&&(!ProfessionPacts.available(g.careers[b][0])||xp<CareerSystem.SPECIALIZATION_XP))throw new IllegalArgumentException("职业禁术归属或等级无效");}
-                g.pactCd=f(p,"pactCd",0,g.pactEnabled()&&ProfessionPacts.available(g.job())?ProfessionPacts.COOLDOWN[g.job()]:0);g.pactTime=f(p,"pactTime",0,g.pactEnabled()&&ProfessionPacts.available(g.job())?ProfessionPacts.DURATION[g.job()]:0);g.careerSkillTime=f(p,"careerSkillTime",0,10);g.careerSkillDeathCd=f(p,"careerSkillDeathCd",0,2);g.careerSkillMode=n(p,"careerSkillMode",0,4);
-                g.pactWard=f(p,"pactWard",0,g.pactActive(CareerSystem.MINER)?35:0);
-                if(g.pactTime>g.pactCd+.0001f||g.pactActive(CareerSystem.BOXER)&&g.hero==1||g.mode==ActionGame.Mode.CAMP&&(g.pactCd>0||g.pactTime>0||g.pactWard>0))throw new IllegalArgumentException("职业禁术状态无效");
-            }
+            if(version>=7){g.careerSkillTime=f(p,"careerSkillTime",0,10);g.careerSkillDeathCd=f(p,"careerSkillDeathCd",0,2);g.careerSkillMode=n(p,"careerSkillMode",0,4);}
             if(version>=9){
                 g.followUpWindow=f(p,"followUpWindow",0,version>=10?g.followUpDuration():2);g.ruptureTime=f(p,"ruptureTime",0,6);g.ruptureTick=f(p,"ruptureTick",0,1.5f);g.ruptureLatched=bool(p,"ruptureLatched");
                 if(g.soulKind()!=2&&(g.ruptureTime>0||g.ruptureTick>0||g.ruptureLatched)||g.ruptureTime>0&&!g.ruptureLatched||g.ruptureTime==0&&g.ruptureTick>0)throw new IllegalArgumentException("侵蚀失控状态无效");
@@ -132,10 +126,7 @@ public final class ActionSave {
                 e.hp=range(a[5],0,e.maxHp);e.state=integer(a[2],0,version>=9?3:2);e.timer=range(a[7],-.1f,2);e.aimX=range(a[8],-1,1);e.aimY=range(a[9],-1,1);e.stun=range(a[10],0,1);e.flash=range(a[11],0,1);e.struck=integer(a[12],0,1)==1;
                 if(version>=9){float[] t=array(p,"enemyTactics"+i,4);e.guard=range(t[0],0,40);e.targetX=range(t[1],64,1056);e.targetY=range(t[2],64,696);e.pattern=integer(t[3],0,e.type==3?2:0);if(e.state==3&&e.type!=2&&e.type!=4)throw new IllegalArgumentException("敌人恢复状态无效");}
                 if(version>=3)e.hex=f(p,"hex"+i,0,3);
-                if(version>=8){float[] pm=array(p,"pactEnemy"+i,4);e.pactMark=range(pm[0],0,g.pactTime);e.pactTick=range(pm[1],0,g.job()==CareerSystem.MECHANIC?.5f:1);e.pactStacks=integer(pm[2],0,3);e.pactDebt=range(pm[3],0,1000);
-                    if(e.pactMark>0&&(!g.pactEnabled()||e.hp<=0)||e.pactMark==0&&(e.pactTick>0||e.pactStacks>0||e.pactDebt>0)||e.pactStacks>0&&g.job()!=CareerSystem.BOXER||e.pactDebt>0&&g.job()!=CareerSystem.REPORTER)throw new IllegalArgumentException("敌人禁术标记无效");
-                }
-                if(!g.free(e.x,e.y,e.radius()))throw new IllegalArgumentException("敌人位置无效");g.enemies.add(e);
+enemy pact decode                if(!g.free(e.x,e.y,e.radius()))throw new IllegalArgumentException("敌人位置无效");g.enemies.add(e);
             }
             count=n(p,"shots",0,160);for(int i=0;i<count;i++){
                 float[] a=array(p,"s"+i,8);ActionGame.Shot s=new ActionGame.Shot(range(a[0],0,1120),range(a[1],0,760),range(a[2],-1000,1000),range(a[3],-1000,1000),range(a[5],1,version>=9?800:500),integer(a[7],0,1)==1);
@@ -152,9 +143,7 @@ public final class ActionSave {
             if(g.roomCleared&&!g.enemies.isEmpty())throw new IllegalArgumentException("房间状态矛盾");
             if(g.mode==ActionGame.Mode.REWARD&&(!g.enemies.isEmpty()||g.room==5&&!g.endless||g.roomCleared))throw new IllegalArgumentException("奖励状态矛盾");
             if(g.won&&(g.mode!=ActionGame.Mode.RESULT&&g.mode!=ActionGame.Mode.CAMP))throw new IllegalArgumentException("结算状态无效");
-            // v7 opted in to different abilities: never silently substitute the rewritten acts.
-            if(version==7){Arrays.fill(g.careerPacts,false);g.pactCd=0;g.pactTime=0;g.pactWard=0;}
-            g.settleRestoredAttack();g.notice=version==7?"旧档已恢复；职业禁术已重做，请回营自行选择。":"存档已恢复";return g;
+            g.settleRestoredAttack();g.notice=version<11?"旧职业配置已重置为猎人；灵魂、背景与角色进度保留。":"存档已恢复";return g;
         }catch(IllegalArgumentException|NullPointerException e){throw new IOException("存档校验失败："+e.getMessage(),e);}
     }
     private static String required(Properties p,String key){String s=p.getProperty(key);if(s==null)throw new IllegalArgumentException("缺少 "+key);return s;}
