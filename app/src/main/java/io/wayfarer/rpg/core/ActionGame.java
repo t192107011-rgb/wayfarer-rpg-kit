@@ -585,6 +585,7 @@ public final class ActionGame {
     private void hit(Enemy e,float value,boolean charge){hit(e,value,charge,charge);}
     private void hit(Enemy e,float value,boolean charge,boolean echoEligible){
         if(e.hp<=0)return;
+        if(echoEligible&&careerSkillMode==4&&careerSkillTime>0&&!reporterShareHit){int alive=0;for(Enemy q:enemies)if(q.hp>0)alive++;if(alive==1)value*=2f;}
         if(echoEligible){
             value*=pactActive(SOLDIER)?1.3f:marked(e)&&job()==BOXER&&hero!=1?1.8f+e.pactStacks*.25f:1;
             if(marked(e)&&job()==POLICE&&e.hp<=e.maxHp*.3f){if(e.type!=3)value=Math.max(value,e.hp+e.guard);else value*=1.6f;signal("sentence",e.x,e.y,0);}
