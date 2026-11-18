@@ -6,6 +6,7 @@ public final class CareerSystem {
     public static final int SPECIALIZATION_XP=160;
     public static final int HUNTER=0,ASSASSIN=1,DETECTIVE=2,REPORTER=3;
     public static final String[] CLASSES={"猎人","刺客","侦探","记者"};
+    public static final String[] SKILL_NAMES={"火力强化","狂袭","引力场","群体曝光"};
     public static final String[] CLASS_DETAILS={
         "猎人：远程压制与近身控场。主动技能期间，子弹命中产生小范围溅射，近战范围增加35%。",
         "刺客：5秒突袭状态。受到伤害降低80%，获得相当于最大生命值40%的护盾，普攻伤害提高50%，移动速度提高25%。",
