@@ -16,8 +16,8 @@ public final class CareerTests {
         g.experience[0]=160;check(g.chooseCareer(REPORTER,2,4),"reporter specialization available at level three");
         g.bindSoul(2,1);g.start(3);ActionGame a=ActionSave.decode(ActionSave.encode(g));
         check(a.job()==REPORTER&&a.specialization()==2&&a.background()==4&&a.soulKind()==2,"new career, specialization, background and soul persist");
-        byte[] oldData=ActionSave.encode(g);oldData=edit(oldData,"version","10");oldData=edit(oldData,"career0.0","13");oldData=edit(oldData,"career0.1","2");oldData=edit(oldData,"career0.2","4");oldData=edit(oldData,"characterJob0","13");
-        ActionGame migrated=ActionSave.decode(oldData);check(migrated.job()==HUNTER&&migrated.specialization()==0&&migrated.background()==4,"v1-v10 migration resets retired career but keeps background");check(migrated.characterJobs[0]==HUNTER,"historical character career IDs are reset too");
+        g.careerSkillMode=4;g.careerSkillTime=4;g.skillCd=2;byte[] oldData=ActionSave.encode(g);oldData=edit(oldData,"version","10");oldData=edit(oldData,"career0.0","13");oldData=edit(oldData,"career0.1","2");oldData=edit(oldData,"career0.2","4");oldData=edit(oldData,"characterJob0","13");
+        ActionGame migrated=ActionSave.decode(oldData);check(migrated.job()==HUNTER&&migrated.specialization()==0&&migrated.background()==4,"v1-v10 migration resets retired career but keeps background");check(migrated.characterJobs[0]==HUNTER,"historical character career IDs are reset too");check(migrated.careerSkillMode==0&&migrated.careerSkillTime==0&&migrated.skillCd==0,"retired career runtime is cleared during migration");
 
         g=new ActionGame();g.experience[0]=160;g.chooseCareer(HUNTER,1,0);g.start(4);g.blocks.clear();g.enemies.clear();
         ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,700,600,1000);g.enemies.add(e);g.skill();check(g.careerSkillMode==1&&g.careerSkillTime==5,"hunter active skill starts");
