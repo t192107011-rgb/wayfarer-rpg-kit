@@ -26,9 +26,7 @@ public final class SmokeInstrumentation extends Instrumentation {
             ui(()->activity.world.replace(new ActionGame()));
             challengeFlow();
             ui(()->{activity.world.replace(new ActionGame());activity.world.startFrames();});
-            pactFlow();
             ui(()->activity.world.replace(new ActionGame()));
-            ordinaryCareerFlow();
             ui(()->activity.world.replace(new ActionGame()));
             careerFlow();
             ui(()->activity.world.replace(new ActionGame()));
@@ -65,7 +63,7 @@ public final class SmokeInstrumentation extends Instrumentation {
                 ActionGame.Enemy s=new ActionGame.Enemy(g.nextId++,1,400,260,80);s.state=1;s.aimX=.78f;s.aimY=.62f;s.timer=.8f;g.enemies.add(s);
                 g.mode=ActionGame.Mode.PLAY;activity.world.stopFrames();});
             screenshot("04-combat-render.png");
-            result.putString("stream","ARPG_SMOKE_OK: independent three-final purchases and same-category locks; actual endless entry, fifth-boss reward and sixth-floor exit; full bag potion pickup after drinking; v10 AtomicFile floor, threat and build; main and personal story choices, once-only rewards, personal passive and AtomicFile; real two-touch combo and blocked third touch; legal-cast 100 erosion; real burner zones and bell shields with snapshot; launch, landscape, character selection, simultaneous move/attack, dodge, skill, pause, atomic save and resume; custom editor save/cancel, cross-class skill, talent purchase/locks and profile persistence; soul binding/cancel, independent soul button, radiant domain, forbidden pact, corruption costs and soul snapshot persistence; relic cabinet equip/cancel, duplicate guard, character isolation, checkpoint discovery and relic manual save; career level gate, save/cancel, specialization persistence, class-independent weapon, background/skill shields, dodge charge and atomic snapshot; 1887 setting dossier; all eight ordinary career selections, doctor treatment and potion, merchant actual upgrade price, miner protection and v6 manual save; optional pact cancel/confirm, job-change opt-out, separate pact/soul touch buttons, healing lock, frozen penalty, AtomicFile persistence and local-only merchant payment; all eight rewritten arts mark real test victims, donor damage and healing, pulse snapshot and machine/burial rendering.\n");
+            result.putString("stream","ARPG_SMOKE_OK: independent three-final purchases and same-category locks; actual endless entry, fifth-boss reward and sixth-floor exit; full bag potion pickup after drinking; v11 AtomicFile floor, threat and build; main and personal story choices, once-only rewards, personal passive and AtomicFile; real two-touch combo and blocked third touch; legal-cast 100 erosion; real burner zones and bell shields with snapshot; launch, landscape, character selection, simultaneous move/attack, dodge, skill, pause, atomic save and resume; custom editor save/cancel, cross-class skill, talent purchase/locks and profile persistence; soul binding/cancel, independent soul button, radiant domain, forbidden pact, corruption costs and soul snapshot persistence; relic cabinet equip/cancel, duplicate guard, character isolation, checkpoint discovery and relic manual save; career level gate, save/cancel, specialization persistence, class-independent weapon and background passives; 1887 setting dossier; four rebuilt careers, career selection and save migration.\n");
             finish(Activity.RESULT_OK,result);
         }catch(Throwable t){result.putString("stream","ARPG_SMOKE_FAILED: "+t+"\n");finish(Activity.RESULT_CANCELED,result);}
     }
@@ -94,7 +92,7 @@ public final class SmokeInstrumentation extends Instrumentation {
     private void journalItem(int index){ui(()->{ListView list=activity.storyDialog.getListView();list.performItemClick(null,index,index);});waitForIdleSync();}
     private void storyButton(int which){ui(()->activity.storyDialog.getButton(which).performClick());waitForIdleSync();}
     private void challengeFlow(){
-        ui(()->{activity.world.stopFrames();ActionGame g=activity.world.game;g.chooseCareer(CareerSystem.DOCTOR,0,0);});
+        ui(()->{activity.world.stopFrames();ActionGame g=activity.world.game;g.chooseCareer(CareerSystem.HUNTER,0,0);});
         tap(835,105);waitForIdleSync();journalItem(0);
         ui(()->{check(((TextView)activity.storyDialog.getWindow().getDecorView().findViewWithTag("story-text")).getText().toString().contains("诺拉"),"journal intro opens from real camp entry");});storyButton(AlertDialog.BUTTON_NEGATIVE);
         tap(785,405);waitForIdleSync();ui(()->check(activity.world.game.mode==ActionGame.Mode.PLAY,"story flow starts expedition: "+activity.world.game.mode));
@@ -106,7 +104,7 @@ public final class SmokeInstrumentation extends Instrumentation {
         ui(()->check(activity.world.game.bank==bank[0]+12,"rereading cannot duplicate main reward"));storyButton(AlertDialog.BUTTON_NEGATIVE);ui(()->{ActionGame g=activity.world.game;g.chooseReward(0);g.pause();g.abandon();g.returnCamp();});
         tap(835,105);waitForIdleSync();journalItem(6);journalItem(0);screenshotNativeDialog("24-doctor-story-fixture.png",activity.storyDialog);
         float[] personalHp={0};ui(()->personalHp[0]=activity.world.game.maxHp());storyButton(AlertDialog.BUTTON_POSITIVE);
-        ui(()->{ActionGame g=activity.world.game;check(g.maxHp()==personalHp[0]+4,"personal decision grants actual persistent passive");try{SaveStore store=new SaveStore(activity);store.write(2,g);ActionGame loaded=store.read(2);check(loaded.storyChoices[0]==1&&loaded.characterJobs[0]==CareerSystem.DOCTOR&&loaded.characterChoices[0][0]==1&&loaded.maxHp()==g.maxHp(),"story and derived health survive AtomicFile");}catch(IOException e){throw new RuntimeException(e);}activity.world.replace(new ActionGame());});
+        ui(()->{ActionGame g=activity.world.game;check(g.maxHp()==personalHp[0]+4,"personal decision grants actual persistent passive");try{SaveStore store=new SaveStore(activity);store.write(2,g);ActionGame loaded=store.read(2);check(loaded.storyChoices[0]==1&&loaded.characterJobs[0]==CareerSystem.HUNTER&&loaded.characterChoices[0][0]==1&&loaded.maxHp()==g.maxHp(),"story and derived health survive AtomicFile");}catch(IOException e){throw new RuntimeException(e);}activity.world.replace(new ActionGame());});
         tap(785,405);ui(()->{ActionGame g=activity.world.game;pactArena(g);g.enemies.get(0).y=g.y-140;});tap(855,298);
         float[] target={0};ui(()->{check(activity.world.game.followUpWindow>0,"real skill button opens combo");target[0]=activity.world.game.enemies.get(0).hp;});tap(855,298);
         ui(()->{check(activity.world.game.followUpWindow==0&&activity.world.game.enemies.get(0).hp<target[0],"second touch performs damaging follow-up");target[0]=activity.world.game.enemies.get(0).hp;});tap(855,298);ui(()->check(activity.world.game.enemies.get(0).hp==target[0],"third touch cannot repeat combo"));
@@ -120,60 +118,6 @@ public final class SmokeInstrumentation extends Instrumentation {
             ActionGame.Enemy fire=new ActionGame.Enemy(g.nextId++,5,440,280,120);fire.state=1;fire.timer=.001f;fire.targetX=g.x;fire.targetY=g.y;fire.aimX=.6f;fire.aimY=.8f;g.enemies.add(fire);
             ActionGame.Enemy bell=new ActionGame.Enemy(g.nextId++,6,580,250,140);bell.state=1;bell.timer=.001f;bell.aimX=0;bell.aimY=1;g.enemies.add(bell);g.update(1f/60,new ActionGame.Input());check(g.hazards.size()==2&&hunter.guard==24,"new enemy AI produces actual ground warnings and ally shields");try{ActionGame loaded=ActionSave.decode(ActionSave.encode(g));check(loaded.hazards.size()==2&&loaded.enemies.get(0).guard==24,"new enemy runtime restores");}catch(IOException e){throw new RuntimeException(e);}});
         screenshot("26-mixed-enemies-fixture.png");
-    }
-    private void pactFlow(){
-        ui(()->{activity.world.game.experience[0]=160;activity.world.game.hp=activity.world.game.maxHp();});
-        pickCareer(CareerSystem.DOCTOR,1,4);tap(510,142);waitForIdleSync();
-        ui(()->{View root=activity.careerDialog.getWindow().getDecorView();CheckBox pact=root.findViewWithTag("career-pact");check(!pact.isChecked()&&pact.isEnabled(),"occupational forbidden art defaults off");check(((TextView)root.findViewWithTag("career-pact-details")).getText().toString().contains("供体"),"pact explains the transgressive act itself");check(((TextView)root.findViewWithTag("career-temperament")).getText().toString().contains("同情心"),"doctor has distinctive temperament");pact.setChecked(true);activity.careerDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();});waitForIdleSync();
-        ui(()->check(!activity.world.game.pactEnabled(),"cancel never accepts forbidden cost"));
-        tap(510,142);waitForIdleSync();ui(()->((CheckBox)activity.careerDialog.getWindow().getDecorView().findViewWithTag("career-pact")).setChecked(true));waitForIdleSync();
-        screenshotNativeDialog("19-doctor-pact-choice.png",activity.careerDialog);
-        ui(()->activity.careerDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick());waitForIdleSync();ui(()->check(activity.world.game.pactEnabled(),"explicit confirmation enables occupational art"));
-        tap(510,142);waitForIdleSync();ui(()->((Spinner)activity.careerDialog.getWindow().getDecorView().findViewWithTag("career-job")).setSelection(CareerSystem.SOLDIER));waitForIdleSync();
-        ui(()->{check(!((CheckBox)activity.careerDialog.getWindow().getDecorView().findViewWithTag("career-pact")).isChecked(),"changing job resets forbidden consent draft");activity.careerDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();});waitForIdleSync();
-        ui(()->{check(activity.world.game.job()==CareerSystem.DOCTOR&&activity.world.game.pactEnabled(),"cancel preserves doctor choice");activity.world.game.bindSoul(1,0);});
-        tap(785,405);float[] expected={0};ui(()->{ActionGame g=activity.world.game;pactArena(g);g.hp=10;expected[0]=10+g.damage()*2.5f*.8f*g.healingFactor();});tap(648,332);
-        ui(()->check(activity.world.game.pactTime>0&&Math.abs(activity.world.game.hp-expected[0])<.05f,"dedicated forbidden button steals life from actual donor"));tap(648,456);
-        ui(()->check(activity.world.game.potions==2&&activity.world.game.healingFactor()==0,"forbidden treatment blocks potion consumption and healing"));tap(735,332);
-        ui(()->check(activity.world.game.soulCd>0&&activity.world.game.pactCd>0,"soul and occupational buttons remain independent"));
-        screenshot("20-doctor-pact-combat.png");tap(900,37);float[] paused={0,0};ui(()->{paused[0]=activity.world.game.pactTime;paused[1]=activity.world.game.pactCd;});SystemClock.sleep(180);
-        ui(()->{ActionGame g=activity.world.game;check(g.pactTime==paused[0]&&g.pactCd==paused[1],"paused forbidden cost freezes");try{SaveStore store=new SaveStore(activity);store.write(3,g);ActionGame a=store.read(3);check(a.pactEnabled()&&a.pactTime==g.pactTime&&a.hp==g.hp&&a.healingFactor()==0&&a.enemies.get(0).pactMark==g.enemies.get(0).pactMark&&a.enemies.get(0).pactTick==g.enemies.get(0).pactTick,"pact and donor pulse survive AtomicFile without replay");}catch(IOException e){throw new RuntimeException(e);}ActionGame merchant=new ActionGame();merchant.experience[0]=160;merchant.chooseCareer(CareerSystem.MERCHANT,2,0,true);merchant.bank=500;activity.world.replace(merchant);});
-        tap(785,405);ui(()->activity.world.game.loot=29);tap(648,332);ui(()->check(activity.world.game.pactCd==0&&activity.world.game.bank==500,"merchant cannot spend camp bank"));ui(()->{pactArena(activity.world.game);activity.world.game.loot=30;});tap(648,332);
-        ui(()->check(activity.world.game.pactTime>0&&activity.world.game.loot==0&&activity.world.game.bank==500,"merchant pays only run tickets"));
-        for(int j=CareerSystem.POLICE;j<=CareerSystem.REPORTER;j++){
-            final int job=j;ui(()->{ActionGame g=new ActionGame();g.experience[0]=160;g.chooseCareer(job,1,0,true);activity.world.replace(g);});tap(785,405);
-            ui(()->{ActionGame g=activity.world.game;pactArena(g);g.loot=30;g.hp=g.maxHp()*.6f;});tap(648,332);
-            ui(()->check(activity.world.game.pactCd>0&&activity.world.game.enemies.get(0).pactMark>0,"each profession touch button marks an actual victim"));
-            if(job==CareerSystem.MECHANIC)screenshot("21-living-engine-fixture.png");
-            if(job==CareerSystem.MINER)screenshot("22-burial-fixture.png");
-        }
-    }
-    private void pactArena(ActionGame g){
-        // Deterministic test actors, not a claim of natural leveling or an actual campaign encounter.
-        g.enemies.clear();g.blocks.clear();g.shots.clear();g.x=560;g.y=430;g.time=9;
-        ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,560,330,1000);e.stun=1;g.enemies.add(e);
-    }
-    private void pickCareer(int job,int spec,int background){
-        tap(510,142);waitForIdleSync();
-        ui(()->{Spinner jobs=activity.careerDialog.getWindow().getDecorView().findViewWithTag("career-job");check(jobs.getCount()==12,"all eleven careers present");jobs.setSelection(job);});waitForIdleSync();
-        ui(()->{View root=activity.careerDialog.getWindow().getDecorView();((Spinner)root.findViewWithTag("career-spec")).setSelection(spec);((Spinner)root.findViewWithTag("career-background")).setSelection(background);});waitForIdleSync();
-        ui(()->activity.careerDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick());waitForIdleSync();
-        ui(()->check(activity.world.game.isSpec(job,spec)&&activity.world.game.background()==background,"ordinary career commits without soul: "+job));
-    }
-    private void ordinaryCareerFlow(){
-        ui(()->{activity.world.game.experience[0]=160;activity.world.game.hp=activity.world.game.maxHp();});
-        for(int job=CareerSystem.POLICE;job<=CareerSystem.REPORTER;job++)pickCareer(job,2,0);
-        pickCareer(CareerSystem.DOCTOR,1,4);
-        tap(510,142);waitForIdleSync();screenshotNativeDialog("18-ordinary-doctor.png",activity.careerDialog);
-        ui(()->activity.careerDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick());waitForIdleSync();
-        tap(785,405);float[] expected={0};ui(()->{ActionGame g=activity.world.game;g.hp=20;expected[0]=20+g.maxHp()*.04f;});tap(855,298);
-        ui(()->check(Math.abs(activity.world.game.hp-expected[0])<.05f,"ordinary first aid actually heals without soul"));
-        ui(()->{ActionGame g=activity.world.game;expected[0]+=g.maxHp()*.45f+8+6;});tap(648,456);tap(900,37);
-        ui(()->{ActionGame g=activity.world.game;check(Math.abs(g.hp-expected[0])<.05f&&g.potions==1,"doctor and medic background actual potion bonus");try{SaveStore store=new SaveStore(activity);store.write(3,g);ActionGame loaded=store.read(3);check(loaded.isSpec(CareerSystem.DOCTOR,1)&&loaded.background()==4&&loaded.hp==g.hp&&loaded.potions==1,"ordinary career v6 AtomicFile snapshot");loaded.abandon();loaded.returnCamp();activity.world.replace(loaded);}catch(IOException e){throw new RuntimeException(e);}});
-        pickCareer(CareerSystem.MERCHANT,2,0);ui(()->activity.world.game.bank=100);tap(180,393);
-        ui(()->check(activity.world.game.bank==74&&activity.world.game.power==1,"merchant UI charges discounted 26 tickets"));
-        pickCareer(CareerSystem.MINER,2,1);tap(785,405);
-        ui(()->check(activity.world.game.careerWard==12,"miner protective equipment combines with background using max"));
     }
     private void careerFlow(){
         tap(350,108);waitForIdleSync();
