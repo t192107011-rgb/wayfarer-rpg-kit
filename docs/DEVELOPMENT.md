@@ -204,7 +204,7 @@ flowchart TD
 | 灵魂、侵蚀、领域 | `SoulTests` + `ChallengeTests` |
 | 圣遗物 | `RelicTests` |
 | 职业、背景、专精 | `CareerTests` |
-| 越界禁术及组合 | `PactTests` |
+| 四种职业主动技能 | `CareerTests` / `CareerAbilityTests` |
 | 追击、新AI、主线/人物、v9 | `ChallengeTests` |
 | 无尽、动态敌势、三终阶、药瓶与v10 | `EndlessTests` |
 | 按钮、对话、真实写盘 | `SmokeInstrumentation` |
