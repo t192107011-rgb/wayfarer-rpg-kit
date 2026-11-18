@@ -32,7 +32,7 @@ public final class ActionGame {
     public final int[][] talents=new int[6][12];
     public float shield=0,dodgeCharge=0;
     public final int[][] careers=new int[6][3];
-    public float careerWard=0,careerCharge=0;careerSkillTime=0;careerSkillDeathCd=0;careerSkillMode=0;
+    public float careerWard=0,careerCharge=0;
     public final boolean[] careerPacts=new boolean[6];
     public float pactCd=0,pactTime=0,pactWard=0;
     // Career active skill runtime. Mode: 1 hunter, 2 assassin, 3 detective, 4 reporter.
