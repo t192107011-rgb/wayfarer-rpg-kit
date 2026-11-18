@@ -25,8 +25,8 @@ public final class BuildTests {
         // Every weapon / active skill / origin / trait combination is valid and persists mid-skill.
         for(int w=0;w<3;w++)for(int s=0;s<3;s++)for(int o=0;o<3;o++)for(int t=0;t<3;t++){
             g=new ActionGame();draft=g.profiles[0].copy();draft.weapon=w;draft.skill=s;draft.origin=o;draft.trait=t;g.customize(0,draft);float max=g.maxHp();arena(g);mob(g,600,600);g.skill();
-            check(g.hero==w&&g.skillStyle()==s&&g.hp==max,"81 combinations configure combat");if(s==1)check(g.shots.size()==5,"ranged active independent of weapon");else check(g.enemies.get(0).hp<500,"radial active independent of weapon");
-            restored=ActionSave.decode(ActionSave.encode(g));near(restored.skillCd,g.skillCd,"custom cooldown persisted");
+            check(g.hero==w&&g.skillStyle()==s&&g.hp==max&&g.careerSkillMode==1,"81 custom weapon and soul-style combinations keep the hunter career active");
+            restored=ActionSave.decode(ActionSave.encode(g));near(restored.skillCd,g.skillCd,"custom cooldown persisted");check(restored.careerSkillMode==1,"career skill mode persisted");
         }
         System.out.println("PASS 81 custom combat combinations, draft isolation, cosmetics, independent XP and roster switching");
     }
@@ -44,8 +44,8 @@ public final class BuildTests {
         g=ultimate(6);arena(g);e=mob(g,610,600);g.dodge(0,-1);check(e.hp<500&&e.stun>=.45,"dodge pulse has real damage and stun");
         g=ultimate(7);arena(g);mob(g,300,300);g.skillCd=6;g.dodge(0,-1);near(g.skillCd,3.5f,"dodge reduces skill cooldown");g.dodge(0,-1);near(g.skillCd,3.5f,"failed dodge grants no free cooldown reduction");
         g=new ActionGame();points(g);learn(g,4,1);learn(g,5,2);arena(g);e=mob(g,610,600);g.dodge(0,-1);g.rollTime=0;g.x=560;g.y=600;float damage=g.damage();tick(g,true,10);near(500-e.hp,damage*1.3f,"dodge primes one empowered attack");check(g.dodgeCharge==0,"charge consumed once");
-        g=ultimate(10);arena(g);mob(g,300,300);g.hp=30;float expected=30+g.maxHp()*.08f;g.skill();near(g.hp,expected,"longlight healing");near(g.shield,12,"warmth shield");near(g.skillCd,6.2f,"warmth cooldown");g.skill();near(g.hp,expected,"cooldown blocks duplicate heal");
-        g=ultimate(11);arena(g);e=mob(g,590,600);g.skill();g.hp=g.maxHp();g.hitStop=0;e.stun=0;e.hp=500;e.state=1;e.timer=.001f;float hp=g.hp;tick(g,false,1);near(g.hp,hp,"shield absorbs melee");near(g.shield,10,"shield is consumed");near(e.hp,490.9f,"mirror reflects 65 percent of absorbed damage");
+        g=ultimate(10);arena(g);mob(g,300,300);g.bindSoul(1,0);g.soulEnergy=40;g.soulSkill();check(g.soulWard==30&&g.soulFields.size()==1,"radiant soul art creates ward and domain independently of career skill");
+        g=ultimate(11);arena(g);e=mob(g,590,600);g.shield=12;g.hp=g.maxHp();g.hitStop=0;e.stun=0;e.hp=500;e.state=1;e.timer=.001f;float hp=g.hp;tick(g,false,1);near(g.hp,hp,"shield absorbs melee");near(g.shield,10,"shield is consumed");near(e.hp,490.9f,"mirror reflects 65 percent of absorbed damage");
         ActionGame a=ActionSave.decode(ActionSave.encode(g));near(a.shield,g.shield,"remaining shield persists");
         g=new ActionGame();points(g);g.selectHero(1);g.experience[1]=1200;learn(g,0,1);learn(g,1,2);arena(g);e=mob(g,720,600);g.combo=1;g.comboWindow=.7f;tick(g,true,1);near(g.shots.get(0).damage,g.damage()*1.59f,"archer benefits from third-beat talent");
         // Each custom character gets only their own earned XP on settlement.
