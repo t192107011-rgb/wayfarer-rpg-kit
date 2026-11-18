@@ -211,13 +211,13 @@ public final class ActionGame {
     public void start(long seed){beginRun(seed,false);}
     public void startEndless(long seed){beginRun(seed,true);}
     private void beginRun(long seed,boolean infinite){
-        if(mode!=Mode.CAMP)return;clearThreat();endless=infinite;endlessDepth=infinite?1:0;clearSoulRuntime();clearRelicRun();clearPactRuntime();soulEnergy=soulKind()==0?0:40+(hasRelic(5)?(soulKind()==1?30:15):0);rngState=seed==0?1:seed;runs=Math.min(999999,runs+1);
+        if(mode!=Mode.CAMP)return;clearThreat();endless=infinite;endlessDepth=infinite?1:0;clearSoulRuntime();clearRelicRun();clearPactRuntime();careerSkillTime=0;careerSkillDeathCd=0;careerSkillMode=0;soulEnergy=soulKind()==0?0:40+(hasRelic(5)?(soulKind()==1?30:15):0);rngState=seed==0?1:seed;runs=Math.min(999999,runs+1);
         loot=0;kills=0;nextId=1;room=1;potions=2;damageBonus=0;healthBonus=0;speedBonus=0;combo=0;time=0;won=false;hp=maxHp();
         generateRoom();
     }
     public void generateRoom(){
         mode=Mode.PLAY;roomCleared=false;lastRelic=0;relicEcho=0;careerWard=entryCareerWard();careerCharge=0;x=WIDTH/2;y=HEIGHT-100;faceX=0;faceY=-1;
-        attackCd=0;attackAnim=0;rollTime=0;rollCd=0;skillCd=0;shield=0;dodgeCharge=0;swingBoost=1;followUpWindow=0;hazards.clear();soulWard=0;soulBuff=0;soulFields.clear();invulnerable=.8f;comboWindow=0;hitStop=0;
+        attackCd=0;attackAnim=0;rollTime=0;rollCd=0;skillCd=0;careerSkillTime=0;careerSkillDeathCd=0;careerSkillMode=0;shield=0;dodgeCharge=0;swingBoost=1;followUpWindow=0;hazards.clear();soulWard=0;soulBuff=0;soulFields.clear();invulnerable=.8f;comboWindow=0;hitStop=0;
         enemies.clear();shots.clear();blocks.clear();drops.clear();signals.clear();swingHits.clear();
         // Keep the central route and both exits connected in every layout.
         for(int i=0;i<6;i++) {
