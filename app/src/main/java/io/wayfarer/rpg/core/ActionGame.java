@@ -256,7 +256,7 @@ public final class ActionGame {
         if(mode!=Mode.PLAY||rollTime>0)return;
         if(skillCd>0){if(followUpWindow>0)followUp();return;}
         int j=job();
-        // Profession active skills. Timekeeper is intentionally left untouched.
+        // Dispatch the active skill defined by the selected career.
         if(j==HUNTER||j==ASSASSIN||j==DETECTIVE||j==REPORTER){
             skillCd=skillPeriod();
             careerSkillDeathCd=0;
