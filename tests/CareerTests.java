@@ -21,7 +21,7 @@ public final class CareerTests {
 
         g=new ActionGame();g.experience[0]=160;g.chooseCareer(HUNTER,1,0);g.start(4);g.blocks.clear();g.enemies.clear();
         ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,700,600,1000);g.enemies.add(e);g.skill();check(g.careerSkillMode==1&&g.careerSkillTime==5,"hunter active skill starts");
-        g=new ActionGame();g.chooseCareer(ASSASSIN,0,0);g.start(5);float hp=g.maxHp();g.skill();near(g.shield,hp*.4f,"assassin gains 40 percent max-health shield");near(g.damage(),g.baseDamage()*1.5f,"assassin gains attack damage");
+        g=new ActionGame();g.chooseCareer(ASSASSIN,0,0);g.start(5);float hp=g.maxHp();g.skill();near(g.shield,hp*.4f,"assassin gains 40 percent max-health shield");near(g.damage(),g.baseDamage()*1.5f,"assassin gains attack damage");ActionGame assassinSave=ActionSave.decode(ActionSave.encode(g));near(assassinSave.shield,hp*.4f,"assassin shield survives save and restore");
         g=new ActionGame();g.chooseCareer(DETECTIVE,0,0);g.start(6);g.blocks.clear();g.enemies.clear();g.enemies.add(new ActionGame.Enemy(g.nextId++,0,700,600,1000));g.skill();check(g.careerSkillMode==3&&g.careerSkillTime==3.5f,"detective gravity field starts");
         g=new ActionGame();g.chooseCareer(REPORTER,0,0);g.start(7);g.blocks.clear();g.enemies.clear();g.enemies.add(new ActionGame.Enemy(g.nextId++,0,700,600,1000));g.skill();check(g.careerSkillMode==4&&g.careerSkillTime==5,"reporter exposure starts");
         System.out.println("CAREER CHECKS PASSED: "+checks);
