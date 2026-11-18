@@ -293,7 +293,6 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         if(eventMessageTime>0&&game.mode==ActionGame.Mode.PLAY){rounded(c,330,168,500,35,6,0xE0251F2A);text(c,eventMessage,580,191,12,0xFFE8B8BF,true);}
         if(soulMessageTime>0)text(c,"魂能不足，需要40点",480,170,17,gold,true);
         if(game.ruptureTime>0)text(c,"失控 "+(int)Math.ceil(game.ruptureTime)+"秒 · 生命流失",480,71,13,0xFFFF879B,true);
-        if(game.followUpWindow>0&&game.skillCd>0)text(c,EncounterSystem.FOLLOWUPS[game.skillStyle()]+" · "+String.format(java.util.Locale.ROOT,"%.1f",game.followUpWindow),835,225,12,0xFFADE1D0,true);
         button(c,855,15,88,45,"Ⅱ 暂停",false);
         if(game.roomCleared){rounded(c,280,82,400,35,8,0xDF18372F);text(c,"出口已开启：向上走，选择补给所或货栈",480,105,14,0xFFCADEB0,true);}
         for(ActionGame.Enemy e:game.enemies)if(e.type==3){text(c,e.hp<e.maxHp*.5f?"失魂监工 · 狂怒":"失魂监工",480,87,14,gold,true);box(c,340,97,280,7,0xFF273239);box(c,340,97,280*e.hp/e.maxHp,7,0xFFB36C5B);}
@@ -302,7 +301,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     private void controls(Canvas c){
         circle(c,117,423,69,0x8814252D);ring(c,117,423,69,0x7789A39A,2);circle(c,117+joyX*48,423+joyY*48,27,0xAA79968A);
         text(c,"移动",117,519,12,muted,true);
-        control(c,850,420,58,"攻击",0,input.attack);control(c,737,456,37,"闪避",game.rollCd,false);control(c,855,298,38,game.followUpWindow>0?"追击":"技能",game.followUpWindow>0?0:game.skillCd,false);
+        control(c,850,420,58,"攻击",0,input.attack);control(c,737,456,37,"闪避",game.rollCd,false);control(c,855,298,38,"职业技",game.skillCd,false);
         control(c,648,456,29,"药×"+game.potions,0,false);
         if(game.soulKind()>0){control(c,735,332,40,game.soulEnergy<40?"蓄能":"魂技",game.soulCd,false);ring(c,735,332,43,game.soulKind()==1?0xFFE8D493:0xFFBE8FDC,2);text(c,game.soulArtName(),735,389,12,game.soulKind()==1?gold:0xFFCAA9E2,true);}
     }
