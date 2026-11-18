@@ -278,18 +278,16 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             box(c,30,109,180,5,0xFF3D454E);box(c,30,109,180*game.soulEnergy/100,5,tint);
             text(c,game.soulKind()==2?"侵蚀 "+(int)game.corruption+" · 受伤+"+(int)(game.corruption*.4f)+"% / 治疗"+String.format(java.util.Locale.ROOT,"%+.0f%%",(game.healingFactor()-1)*100):"辉盾 "+(int)game.soulWard+" · 治疗 "+String.format(java.util.Locale.ROOT,"%+.0f%%",(game.healingFactor()-1)*100),30,134,12,tint,false);
             if(game.soulKind()==2){box(c,30,143,275,4,0xFF3D454E);box(c,30,143,275*game.corruption/100,4,game.ruptureTime>0?0xFFE66D87:tint);}
-            text(c,game.skillName(),855,248,12,tint,true);
+            text(c,game.soulArtName(),855,248,12,tint,true);
         }
         if(game.shield>0||game.dodgeCharge>0)text(c,"天赋护盾 "+(int)game.shield+(game.dodgeCharge>0?"  · 借势就绪":""),30,game.soulKind()>0?170:98,13,gold,false);
         if(game.relics[game.buildId()][0]!=0||game.relics[game.buildId()][1]!=0){
             text(c,"遗物："+game.relicLoadout(),30,game.soulKind()>0?193:122,11,gold,false);
             if(game.relicEcho>0||game.hasRelic(8))text(c,(game.relicEcho>0?"铜铃待发  ":"")+(game.hasRelic(8)?(game.relicRevived?"沙漏已用":"沙漏待命"):""),30,game.soulKind()>0?210:140,11,muted,false);
         }
-        if(game.background()!=0||game.job()>=0){
-            float yy=game.soulKind()>0?233:164;
-            text(c,game.careerName()+" / "+CareerSystem.BACKGROUNDS[game.background()],30,yy,11,0xFFAACDDC,false);
-            if(game.careerWard>0)text(c,"职能护盾 "+(int)game.careerWard,30,yy+18,11,0xFFAACDDC,false);
-        }
+        float careerY=game.soulKind()>0?233:164;
+        text(c,game.careerName()+" / "+CareerSystem.BACKGROUNDS[game.background()],30,careerY,11,0xFFAACDDC,false);
+        if(game.careerWard>0)text(c,"职能护盾 "+(int)game.careerWard,30,careerY+18,11,0xFFAACDDC,false);
         if(eventMessageTime>0&&game.mode==ActionGame.Mode.PLAY){rounded(c,330,168,500,35,6,0xE0251F2A);text(c,eventMessage,580,191,12,0xFFE8B8BF,true);}
         if(soulMessageTime>0)text(c,"魂能不足，需要40点",480,170,17,gold,true);
         if(game.ruptureTime>0)text(c,"失控 "+(int)Math.ceil(game.ruptureTime)+"秒 · 生命流失",480,71,13,0xFFFF879B,true);
