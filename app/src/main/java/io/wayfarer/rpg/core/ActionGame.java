@@ -49,7 +49,6 @@ public final class ActionGame {
     }
     public float careerWardLimit(){return entryCareerWard();}
     public float entryCareerWard(){return background()==1?10:0;}
-    public float careerChargeLimit(){return 0;}
     public float soulPeriod(){return SoulSystem.COOLDOWNS[soulKind()][soulArt()];}
     public float springRatio(){return background()==2?.26f:.18f;}
     public int storyUnlocked=0;
@@ -207,7 +206,7 @@ public final class ActionGame {
         generateRoom();
     }
     public void generateRoom(){
-        mode=Mode.PLAY;roomCleared=false;lastRelic=0;relicEcho=0;careerWard=entryCareerWard();careerCharge=0;x=WIDTH/2;y=HEIGHT-100;faceX=0;faceY=-1;
+        mode=Mode.PLAY;roomCleared=false;lastRelic=0;relicEcho=0;careerWard=entryCareerWard();x=WIDTH/2;y=HEIGHT-100;faceX=0;faceY=-1;
         attackCd=0;attackAnim=0;rollTime=0;rollCd=0;skillCd=0;careerSkillTime=0;careerSkillDeathCd=0;careerSkillMode=0;shield=0;dodgeCharge=0;swingBoost=1;followUpWindow=0;hazards.clear();soulWard=0;soulBuff=0;soulFields.clear();invulnerable=.8f;comboWindow=0;hitStop=0;
         enemies.clear();shots.clear();blocks.clear();drops.clear();signals.clear();swingHits.clear();
         // Keep the central route and both exits connected in every layout.
@@ -235,7 +234,7 @@ public final class ActionGame {
     }
     public void pause(){if(mode==Mode.PLAY){mode=Mode.PAUSED;notice="已暂停";}}
     public void resume(){if(mode==Mode.PAUSED)mode=Mode.PLAY;}
-    public void returnCamp(){if(mode==Mode.RESULT){mode=Mode.CAMP;clearThreat();clearSoulRuntime();clearRelicRun();clearPactRuntime();careerWard=0;careerCharge=0;room=0;damageBonus=0;healthBonus=0;speedBonus=0;roomCleared=false;shield=0;dodgeCharge=0;enemies.clear();shots.clear();blocks.clear();drops.clear();hazards.clear();followUpWindow=0;hp=maxHp();notice="冒险所得已结算。选择角色，再次出发。";}}
+    public void returnCamp(){if(mode==Mode.RESULT){mode=Mode.CAMP;clearThreat();clearSoulRuntime();clearRelicRun();careerWard=0;room=0;damageBonus=0;healthBonus=0;speedBonus=0;roomCleared=false;shield=0;dodgeCharge=0;enemies.clear();shots.clear();blocks.clear();drops.clear();hazards.clear();followUpWindow=0;hp=maxHp();notice="冒险所得已结算。选择角色，再次出发。";}}
     public void abandon(){if(mode==Mode.PAUSED)finish(false);}
     public void dodge(float dx,float dy){
         if(mode!=Mode.PLAY||rollCd>0||rollTime>0)return;
@@ -297,7 +296,6 @@ public final class ActionGame {
         else{float range=activeRadius();float multiplier=style==0?(kind==1?1.65f:kind==2?1.5f:1.8f):(kind==1?1.8f:kind==2?2.6f:2.2f);for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<range){hit(e,activeDamage*multiplier);e.stun=kind==1?.9f:.7f;if(kind==2){e.hex=3;if(style==0)pull(e,x,y,55);}}if(kind==1)cleanse(x,y,range);if(style==2)invulnerable=Math.max(invulnerable,kind==1?.85f:kind==2?.35f:.65f);hitStop=.045f;}
     }
     private void followUp(){
-        if(pactActive(MECHANIC)){float cost=maxHp()*.04f;if(hp<=cost){notice="机匣追击需要支付4%最大生命并存活。";signal("pactLow",x,y,0);return;}payPact(cost);}
         followUpWindow=0;aimAtNearest(680);int style=skillStyle();
         if(soulKind()==2)payForbidden(.02f,12);
         float ox=x,oy=y,range=(style==0?320:style==1?640:180)*reachFactor();
@@ -365,7 +363,7 @@ public final class ActionGame {
     private void beginAttack(){
         aimAtNearest(hero==1?640:meleeReach()+30);attackCd=attackPeriod();attackAnim=hero==1?.18f:.24f;
         combo=comboWindow>0?(combo+1)%3:0;comboWindow=.85f;swingHits.clear();
-        swingBoost=(dodgeCharge>0?1+rank(5)*(soulKind()==2?.20f:.15f):1)*(combo==2?1.35f+rank(1)*(soulKind()==2?.18f:.12f)+(isSpec(BOXER,1)&&hero!=1?.25f:0):1);dodgeCharge=0;
+        swingBoost=(dodgeCharge>0?1+rank(5)*(soulKind()==2?.20f:.15f):1)*(combo==2?1.35f+rank(1)*(soulKind()==2?.18f:.12f):1);dodgeCharge=0;
         if(combo==2&&rank(2)>0){boolean connected=false;for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<185){float before=e.hp;hit(e,damage()*.75f);connected|=e.hp<before;}if(connected&&rank(11)>0)shield=Math.min(talentShieldLimit(),shield+4);signal("echo",x,y,185);}
         if(hero==1)fire(faceX,faceY,damage()*swingBoost);else if(hero==2){attackAnim=.16f;invulnerable=Math.max(invulnerable,.16f);signal("daggerDash",x,y,combo);}signal(hero==1?"bow":"swing",x,y,combo);
     }
@@ -381,7 +379,7 @@ public final class ActionGame {
         if(!Float.isFinite(dt)||dt<=0)return;dt=Math.min(dt,.05f);
         if(hitStop>0){hitStop=Math.max(0,hitStop-dt);return;}
         roomElapsed=Math.min(10000000,roomElapsed+dt);followUpWindow=dec(followUpWindow,dt);careerSkillTime=dec(careerSkillTime,dt);careerSkillDeathCd=dec(careerSkillDeathCd,dt);if(careerSkillTime<=0)careerSkillMode=0;
-        updateSoul(dt);relicEcho=dec(relicEcho,dt);careerCharge=dec(careerCharge,dt);time+=dt;attackCd=dec(attackCd,dt);rollCd=dec(rollCd,dt);skillCd=dec(skillCd,dt);invulnerable=dec(invulnerable,dt);comboWindow=dec(comboWindow,dt);dodgeCharge=dec(dodgeCharge,dt);
+        updateSoul(dt);relicEcho=dec(relicEcho,dt);time+=dt;attackCd=dec(attackCd,dt);rollCd=dec(rollCd,dt);skillCd=dec(skillCd,dt);invulnerable=dec(invulnerable,dt);comboWindow=dec(comboWindow,dt);dodgeCharge=dec(dodgeCharge,dt);
         float mx=Float.isFinite(in.mx)?in.mx:0,my=Float.isFinite(in.my)?in.my:0,mag=len(mx,my);
         if(mag>1){mx/=mag;my/=mag;mag=1;}
         motionX=mx*speed();motionY=my*speed();
