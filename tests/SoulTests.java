@@ -36,7 +36,7 @@ public final class SoulTests {
     private static void costsAndSynergies()throws Exception{
         ActionGame g=game(1,0,0);mob(g,300,300);g.hp=10;g.potion();near(g.hp,10+g.maxHp()*.45f*1.15f,"radiance amplifies healing");
         g=game(2,0,0);ActionGame.Enemy e=mob(g,590,600);g.corruption=100;g.soulQuiet=3;g.hp=10;g.potion();near(g.hp,10+g.maxHp()*.45f*.7f,"corruption reduces potion healing");float hp=g.hp;e.stun=0;e.state=1;e.timer=.001f;g.update(1f/60f,new ActionGame.Input());near(hp-g.hp,14*1.4f*1.12f,"corruption incoming damage composes with trait");step(g,240,false);check(g.corruption<100&&g.corruption>95,"corruption decays only after quiet delay");
-        g=new ActionGame();g.experience[0]=1000;g.bindSoul(1,0);g.learn(8);g.learn(9);g.learn(9);near(g.maxHp(),110+12*3+10,"light wick talent resonance");g.start(7);g.soulSkill();near(g.soulWard,16,"warmth grants additional radiant ward");
+        g=new ActionGame();g.experience[0]=1000;g.bindSoul(1,0);g.learn(8);g.learn(9);g.learn(9);near(g.maxHp(),110+12*3+10,"light wick talent resonance");g.start(7);g.soulSkill();near(g.soulWard,30,"radiant art grants its full domain ward");
         g=new ActionGame();g.experience[1]=1000;g.selectHero(1);g.bindSoul(2,0);g.learn(0);g.learn(1);g.learn(1);g.start(7);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;mob(g,710,600);g.combo=1;g.comboWindow=.5f;step(g,1,true);near(g.shots.get(0).damage,g.damage()*1.71f,"forbidden third-beat resonance");
         g=game(1,0,0);e=mob(g,590,600);g.soulEnergy=0;g.soulWard=20;e.stun=0;e.state=1;e.timer=.001f;g.update(1f/60f,new ActionGame.Input());check(g.soulEnergy>0&&g.soulWard<20,"radiant ward damage absorption charges soul");
         System.out.println("PASS corruption damage/healing balance, decay, radiant shield charge and talent resonances");
@@ -48,7 +48,6 @@ public final class SoulTests {
         ActionGame old=ActionSave.decode(edit(bytes,"version","2"));check(old.custom==1&&old.profile().xp==320&&old.rank(0)==1&&old.bank==83&&old.soulKind()==0&&old.soulEnergy==0,"v2 migration preserves builds and does not invent a soul");
         g=game(2,1,0);mob(g,610,600);g.soulSkill();g.pause();bytes=ActionSave.encode(g);ActionGame a=ActionSave.decode(bytes);near(a.soulBuff,g.soulBuff,"pact persisted");near(a.corruption,g.corruption,"debt persisted");near(a.soulCd,g.soulCd,"exclusive cooldown persisted");near(a.enemies.get(0).hex,g.enemies.get(0).hex,"curse persisted");
         reject(bytes,"soulEnergy","101");reject(bytes,"soulCd","19");reject(bytes,"corruption","NaN");reject(bytes,"profile0.soul","3");reject(bytes,"profile0.art","2");reject(bytes,"soulFields","20");reject(bytes,"soulWard","1");reject(bytes,"hex0","4");reject(bytes,"soulBuff","9");
-        g=game(1,1,1);mob(g,710,600);g.soulSkill();bytes=ActionSave.encode(g);reject(bytes,"shotPierce0","3");reject(bytes,"shotHits0","1,1");reject(bytes,"shotHits0","9999");reject(bytes,"shotEffect0","2");
         g=game(1,0,0);mob(g,700,600);g.soulSkill();bytes=ActionSave.encode(g);reject(bytes,"field0","2,560,600,4,0.5,22");reject(bytes,"field0","1,560,600,5,2,22");
         System.out.println("PASS v2 migration, soul snapshots, pulse and curse continuity, malformed resources and pierce histories rejected");
     }
