@@ -6,7 +6,7 @@ public final class SoulSystem {
     public static final String[] NAMES={"未缔结","光辉灵魂","禁忌灵魂"};
     public static final String[][] SKILLS={{"震地","散射","环刃"},{"圣钟震地","折光齐射","守誓环刃"},{"深渊牵引","咒棘散射","噬影环刃"}};
     public static final String[][] ARTS={{"无专属技能","无专属技能"},{"曙光圣域","裁决光矛"},{"裂隙之井","血契狂宴"}};
-    public static final float[][] COOLDOWNS={{0,0},{16,12},{16,18}};
+    public static final float[][] COOLDOWNS={{0,0},{8,6},{8,9}};
     public static final String[] PASSIVES={
         "维持原有技能与天赋，不使用魂能。旧存档默认保持未缔结。",
         "治疗量 +15%；主动技能冷却 +0.5秒并获得辉盾。灯芯每级额外+2生命，余温每级额外+4辉盾。",
