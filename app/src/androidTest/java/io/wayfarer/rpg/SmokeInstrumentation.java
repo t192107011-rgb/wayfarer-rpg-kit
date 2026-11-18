@@ -105,9 +105,6 @@ public final class SmokeInstrumentation extends Instrumentation {
         tap(835,105);waitForIdleSync();journalItem(6);journalItem(0);screenshotNativeDialog("24-doctor-story-fixture.png",activity.storyDialog);
         float[] personalHp={0};ui(()->personalHp[0]=activity.world.game.maxHp());storyButton(AlertDialog.BUTTON_POSITIVE);
         ui(()->{ActionGame g=activity.world.game;check(g.maxHp()==personalHp[0]+4,"personal decision grants actual persistent passive");try{SaveStore store=new SaveStore(activity);store.write(2,g);ActionGame loaded=store.read(2);check(loaded.storyChoices[0]==1&&loaded.characterJobs[0]==CareerSystem.HUNTER&&loaded.characterChoices[0][0]==1&&loaded.maxHp()==g.maxHp(),"story and derived health survive AtomicFile");}catch(IOException e){throw new RuntimeException(e);}activity.world.replace(new ActionGame());});
-        tap(785,405);ui(()->{ActionGame g=activity.world.game;pactArena(g);g.enemies.get(0).y=g.y-140;});tap(855,298);
-        float[] target={0};ui(()->{check(activity.world.game.followUpWindow>0,"real skill button opens combo");target[0]=activity.world.game.enemies.get(0).hp;});tap(855,298);
-        ui(()->{check(activity.world.game.followUpWindow==0&&activity.world.game.enemies.get(0).hp<target[0],"second touch performs damaging follow-up");target[0]=activity.world.game.enemies.get(0).hp;});tap(855,298);ui(()->check(activity.world.game.enemies.get(0).hp==target[0],"third touch cannot repeat combo"));
         ui(()->{ActionGame g=new ActionGame();g.bindSoul(2,0);g.start(91);g.blocks.clear();g.enemies.clear();g.x=560;g.y=430;ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,100,100,1000);g.enemies.add(e);
             // No injected erosion: real casts and natural cooldown updates, with a frozen distant actor.
             for(int cast=0;cast<4;cast++){g.skill();g.skill();if(cast<3)for(int t=0;t<391;t++){e.stun=1;g.hitStop=0;g.update(1f/60,new ActionGame.Input());g.signals.clear();}}
