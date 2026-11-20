@@ -24,13 +24,13 @@ public final class ActionTests {
         check(e.hp==178,"single sword swing cannot repeatedly hit same target");
         ticks(g,in,60);check(e.hp<150,"held attack repeats combo");
         g=game(1);e=mob(g,0,720,600,100);e.stun=1;in.attack=true;ticks(g,in,22);check(e.hp<100,"bow projectile travels and hits");
-        g=new ActionGame();g.selectHero(2);g.chooseCareer(CareerSystem.REPORTER,0,0);g.start(38471);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;e=mob(g,0,615,600,100);g.skill();check(e.hp<100&&g.careerSkillMode==4&&g.skillCd>0,"reporter career skill damages nearby enemies");float eh=e.hp;g.skill();check(e.hp==eh,"career skill cooldown prevents repeat");
+        g=new ActionGame();g.selectHero(2);g.chooseCareer(CareerSystem.REPORTER,0,0);g.start(38471);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;e=mob(g,0,615,600,100);g.skill();check(e.hp==100&&g.careerSkillMode==4&&g.careerSkillTime==10&&g.skillCd>0,"reporter activates the ten-second speed state without an opening burst");float eh=e.hp;g.skill();check(e.hp==eh,"career skill cooldown prevents repeat");
         g=game(0);e=mob(g,0,590,600,100);e.state=1;e.timer=.01f;g.dodge(0,-1);float health=g.hp;in.attack=false;ticks(g,in,2);check(g.hp==health,"dodge invulnerability avoids melee");check(g.y<600,"dodge moves immediately");
         float cd=g.rollCd;g.dodge(1,0);check(g.rollCd==cd,"dodge cooldown honored");
         ticks(g,in,25);e.x=g.x+25;e.y=g.y;e.state=1;e.timer=.001f;e.stun=0;ticks(g,in,1);check(g.hp<health,"melee damages after dodge ends");
         health=g.hp;e.state=1;e.timer=.001f;ticks(g,in,1);check(g.hp==health,"hurt invulnerability prevents damage stacking");
         g.hp=g.maxHp();g.potion();check(g.potions==2,"full health does not consume potion");g.hp=10;g.potion();check(g.potions==1&&g.hp>10,"potion heals and consumes one");
-        g=new ActionGame();g.chooseCareer(CareerSystem.REPORTER,0,0);g.start(1);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;e=mob(g,0,610,600,100);g.blocks.add(new ActionGame.Block(580,560,15,80,0));g.skill();check(e.hp<100,"reporter career burst resolves through thin cover");
+        g=new ActionGame();g.chooseCareer(CareerSystem.REPORTER,0,0);g.start(1);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;e=mob(g,0,610,600,100);g.blocks.add(new ActionGame.Block(580,560,15,80,0));g.skill();check(e.hp==100&&g.careerSkillTime==10,"reporter state activates independently of obstacle layout");g.soulCd=5;g.generateRoom();check(g.skillCd==0&&g.soulCd==0,"entering a new room resets career and soul skill cooldowns");
         check(ActionGame.segmentDistance(5,2,0,0,10,0)==2,"swept collision geometry");
         System.out.println("PASS melee combos, ranged hits, skills, dodge and damage windows");
     }
