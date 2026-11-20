@@ -348,7 +348,7 @@ public final class ActionGame {
         combo=comboWindow>0?(combo+1)%3:0;comboWindow=.85f;swingHits.clear();
         swingBoost=(dodgeCharge>0?1+rank(5)*(soulKind()==2?.20f:.15f):1)*(combo==2?1.35f+rank(1)*(soulKind()==2?.18f:.12f):1);dodgeCharge=0;
         if(combo==2&&rank(2)>0){boolean connected=false;for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<185){float before=e.hp;hit(e,damage()*.75f);connected|=e.hp<before;}if(connected&&rank(11)>0)shield=Math.min(talentShieldLimit(),shield+4);signal("echo",x,y,185);}
-        if(hero==1)fire(faceX,faceY,damage()*swingBoost);else if(hero==2){attackAnim=.16f;signal("daggerDash",x,y,combo);}signal(hero==1?"bow":"swing",x,y,combo);
+        if(hero==1)fire(faceX,faceY,damage()*swingBoost);else if(hero==2){attackAnim=.18f;signal("daggerDash",x,y,combo);}signal(hero==1?"bow":"swing",x,y,combo);
     }
     private void fire(float dx,float dy,float value){fire(dx,dy,value,0,0);}
     private void fire(float dx,float dy,float value,int effect,int pierce){if(shots.size()<160){Shot s=new Shot(x+dx*20,y+dy*20,dx*640,dy*640,value,true);s.effect=effect;s.pierce=pierce;shots.add(s);}}
