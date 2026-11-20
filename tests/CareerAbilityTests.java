@@ -11,8 +11,8 @@ public final class CareerAbilityTests {
     public static void main(String[] args)throws Exception{
         ActionGame g=arena(HUNTER);ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,700,600,1000);g.enemies.add(e);g.skill();
         check(g.careerSkillMode==1&&g.careerSkillTime==10&&e.hp<1000,"hunter burst and sustained state");
-        g=arena(ASSASSIN);g.skill();ActionGame.Input in=new ActionGame.Input();in.attack=true;g.update(.016f,in);
-        check(g.careerSkillMode==2&&g.shots.size()==3,"assassin fan fires three knives per attack");
+        g=arena(ASSASSIN);float basePeriod=g.attackPeriod();g.skill();
+        check(g.careerSkillMode==2&&g.careerSkillTime==10&&g.attackPeriod()>basePeriod,"assassin activates knife state with a slight attack interval increase");
         g=arena(DETECTIVE);e=new ActionGame.Enemy(g.nextId++,0,720,600,1000);g.enemies.add(e);float x=e.x;g.skill();
         for(int i=0;i<20;i++){g.hitStop=0;g.update(1f/60f,new ActionGame.Input());}
         check(g.careerSkillMode==3&&e.x<x&&e.hp<1000,"detective field attracts and damages");
