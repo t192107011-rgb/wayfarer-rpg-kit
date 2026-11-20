@@ -257,7 +257,7 @@ public final class ActionGame {
         if(mode!=Mode.PLAY||rollTime>0||skillCd>0)return;
         int j=job();
         careerSkillMode=j+1;
-        careerSkillTime=10f;
+        careerSkillTime=30f;
         careerSkillDeathCd=j==HUNTER?1f:0f;
         skillCd=skillPeriod();
         followUpWindow=0;
@@ -281,7 +281,7 @@ public final class ActionGame {
         if(soulKind()==2)payForbidden(.02f,12);
         float ox=x,oy=y,range=(style==0?320:style==1?640:180)*reachFactor();
         float endX=x+faceX*range,endY=y+faceY*range;
-        if(style==2){for(int i=0;i<(int)(range/5);i++)movePlayer(faceX*5,faceY*5);endX=x;endY=y;invulnerable=Math.max(invulnerable,.18f);}
+        if(style==2){for(int i=0;i<(int)(range/5);i++)movePlayer(faceX*5,faceY*5);endX=x;endY=y;}
         boolean connected=false;
         for(Enemy e:enemies)if(e.hp>0&&segmentDistance(e.x,e.y,ox,oy,endX,endY)<(style==0?36:style==1?19:30)+e.radius()&&lineClear(ox,oy,e.x,e.y)){
             boolean cursed=e.hex>0;float factor=style==0?(e.stun>0?1.95f:1.3f):style==1?1.8f:e.state==1?2.1f:1.5f;
