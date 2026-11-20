@@ -124,10 +124,10 @@ public final class SmokeInstrumentation extends Instrumentation {
         tap(510,142);waitForIdleSync();
         ui(()->{View root=activity.careerDialog.getWindow().getDecorView();Spinner jobs=root.findViewWithTag("career-job");check(jobs.getCount()==4,"exactly four rebuilt careers");jobs.setSelection(CareerSystem.ASSASSIN);((Spinner)root.findViewWithTag("career-background")).setSelection(1);check(!root.findViewWithTag("career-spec").isEnabled(),"level-one specialization remains locked");activity.careerDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();});waitForIdleSync();
         ui(()->check(activity.world.game.job()==CareerSystem.ASSASSIN&&activity.world.game.background()==1,"new career and background commit"));
-        tap(785,405);ui(()->check(activity.world.game.careerWard==10,"background grants entry shield"));tap(855,298);
-        ui(()->check(activity.world.game.shield>=activity.world.game.maxHp()*.4f,"assassin skill grants 40 percent shield"));
+        tap(785,405);ui(()->check(activity.world.game.careerWard==10,"background grants entry shield"));float basePeriod=activity.world.game.attackPeriod();tap(855,298);
+        ui(()->check(activity.world.game.careerSkillMode==2&&activity.world.game.careerSkillTime==10&&activity.world.game.attackPeriod()>basePeriod,"assassin knife skill activates with a slight attack interval increase"));
         screenshot("16-career-combat.png");tap(900,37);
-        ui(()->{try{SaveStore store=new SaveStore(activity);store.write(1,activity.world.game);ActionGame loaded=store.read(1);check(loaded.job()==CareerSystem.ASSASSIN&&loaded.background()==1&&loaded.shield==activity.world.game.shield,"rebuilt career and skill state survive AtomicFile");}catch(IOException e){throw new RuntimeException(e);}});
+        ui(()->{try{SaveStore store=new SaveStore(activity);store.write(1,activity.world.game);ActionGame loaded=store.read(1);check(loaded.job()==CareerSystem.ASSASSIN&&loaded.background()==1&&loaded.careerSkillMode==2&&loaded.careerSkillTime>0,"rebuilt career and skill state survive AtomicFile");}catch(IOException e){throw new RuntimeException(e);}});
     }
     private void screenshotNativeDialog(String name,AlertDialog dialog){ui(()->{try{View v=dialog.getWindow().getDecorView();Bitmap b=Bitmap.createBitmap(v.getWidth(),v.getHeight(),Bitmap.Config.ARGB_8888);v.draw(new Canvas(b));writeBitmap(b,name);}catch(IOException e){throw new RuntimeException(e);}});}
     private void relicFlow(){
@@ -187,7 +187,7 @@ public final class SmokeInstrumentation extends Instrumentation {
         });waitForIdleSync();SystemClock.sleep(150);
         screenshotDialog("05-character-workshop.png");
         ui(()->activity.workshopDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick());waitForIdleSync();
-        ui(()->{ActionGame g=activity.world.game;check(g.heroName().equals("暮灯艾文")&&g.hero==1&&g.skillName().equals("火力强化")&&g.profile().color==4&&g.profile().hair==2,"native editor commits customization");});
+        ui(()->{ActionGame g=activity.world.game;check(g.heroName().equals("暮灯艾文")&&g.hero==1&&g.skillName().equals("瞬时猎杀")&&g.profile().color==4&&g.profile().hair==2,"native editor commits customization");});
         tap(350,500);waitForIdleSync();ui(()->{View root=activity.workshopDialog.getWindow().getDecorView();((EditText)root.findViewWithTag("profile-name")).setText("取消的修改");activity.workshopDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();});
         ui(()->check(activity.world.game.heroName().equals("暮灯艾文"),"cancel preserves profile"));
         tap(530,500);ui(()->check(activity.world.showTalents,"tree opens"));tap(175,164);
