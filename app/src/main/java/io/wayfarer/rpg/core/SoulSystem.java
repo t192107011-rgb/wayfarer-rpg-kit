@@ -1,12 +1,12 @@
 package io.wayfarer.rpg.core;
 
-/** Stable soul IDs: 0 unbound, 1 radiance, 2 forbidden; each bound soul has two arts. */
+/** Stable soul IDs: 0 unbound, 1 radiance, 2 forbidden; each bound soul has damage, control and enhancement arts. */
 public final class SoulSystem {
     private SoulSystem(){}
     public static final String[] NAMES={"未缔结","光辉灵魂","禁忌灵魂"};
     public static final String[][] SKILLS={{"震地","散射","环刃"},{"圣钟震地","折光齐射","守誓环刃"},{"深渊牵引","咒棘散射","噬影环刃"}};
-    public static final String[][] ARTS={{"无专属技能","无专属技能"},{"曙光圣域","裁决光矛"},{"裂隙之井","血契狂宴"}};
-    public static final float[][] COOLDOWNS={{0,0},{8,6},{8,9}};
+    public static final String[][] ARTS={{"无专属技能","无专属技能","无专属技能"},{"曙光圣域 · 控制","裁决光矛 · 伤害","黎明庇护 · 强化"},{"裂隙之井 · 控制","血契狂宴 · 强化","血狱爆发 · 伤害"}};
+    public static final float[][] COOLDOWNS={{0,0,0},{16,12,14},{16,18,15}};
     public static final String[] PASSIVES={
         "维持原有技能与天赋，不使用魂能。旧存档默认保持未缔结。",
         "治疗量 +15%；主动技能冷却 +0.5秒并获得辉盾。灯芯每级额外+2生命，余温每级额外+4辉盾。",
@@ -22,13 +22,15 @@ public final class SoulSystem {
          "噬影环刃：范围190、2.6倍伤害并施加诅咒；无敌缩短至0.35秒。"}
     };
     public static final String[][] ART_DETAILS={
-        {"先缔结灵魂。","先缔结灵魂。"},
+        {"先缔结灵魂。","先缔结灵魂。","先缔结灵魂。"},
         {"消耗40魂能，冷却16秒。获得30辉盾，在原地展开5秒圣域；每秒灼烧175范围敌人、净化弹丸，留在其中每秒恢复2%生命。",
-         "消耗40魂能，冷却12秒。沿瞄准方向释放520距离光矛，造成3.6倍伤害、净化路径弹丸并获得12辉盾；墙体会阻挡伤害。"},
+         "消耗40魂能，冷却12秒。沿瞄准方向释放520距离光矛，造成3.6倍伤害、净化路径弹丸并获得12辉盾；墙体会阻挡伤害。",
+         "消耗40魂能，冷却14秒。获得5秒黎明强化并累积20辉盾（辉盾上限60）；强化期间造成伤害提高25%。持续时间短于冷却时间。"},
         {"消耗40魂能，冷却16秒；消耗8%最大生命、增加30侵蚀。前方展开4秒裂隙，每0.5秒牵引、诅咒并造成0.5倍伤害。",
-         "消耗40魂能，冷却18秒；消耗8%最大生命、增加30侵蚀。周围爆发1.2倍伤害，进入6秒血契：伤害+25%、普攻间隔-20%，有效攻击吸取伤害的8%生命（每次不超过最大生命的1.5%，仍受侵蚀影响）。"}
+         "消耗40魂能，冷却18秒；消耗8%最大生命、增加30侵蚀。周围爆发1.2倍伤害，进入6秒血契：伤害+25%、普攻间隔-20%，有效攻击吸取伤害的8%生命（每次不超过最大生命的1.5%，仍受侵蚀影响）。",
+         "消耗40魂能，冷却15秒；消耗8%最大生命、增加30侵蚀。血狱在周围爆发2.8倍伤害，对命中敌人施加4秒诅咒。"}
     };
-    public static void validate(int kind,int art){if(kind<0||kind>2||art<0||art>1||kind==0&&art!=0)throw new IllegalArgumentException("灵魂配置无效");}
+    public static void validate(int kind,int art){if(kind<0||kind>2||art<0||art>(kind==0?0:2)||kind==0&&art!=0)throw new IllegalArgumentException("灵魂配置无效");}
     public static String talentExtra(int kind,int node){
         if(kind==1&&node==8)return "光辉共鸣：每级额外 +2 生命。";
         if(kind==1&&node==9)return "光辉共鸣：每级额外 +4 辉盾。";

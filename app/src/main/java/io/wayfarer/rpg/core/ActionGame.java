@@ -308,10 +308,15 @@ public final class ActionGame {
         }else if(art==0){
             float fx=Math.max(60,Math.min(WIDTH-60,x+faceX*120)),fy=Math.max(60,Math.min(HEIGHT-60,y+faceY*120));
             soulFields.add(new SoulField(2,fx,fy,power));signal("forbidden",fx,fy,185);
-        }else{
+        }else if(kind==2&&art==1){
             soulBuff=6;
             for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<160){hit(e,power*1.2f,false);e.hex=3;}
             signal("forbidden",x,y,160);
+        }else if(kind==1){
+            soulBuff=5;soulWard=Math.min(60,soulWard+20);signal("radiant",x,y,160);
+        }else{
+            for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<190){hit(e,power*2.8f,false);e.hex=4;}
+            signal("forbidden",x,y,190);
         }
     }
     private void cleanse(float cx,float cy,float radius){shots.removeIf(p->!p.friendly&&len(p.x-cx,p.y-cy)<radius);}

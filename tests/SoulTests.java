@@ -22,7 +22,9 @@ public final class SoulTests {
         g=game(2,0,0);e=mob(g,750,600);float hp=g.hp;g.soulSkill();step(g,31,false);check(e.x<750&&e.hex>0,"forbidden rift pulls and curses");near(hp-g.hp,g.maxHp()*.08f,"forbidden art life cost");near(g.corruption,29.5f,"forbidden art debt after immediate decay tick");check(g.soulCd>0,"forbidden art starts its own cooldown");
         g=game(2,1,0);e=mob(g,610,600);g.hp=50;float original=g.damage(),interval=g.attackPeriod();g.soulSkill();near(g.soulBuff,6,"forbidden art grants six-second buff");near(g.damage(),original*1.25f,"forbidden art damage bonus");near(g.attackPeriod(),interval*.8f,"forbidden art attack speed");
         g=game(2,0,0);mob(g,680,600);g.hp=.5f;g.soulSkill();check(g.hp==.5f,"self-cost cannot kill critical player");
-        System.out.println("PASS independent radiant and forbidden soul arts, cooldowns, field, lance, rift and buff");
+        g=game(1,2,0);e=mob(g,610,600);g.soulSkill();near(g.soulBuff,5,"radiant enhancement lasts five seconds");near(g.soulWard,20,"radiant enhancement accumulates ward");near(g.soulCd,14,"radiant enhancement starts independent cooldown");step(g,301,false);check(g.soulBuff==0&&g.soulCd>8,"enhancement expires well before cooldown");
+        g=game(2,2,0);e=mob(g,610,600);hp=g.hp;g.soulSkill();near(hp-g.hp,g.maxHp()*.08f,"forbidden burst has explicit life cost");near(e.hp,1000-g.damage()*2.8f,"forbidden burst deals area damage");near(e.hex,4,"forbidden burst applies curse");near(g.soulCd,15,"forbidden damage art cooldown");
+        System.out.println("PASS three independent art categories per soul, cooldowns, fields, burst, rift, enhancement and buff");
     }
     private static void arts()throws Exception{
         ActionGame g=game(1,0,0);mob(g,680,600);g.soulEnergy=39;g.soulSkill();check(g.soulFields.isEmpty()&&g.soulCd==0,"insufficient energy blocks art");g.soulEnergy=40;g.hp=20;g.soulSkill();near(g.soulEnergy,0,"art consumes forty energy");near(g.soulWard,30,"domain grants ward");float base=g.damage(),max=g.maxHp();step(g,305,false);near(g.enemies.get(0).hp,1000-base*.35f*5,"domain exactly five pulses");near(g.hp,20+max*.02f*1.15f*5,"domain heals only over its five pulses");check(g.soulFields.isEmpty()&&g.soulEnergy==0,"domain expires without recharging itself");
@@ -47,7 +49,7 @@ public final class SoulTests {
         ActionGame g=new ActionGame();g.selectCustom(1);g.profile().xp=320;g.learn(0);g.bank=83;g.start(7);byte[] bytes=ActionSave.encode(g);
         ActionGame old=ActionSave.decode(edit(bytes,"version","2"));check(old.custom==1&&old.profile().xp==320&&old.rank(0)==1&&old.bank==83&&old.soulKind()==0&&old.soulEnergy==0,"v2 migration preserves builds and does not invent a soul");
         g=game(2,1,0);mob(g,610,600);g.soulSkill();g.pause();bytes=ActionSave.encode(g);ActionGame a=ActionSave.decode(bytes);near(a.soulBuff,g.soulBuff,"forbidden soul buff persisted");near(a.corruption,g.corruption,"debt persisted");near(a.soulCd,g.soulCd,"exclusive cooldown persisted");near(a.enemies.get(0).hex,g.enemies.get(0).hex,"curse persisted");
-        reject(bytes,"soulEnergy","101");reject(bytes,"soulCd","19");reject(bytes,"corruption","NaN");reject(bytes,"profile0.soul","3");reject(bytes,"profile0.art","2");reject(bytes,"soulFields","20");reject(bytes,"soulWard","1");reject(bytes,"hex0","4");reject(bytes,"soulBuff","9");
+        reject(bytes,"soulEnergy","101");reject(bytes,"soulCd","19");reject(bytes,"corruption","NaN");reject(bytes,"profile0.soul","3");reject(bytes,"profile0.art","3");reject(bytes,"soulFields","20");reject(bytes,"soulWard","1");reject(bytes,"hex0","4");reject(bytes,"soulBuff","9");
         g=game(1,0,0);mob(g,700,600);g.soulSkill();bytes=ActionSave.encode(g);reject(bytes,"field0","2,560,600,4,0.5,22");reject(bytes,"field0","1,560,600,5,2,22");
         System.out.println("PASS v2 migration, soul snapshots, pulse and curse continuity, malformed resources and pierce histories rejected");
     }

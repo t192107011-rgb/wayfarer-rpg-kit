@@ -7,7 +7,7 @@ import java.util.*;
 public final class ActionSave {
     private ActionSave(){}
     public static byte[] encode(ActionGame g) throws IOException {
-        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",14);
+        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",15);
         p.setProperty("endless",Boolean.toString(g.endless));put(p,"endlessDepth",g.endlessDepth);put(p,"bestDepth",g.bestDepth);put(p,"threat",g.threat);put(p,"pressure",g.pressure);put(p,"encounterHpFloor",g.encounterHpFloor);put(p,"encounterDamageFloor",g.encounterDamageFloor);put(p,"roomDamage",g.roomDamage);put(p,"roomElapsed",g.roomElapsed);
         p.setProperty("mode",g.mode.name());p.setProperty("rng",Long.toString(g.rngState));p.setProperty("won",Boolean.toString(g.won));p.setProperty("cleared",Boolean.toString(g.roomCleared));
         String[] ik={"hero","bank","power","vitality","runs","wins","room","loot","kills","potions","damageBonus","healthBonus","speedBonus","combo","nextId"};
@@ -47,7 +47,7 @@ public final class ActionSave {
         if(data==null||data.length==0||data.length>131072)throw new IOException("存档大小不正确");
         try{
             Properties p=new Properties();p.load(new ByteArrayInputStream(data));
-            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,14);
+            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,15);
             ActionGame g=new ActionGame();g.mode=ActionGame.Mode.valueOf(required(p,"mode"));g.rngState=Long.parseLong(required(p,"rng"));if(g.rngState==0)throw new IllegalArgumentException("随机状态无效");
             g.won=bool(p,"won");g.roomCleared=bool(p,"cleared");g.hero=n(p,"hero",0,2);g.bank=n(p,"bank",0,999999);g.power=n(p,"power",0,10);g.vitality=n(p,"vitality",0,10);g.runs=n(p,"runs",0,999999);g.wins=n(p,"wins",0,g.runs);
             g.room=n(p,"room",0,5);g.loot=n(p,"loot",0,99999);g.kills=n(p,"kills",0,99999);g.potions=n(p,"potions",0,version>=10?ActionGame.MAX_POTIONS:2);g.damageBonus=n(p,"damageBonus",0,version>=10?40:16);g.healthBonus=n(p,"healthBonus",0,version>=12?99999:version>=10?200:80);g.speedBonus=n(p,"speedBonus",0,version>=10?6:4);g.combo=n(p,"combo",0,2);g.nextId=n(p,"nextId",1,Integer.MAX_VALUE-1);
@@ -70,8 +70,8 @@ public final class ActionSave {
             // v1/v2 migration leaves every soul unbound and adds no combat debt or resource.
             if(version>=3){
                 for(int j=0;j<3;j++){
-                    g.presetSouls[j]=n(p,"presetSoul"+j,0,2);g.presetArts[j]=n(p,"presetArt"+j,0,1);SoulSystem.validate(g.presetSouls[j],g.presetArts[j]);
-                    g.profiles[j].soul=n(p,"profile"+j+".soul",0,2);g.profiles[j].soulArt=n(p,"profile"+j+".art",0,1);BuildSystem.validate(g.profiles[j]);
+                    g.presetSouls[j]=n(p,"presetSoul"+j,0,2);g.presetArts[j]=n(p,"presetArt"+j,0,version>=15?2:1);SoulSystem.validate(g.presetSouls[j],g.presetArts[j]);
+                    g.profiles[j].soul=n(p,"profile"+j+".soul",0,2);g.profiles[j].soulArt=n(p,"profile"+j+".art",0,version>=15?2:1);BuildSystem.validate(g.profiles[j]);
                 }
                 g.soulEnergy=f(p,"soulEnergy",0,100);g.soulCd=f(p,"soulCd",0,SoulSystem.COOLDOWNS[g.soulKind()][g.soulArt()]);g.soulWard=f(p,"soulWard",0,99999);g.corruption=f(p,"corruption",0,100);g.soulQuiet=f(p,"soulQuiet",0,version>=9?8:3);g.soulBuff=f(p,"soulBuff",0,6);
                 int fields=n(p,"soulFields",0,1);for(int j=0;j<fields;j++){float[] a=array(p,"field"+j,6);int type=integer(a[0],1,2);ActionGame.SoulField f=new ActionGame.SoulField(type,range(a[1],48,1072),range(a[2],48,712),range(a[5],1,300));f.life=range(a[3],0,type==1?5:4);f.tick=range(a[4],0,type==1?1:.5f);
