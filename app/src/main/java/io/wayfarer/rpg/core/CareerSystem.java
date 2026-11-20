@@ -6,12 +6,12 @@ public final class CareerSystem {
     public static final int SPECIALIZATION_XP=160;
     public static final int HUNTER=0,ASSASSIN=1,DETECTIVE=2,REPORTER=3;
     public static final String[] CLASSES={"猎人","刺客","侦探","记者"};
-    public static final String[] SKILL_NAMES={"火力强化","狂袭","引力场","群体曝光"};
+    public static final String[] SKILL_NAMES={"瞬时猎杀","刀尖之舞","灯中之影","静默之声"};
     public static final String[] CLASS_DETAILS={
-        "猎人：远程压制与近身控场。主动技能期间，子弹命中产生小范围溅射，近战范围增加35%。",
-        "刺客：5秒突袭状态。受到伤害降低80%，获得相当于最大生命值40%的护盾，普攻伤害提高50%，移动速度提高25%。",
-        "侦探：展开3.5秒广域引力场，持续吸附敌人并造成低额伤害；敌人死亡时引发范围追击，触发间隔至少2秒。",
-        "记者：发动大范围攻击并进入群体曝光状态。之后攻击让敌人分担原攻击伤害的70%；场上只剩一个敌人时，攻击伤害提高至200%。"
+        "猎人：瞬时猎杀。发动时造成大范围伤害，随后10秒内攻速与移速大幅提高并获得吸血；期间每秒损失1%最大生命，生命降至30%时停止损失。",
+        "刺客：刀尖之舞。持续10秒，攻击额外扇形发射3把小刀；击杀立即重置职业技能冷却并恢复3%最大生命，攻速小幅降低。",
+        "侦探：灯中之影。持续10秒生成全场吸引场，持续吸引敌人并造成低额伤害；职业技能冷却速度提高，受到的攻击伤害提高15%。",
+        "记者：静默之声。持续10秒，大幅提高攻速与职业技能冷却速度；治疗效果降低80%。"
     };
     public static final String[][] SPECS={{"无专精","狙猎","游击"},{"无专精"},{"无专精"},{"无专精","战地采访","调查报道"}};
     public static final String[][] SPEC_DETAILS={
