@@ -20,10 +20,10 @@ public final class CareerTests {
         ActionGame migrated=ActionSave.decode(oldData);check(migrated.job()==HUNTER&&migrated.specialization()==0&&migrated.background()==4,"v1-v10 migration resets retired career but keeps background");check(migrated.characterJobs[0]==HUNTER,"historical character career IDs are reset too");check(migrated.careerSkillMode==0&&migrated.careerSkillTime==0&&migrated.skillCd==0,"retired career runtime is cleared during migration");
 
         g=new ActionGame();g.experience[0]=160;g.chooseCareer(HUNTER,1,0);g.start(4);g.blocks.clear();g.enemies.clear();
-        ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,700,600,1000);g.enemies.add(e);g.skill();check(g.careerSkillMode==1&&g.careerSkillTime==5,"hunter active skill starts");
-        g=new ActionGame();g.chooseCareer(ASSASSIN,0,0);g.start(5);float hp=g.maxHp();g.skill();near(g.shield,hp*.4f,"assassin gains 40 percent max-health shield");near(g.damage(),g.baseDamage()*1.5f,"assassin gains attack damage");ActionGame assassinSave=ActionSave.decode(ActionSave.encode(g));near(assassinSave.shield,hp*.4f,"assassin shield survives save and restore");
-        g=new ActionGame();g.chooseCareer(DETECTIVE,0,0);g.start(6);g.blocks.clear();g.enemies.clear();g.enemies.add(new ActionGame.Enemy(g.nextId++,0,700,600,1000));g.skill();check(g.careerSkillMode==3&&g.careerSkillTime==3.5f,"detective gravity field starts");
-        g=new ActionGame();g.chooseCareer(REPORTER,0,0);g.start(7);g.blocks.clear();g.enemies.clear();g.enemies.add(new ActionGame.Enemy(g.nextId++,0,700,600,1000));g.skill();check(g.careerSkillMode==4&&g.careerSkillTime==5,"reporter exposure starts");
+        ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,700,600,1000);g.enemies.add(e);g.skill();check(g.careerSkillMode==1&&g.careerSkillTime==10&&e.hp<1000,"hunter burst and ten-second state start");
+        g=new ActionGame();g.chooseCareer(ASSASSIN,0,0);g.start(5);float basePeriod=g.attackPeriod();g.skill();check(g.careerSkillTime==10&&g.attackPeriod()>basePeriod,"assassin skill slightly slows attack interval");ActionGame assassinSave=ActionSave.decode(ActionSave.encode(g));check(assassinSave.careerSkillMode==2&&assassinSave.careerSkillTime==10,"assassin state survives save and restore");
+        g=new ActionGame();g.chooseCareer(DETECTIVE,0,0);g.start(6);g.blocks.clear();g.enemies.clear();g.enemies.add(new ActionGame.Enemy(g.nextId++,0,700,600,1000));g.skill();check(g.careerSkillMode==3&&g.careerSkillTime==10,"detective global attraction field starts");
+        g=new ActionGame();g.chooseCareer(REPORTER,0,0);g.start(7);g.blocks.clear();g.enemies.clear();g.enemies.add(new ActionGame.Enemy(g.nextId++,0,700,600,1000));g.skill();check(g.careerSkillMode==4&&g.careerSkillTime==10&&Math.abs(g.healingFactor()-.2f)<.01f,"reporter speed state and healing penalty start");
         System.out.println("CAREER CHECKS PASSED: "+checks);
     }
 }
