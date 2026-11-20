@@ -13,14 +13,15 @@ public final class ActionGame {
     public boolean endless=false;
     public int endlessDepth=0,bestDepth=0;
     public float threat=1,pressure=0,encounterHpFloor=0,encounterDamageFloor=0,roomDamage=0,roomElapsed=0;
-    public float enemyRange(float base){return base*(1+Math.min(.2f,(threat-1)*.04f));}
-    public float enemySpeed(float base){return base*(1+Math.min(.45f,(threat-1)*.08f));}
+    public float enemyRange(float base){return base*(1+Math.min(.4f,(threat-1)*.04f));}
+    public float enemySpeed(float base){return base*(1+Math.min(.75f,(threat-1)*.08f));}
     public float enemyPower(Enemy e,float base){return Math.max(base*threat,encounterDamageFloor)*enemyForce(e);}
     public float reachFactor(){return rank(3)>0&&hp<maxHp()*.4f?1.25f:1;}
     public float meleeReach(){return (hero==0?120:100)*reachFactor();}
     public float activeRadius(){int k=soulKind();return (skillStyle()==0?(k==1?235:k==2?260:200):(k==1?180:k==2?190:160))*reachFactor();}
     public float followUpDuration(){return rank(7)>0?3:2;}
-    public float talentShieldLimit(){return rank(9)*6+(rank(11)>0?12:0);}
+    /** Persistent talent shield has only a safety cap; it does not decay by time or room. */
+    public float talentShieldLimit(){return maxHp();}
     public String threatLabel(){return String.format(java.util.Locale.ROOT,"敌势 ×%.2f",threat);}
     private void clearThreat(){threat=1;pressure=0;encounterHpFloor=0;encounterDamageFloor=0;roomDamage=0;roomElapsed=0;endless=false;endlessDepth=0;}
     private boolean collectDrop(Drop d){if(d.potion){if(potions>=MAX_POTIONS)return false;potions++;signal("potion",d.x,d.y,potions);notice="拾取药瓶 · "+potions+" / "+MAX_POTIONS;}else if(d.heal)heal(d.amount);else{loot=Math.min(99999,loot+d.amount);signal("coin",d.x,d.y,d.amount);}return true;}
@@ -203,12 +204,12 @@ public final class ActionGame {
     public void startEndless(long seed){beginRun(seed,true);}
     private void beginRun(long seed,boolean infinite){
         if(mode!=Mode.CAMP)return;clearThreat();endless=infinite;endlessDepth=infinite?1:0;clearSoulRuntime();clearRelicRun();careerSkillTime=0;careerSkillDeathCd=0;careerSkillMode=0;careerCooldownRank=0;soulEnergy=soulKind()==0?0:40+(hasRelic(5)?(soulKind()==1?30:15):0);rngState=seed==0?1:seed;runs=Math.min(999999,runs+1);
-        loot=0;kills=0;nextId=1;room=1;potions=2;damageBonus=0;healthBonus=0;speedBonus=0;combo=0;time=0;won=false;hp=maxHp();
+        loot=0;kills=0;nextId=1;room=1;potions=2;damageBonus=0;healthBonus=0;speedBonus=0;combo=0;time=0;won=false;hp=maxHp();shield=0;soulWard=0;careerWard=entryCareerWard();
         generateRoom();
     }
     public void generateRoom(){
-        mode=Mode.PLAY;roomCleared=false;lastRelic=0;relicEcho=0;careerWard=entryCareerWard();x=WIDTH/2;y=HEIGHT-100;faceX=0;faceY=-1;
-        attackCd=0;attackAnim=0;rollTime=0;rollCd=0;skillCd=0;soulCd=0;careerSkillTime=0;careerSkillDeathCd=0;careerSkillMode=0;shield=0;dodgeCharge=0;swingBoost=1;followUpWindow=0;hazards.clear();soulWard=0;soulBuff=0;soulFields.clear();invulnerable=.8f;comboWindow=0;hitStop=0;
+        mode=Mode.PLAY;roomCleared=false;lastRelic=0;relicEcho=0;x=WIDTH/2;y=HEIGHT-100;faceX=0;faceY=-1;
+        attackCd=0;attackAnim=0;rollTime=0;rollCd=0;skillCd=0;soulCd=0;careerSkillTime=0;careerSkillDeathCd=0;careerSkillMode=0;dodgeCharge=0;swingBoost=1;followUpWindow=0;hazards.clear();soulBuff=0;soulFields.clear();invulnerable=.8f;comboWindow=0;hitStop=0;
         enemies.clear();shots.clear();blocks.clear();drops.clear();signals.clear();swingHits.clear();
         // Keep the central route and both exits connected in every layout.
         for(int i=0;i<6;i++) {

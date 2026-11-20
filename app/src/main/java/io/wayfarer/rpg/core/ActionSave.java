@@ -7,7 +7,7 @@ import java.util.*;
 public final class ActionSave {
     private ActionSave(){}
     public static byte[] encode(ActionGame g) throws IOException {
-        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",13);
+        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",14);
         p.setProperty("endless",Boolean.toString(g.endless));put(p,"endlessDepth",g.endlessDepth);put(p,"bestDepth",g.bestDepth);put(p,"threat",g.threat);put(p,"pressure",g.pressure);put(p,"encounterHpFloor",g.encounterHpFloor);put(p,"encounterDamageFloor",g.encounterDamageFloor);put(p,"roomDamage",g.roomDamage);put(p,"roomElapsed",g.roomElapsed);
         p.setProperty("mode",g.mode.name());p.setProperty("rng",Long.toString(g.rngState));p.setProperty("won",Boolean.toString(g.won));p.setProperty("cleared",Boolean.toString(g.roomCleared));
         String[] ik={"hero","bank","power","vitality","runs","wins","room","loot","kills","potions","damageBonus","healthBonus","speedBonus","combo","nextId"};
@@ -39,7 +39,7 @@ public final class ActionSave {
         for(ActionGame.Block b:g.blocks)p.setProperty("b"+i++,csv(b.x,b.y,b.w,b.h,b.style));
         put(p,"drops",g.drops.size());i=0;
         for(ActionGame.Drop d:g.drops){p.setProperty("dropPotion"+i,Boolean.toString(d.potion));p.setProperty("d"+i++,csv(d.x,d.y,d.amount,d.heal?1:0));}
-        ByteArrayOutputStream out=new ByteArrayOutputStream();p.store(out,"Wayfarer Action save v13");return out.toByteArray();
+        ByteArrayOutputStream out=new ByteArrayOutputStream();p.store(out,"Wayfarer Action save v14");return out.toByteArray();
     }
     private static void put(Properties p,String k,Number value){p.setProperty(k,value.toString());}
     private static String csv(Number... values){StringJoiner j=new StringJoiner(",");for(Number n:values)j.add(n.toString());return j.toString();}
@@ -47,20 +47,20 @@ public final class ActionSave {
         if(data==null||data.length==0||data.length>131072)throw new IOException("存档大小不正确");
         try{
             Properties p=new Properties();p.load(new ByteArrayInputStream(data));
-            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,13);
+            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,14);
             ActionGame g=new ActionGame();g.mode=ActionGame.Mode.valueOf(required(p,"mode"));g.rngState=Long.parseLong(required(p,"rng"));if(g.rngState==0)throw new IllegalArgumentException("随机状态无效");
             g.won=bool(p,"won");g.roomCleared=bool(p,"cleared");g.hero=n(p,"hero",0,2);g.bank=n(p,"bank",0,999999);g.power=n(p,"power",0,10);g.vitality=n(p,"vitality",0,10);g.runs=n(p,"runs",0,999999);g.wins=n(p,"wins",0,g.runs);
             g.room=n(p,"room",0,5);g.loot=n(p,"loot",0,99999);g.kills=n(p,"kills",0,99999);g.potions=n(p,"potions",0,version>=10?ActionGame.MAX_POTIONS:2);g.damageBonus=n(p,"damageBonus",0,version>=10?40:16);g.healthBonus=n(p,"healthBonus",0,version>=12?99999:version>=10?200:80);g.speedBonus=n(p,"speedBonus",0,version>=10?6:4);g.combo=n(p,"combo",0,2);g.nextId=n(p,"nextId",1,Integer.MAX_VALUE-1);
             if(version>=10){
                 g.endless=bool(p,"endless");g.endlessDepth=n(p,"endlessDepth",0,999999);g.bestDepth=n(p,"bestDepth",0,999999);
-                g.threat=f(p,"threat",1,6);g.pressure=f(p,"pressure",0,.6f);g.encounterHpFloor=f(p,"encounterHpFloor",0,2000);g.encounterDamageFloor=f(p,"encounterDamageFloor",0,200);g.roomDamage=f(p,"roomDamage",0,100000);g.roomElapsed=f(p,"roomElapsed",0,10000000);
+                g.threat=f(p,"threat",1,12);g.pressure=f(p,"pressure",0,.6f);g.encounterHpFloor=f(p,"encounterHpFloor",0,150000);g.encounterDamageFloor=f(p,"encounterDamageFloor",0,1000);g.roomDamage=f(p,"roomDamage",0,100000);g.roomElapsed=f(p,"roomElapsed",0,10000000);
                 if(g.endless&&(g.endlessDepth<1||g.mode==ActionGame.Mode.CAMP||g.won||g.room!=(g.endlessDepth-1)%5+1)||!g.endless&&g.endlessDepth!=0||(g.encounterHpFloor==0)!=(g.encounterDamageFloor==0))throw new IllegalArgumentException("无尽或敌势来源无效");
                 if(g.mode==ActionGame.Mode.CAMP&&(g.threat!=1||g.pressure>0||g.encounterHpFloor>0||g.encounterDamageFloor>0||g.roomDamage>0||g.roomElapsed>0))throw new IllegalArgumentException("营地敌势状态无效");
             }
             for(int i=0;i<3;i++)g.experience[i]=n(p,"xp"+i,0,1000000);
             // v1 migration: preserve every original field; new profiles and empty trees use defaults.
             if(version>=2){
-                g.custom=n(p,"custom",-1,2);g.shield=f(p,"shield",0,200);g.dodgeCharge=f(p,"dodgeCharge",0,3);
+                g.custom=n(p,"custom",-1,2);g.shield=f(p,"shield",0,99999);g.dodgeCharge=f(p,"dodgeCharge",0,3);
                 for(int i=0;i<3;i++){BuildSystem.Profile b=g.profiles[i];String k="profile"+i+".";b.name=required(p,k+"name");float[] a=array(p,k+"data",8);
                     b.weapon=integer(a[0],0,2);b.skill=integer(a[1],0,2);b.origin=integer(a[2],0,2);b.trait=integer(a[3],0,2);b.color=integer(a[4],0,5);b.skin=integer(a[5],0,2);b.hair=integer(a[6],0,2);b.xp=integer(a[7],0,1000000);BuildSystem.validate(b);}
                 for(int b=0;b<6;b++){for(int t=0;t<12;t++)g.talents[b][t]=n(p,"talent"+b+"."+t,0,BuildSystem.NODES[t].maxRank);if(version>=10)BuildSystem.validateTree(g.talents[b],b<3?g.experience[b]:g.profiles[b-3].xp);else BuildSystem.validateLegacyTree(g.talents[b],b<3?g.experience[b]:g.profiles[b-3].xp);}
@@ -73,7 +73,7 @@ public final class ActionSave {
                     g.presetSouls[j]=n(p,"presetSoul"+j,0,2);g.presetArts[j]=n(p,"presetArt"+j,0,1);SoulSystem.validate(g.presetSouls[j],g.presetArts[j]);
                     g.profiles[j].soul=n(p,"profile"+j+".soul",0,2);g.profiles[j].soulArt=n(p,"profile"+j+".art",0,1);BuildSystem.validate(g.profiles[j]);
                 }
-                g.soulEnergy=f(p,"soulEnergy",0,100);g.soulCd=f(p,"soulCd",0,SoulSystem.COOLDOWNS[g.soulKind()][g.soulArt()]);g.soulWard=f(p,"soulWard",0,30);g.corruption=f(p,"corruption",0,100);g.soulQuiet=f(p,"soulQuiet",0,version>=9?8:3);g.soulBuff=f(p,"soulBuff",0,6);
+                g.soulEnergy=f(p,"soulEnergy",0,100);g.soulCd=f(p,"soulCd",0,SoulSystem.COOLDOWNS[g.soulKind()][g.soulArt()]);g.soulWard=f(p,"soulWard",0,99999);g.corruption=f(p,"corruption",0,100);g.soulQuiet=f(p,"soulQuiet",0,version>=9?8:3);g.soulBuff=f(p,"soulBuff",0,6);
                 int fields=n(p,"soulFields",0,1);for(int j=0;j<fields;j++){float[] a=array(p,"field"+j,6);int type=integer(a[0],1,2);ActionGame.SoulField f=new ActionGame.SoulField(type,range(a[1],48,1072),range(a[2],48,712),range(a[5],1,300));f.life=range(a[3],0,type==1?5:4);f.tick=range(a[4],0,type==1?1:.5f);
                     if(type!=g.soulKind()||g.soulArt()!=0||f.life<=0)throw new IllegalArgumentException("领域与灵魂配置不符");g.soulFields.add(f);}
                 if(g.soulKind()!=1&&g.soulWard>0||g.soulKind()!=2&&(g.corruption>0||g.soulQuiet>0||g.soulBuff>0)||g.soulKind()==0&&g.soulEnergy>0)throw new IllegalArgumentException("灵魂状态无效");
@@ -106,7 +106,7 @@ public final class ActionSave {
             }
             if(version>=12){g.careerSkillTime=f(p,"careerSkillTime",0,30);g.careerSkillDeathCd=f(p,"careerSkillDeathCd",0,2);g.careerSkillMode=n(p,"careerSkillMode",0,4);}else{g.careerSkillTime=0;g.careerSkillDeathCd=0;g.careerSkillMode=0;g.skillCd=0;g.followUpWindow=0;}
             g.careerCooldownRank=version>=12?n(p,"careerCooldownRank",0,8):0;
-            float shieldLimit=g.rank(9)*6+(g.rank(11)>0?12:0);if(version<11)g.shield=Math.min(g.shield,shieldLimit);else if(g.job()==CareerSystem.ASSASSIN)shieldLimit=Math.max(shieldLimit,g.maxHp()*.4f);if(g.shield>shieldLimit)throw new IllegalArgumentException("护盾来源无效");
+            float shieldLimit=g.maxHp();if(version<14)g.shield=Math.min(g.shield,shieldLimit);else if(g.shield>shieldLimit)throw new IllegalArgumentException("护盾超过安全上限");
             if(version>=9){
                 g.followUpWindow=f(p,"followUpWindow",0,version>=10?g.followUpDuration():2);g.ruptureTime=f(p,"ruptureTime",0,6);g.ruptureTick=f(p,"ruptureTick",0,1.5f);g.ruptureLatched=bool(p,"ruptureLatched");
                 if(g.soulBuff>0&&g.soulArt()!=1&&g.ruptureTime<=0)throw new IllegalArgumentException("灵魂强化来源无效");
@@ -126,7 +126,7 @@ public final class ActionSave {
             count=n(p,"enemies",0,40);Set<Integer> ids=new HashSet<>();
             for(int i=0;i<count;i++){
                 float[] a=array(p,"e"+i,13);int id=integer(a[0],1,g.nextId-1);if(!ids.add(id))throw new IllegalArgumentException("重复敌人ID");
-                ActionGame.Enemy e=new ActionGame.Enemy(id,integer(a[1],0,version>=9?6:3),range(a[3],48,1072),range(a[4],48,712),range(a[6],1,version>=10?12000:1000));
+                ActionGame.Enemy e=new ActionGame.Enemy(id,integer(a[1],0,version>=9?6:3),range(a[3],48,1072),range(a[4],48,712),range(a[6],1,version>=14?150000:version>=10?12000:1000));
                 e.hp=range(a[5],0,e.maxHp);e.state=integer(a[2],0,version>=9?3:2);e.timer=range(a[7],-.1f,2);e.aimX=range(a[8],-1,1);e.aimY=range(a[9],-1,1);e.stun=range(a[10],0,1);e.flash=range(a[11],0,1);e.struck=integer(a[12],0,1)==1;
                 if(version>=9){float[] t=array(p,"enemyTactics"+i,4);e.guard=range(t[0],0,40);e.targetX=range(t[1],64,1056);e.targetY=range(t[2],64,696);e.pattern=integer(t[3],0,e.type==3?2:0);if(e.state==3&&e.type!=2&&e.type!=4)throw new IllegalArgumentException("敌人恢复状态无效");}
                 if(version>=3)e.hex=f(p,"hex"+i,0,3);
