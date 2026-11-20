@@ -53,7 +53,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
                 Fx f=new Fx("number",s.x,s.y-30,.7f,s.value,s.kind.equals("hurt")?0xFFFF917E:s.kind.equals("heal")?0xFFB4E9BA:cream);f.vy=-35;effects.add(f);
                 if(s.kind.equals("hurt"))shake=5;
                 for(int i=0;i<6;i++){Fx spark=new Fx("spark",s.x,s.y,.2f+cosmetic.nextFloat()*.2f,0,s.kind.equals("hurt")?0xFFCE705C:gold);spark.vx=(cosmetic.nextFloat()-.5f)*180;spark.vy=(cosmetic.nextFloat()-.5f)*180;effects.add(spark);}
-            }else if(s.kind.equals("skill")||s.kind.equals("slam")||s.kind.equals("clear")||s.kind.equals("echo")||s.kind.equals("shield"))effects.add(new Fx("ring",s.x,s.y,.45f,s.kind.equals("slam")?185:s.kind.equals("echo")?s.value:s.kind.equals("shield")?45:s.kind.equals("skill")?(int)game.activeRadius():140,s.kind.equals("slam")?0xFFDC7053:0xFFBCE8C5));
+            }else if(s.kind.equals("skill")||s.kind.equals("careerSkill")||s.kind.equals("slam")||s.kind.equals("clear")||s.kind.equals("echo")||s.kind.equals("shield"))effects.add(new Fx("ring",s.x,s.y,.55f,s.kind.equals("careerSkill")?(s.value==1?430:180):s.kind.equals("slam")?185:s.kind.equals("echo")?s.value:s.kind.equals("shield")?45:s.kind.equals("skill")?(int)game.activeRadius():140,s.kind.equals("careerSkill")?(s.value==1?0xFFE5A56F:s.value==2?0xFFC4A0D7:s.value==3?0xFF8BC9C0:0xFFE3C68A):s.kind.equals("slam")?0xFFDC7053:0xFFBCE8C5));
             else if(s.kind.equals("radiant")||s.kind.equals("forbidden"))effects.add(new Fx("ring",s.x,s.y,.55f,s.value>3?s.value:(int)game.activeRadius(),s.kind.equals("radiant")?0xFFF2DD9B:0xFFB991DF));
             else if(s.kind.equals("lance"))effects.add(new Fx("lance",s.x,s.y,.35f,s.value,0xFFFFE8AD));
             else if(s.kind.equals("sentence")||s.kind.equals("fracture")||s.kind.equals("obituary")){effects.add(new Fx("ring",s.x,s.y,.4f,55,0xFFE6A5A1));}
@@ -287,7 +287,8 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         }
         float careerY=game.soulKind()>0?233:164;
         text(c,game.careerName()+" / "+CareerSystem.BACKGROUNDS[game.background()],30,careerY,11,0xFFAACDDC,false);
-        if(game.careerWard>0)text(c,"职能护盾 "+(int)game.careerWard,30,careerY+18,11,0xFFAACDDC,false);
+        if(game.careerSkillTime>0)text(c,game.skillName()+" · "+(int)Math.ceil(game.careerSkillTime)+"秒",30,careerY+16,11,0xFFE5C58B,false);
+        if(game.careerWard>0)text(c,"职能护盾 "+(int)game.careerWard,30,careerY+(game.careerSkillTime>0?32:18),11,0xFFAACDDC,false);
         if(eventMessageTime>0&&game.mode==ActionGame.Mode.PLAY){rounded(c,330,168,500,35,6,0xE0251F2A);text(c,eventMessage,580,191,12,0xFFE8B8BF,true);}
         if(soulMessageTime>0)text(c,"魂能不足，需要40点",480,170,17,gold,true);
         if(game.ruptureTime>0)text(c,"失控 "+(int)Math.ceil(game.ruptureTime)+"秒 · 生命流失",480,71,13,0xFFFF879B,true);
@@ -307,7 +308,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     private void rewards(Canvas c){
         shade(c);text(c,"封 锁 线 补 给",480,126,29,cream,true);text(c,"选择一项本轮增益，再选择出口继续前进",480,160,16,muted,true);
         if(game.room>0)text(c,WorldSetting.REPORTS[game.room-1],480,190,12,gold,true);
-        String[] titles={"锋芒","生息","轻羽"};String[] body={game.damageBonus>=40?"伤害增益已满，票券 +12":"所有攻击伤害 +4（上限40）",game.healthBonus>=200?"生命增益已满，基础恢复35":"生命上限 +20，基础恢复35",game.speedBonus>=6?"移速增益已满，技能就绪":"移动速度 +8%，技能就绪"};
+        String[] titles={game.damageBonus>=40?"职业技能冷却": "锋芒",game.maxHp()>=99999?"局内资金":"生息",game.speedBonus>=6?"局内资金":"轻羽"};String[] body={game.damageBonus<40?"所有攻击伤害 +4（上限40）":game.careerCooldownRank<8?"职业技能冷却速度 +10%（上限80%）":"冷却速度已满，票券 +12",game.maxHp()<99999?"生命上限 +20（最高99999），基础恢复35":"生命上限已达99999，票券 +15",game.speedBonus<6?"移动速度 +8%，技能就绪":"局内资金 +15"};
         for(int i=0;i<3;i++){rounded(c,45+i*300,211,270,165,12,0xFF2D4545);text(c,titles[i],180+i*300,266,26,gold,true);text(c,body[i],180+i*300,311,15,cream,true);text(c,"点击获取",180+i*300,351,13,muted,true);}
         button(c,260,391,440,43,"现场线索 · "+StorySystem.TITLES[game.room-1],true);
         if(game.lastRelic!=0){text(c,game.relicDiscovery(),480,457,16,gold,true);text(c,"圣遗物收藏永久保留；本轮携行不变",480,486,13,muted,true);}
