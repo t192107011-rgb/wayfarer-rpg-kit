@@ -13,7 +13,7 @@ public final class SoulTests {
         ActionGame g=new ActionGame();g.experience[0]=160;g.bank=200;g.learn(0);check(g.bindSoul(1,1),"bind preset soul");g.selectHero(1);check(g.soulKind()==0,"preset souls independent");g.selectCustom(0);g.bindSoul(2,1);g.selectHero(0);check(g.soulKind()==1&&g.soulArt()==1&&g.heroXp()==160&&g.bank==200&&g.rank(0)==1,"binding preserves progression");
         ActionGame a=ActionSave.decode(ActionSave.encode(g));a.selectCustom(0);check(a.soulKind()==2&&a.soulArt()==1,"custom binding persisted independently");
         g.start(90);check(!g.bindSoul(2,0)&&g.soulKind()==1,"cannot swap souls midrun");near(g.soulEnergy,40,"initial energy");g.pause();g.abandon();g.returnCamp();near(g.soulEnergy,0,"camp clears runtime but preserves binding");check(g.soulKind()==1,"binding persists between runs");
-        for(int[] pair:new int[][]{{0,1},{3,0},{-1,0},{1,2}}){boolean bad=false;try{SoulSystem.validate(pair[0],pair[1]);}catch(IllegalArgumentException e){bad=true;}check(bad,"invalid binding rejected");}
+        for(int[] pair:new int[][]{{0,1},{3,0},{-1,0},{1,3}}){boolean bad=false;try{SoulSystem.validate(pair[0],pair[1]);}catch(IllegalArgumentException e){bad=true;}check(bad,"invalid binding rejected");}
         System.out.println("PASS soul binding independence, camp-only swaps, progression preservation and fresh-run resources");
     }
     private static void variants()throws Exception{
