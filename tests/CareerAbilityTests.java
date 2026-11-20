@@ -10,7 +10,7 @@ public final class CareerAbilityTests {
     }
     public static void main(String[] args)throws Exception{
         ActionGame g=arena(HUNTER);ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,700,600,1000);g.enemies.add(e);g.skill();
-        check(g.careerSkillMode==1&&g.careerSkillTime==10&&e.hp<1000,"hunter burst and sustained state");
+        check(g.careerSkillMode==1&&g.careerSkillTime==30&&e.hp<1000,"hunter burst and sustained state");
         g=arena(ASSASSIN);float basePeriod=g.attackPeriod();g.skill();
         check(g.careerSkillMode==2&&g.careerSkillTime==10&&g.attackPeriod()>basePeriod,"assassin activates knife state with a slight attack interval increase");
         g=arena(DETECTIVE);e=new ActionGame.Enemy(g.nextId++,0,720,600,1000);g.enemies.add(e);float x=e.x;g.skill();
@@ -18,7 +18,7 @@ public final class CareerAbilityTests {
         check(g.careerSkillMode==3&&e.x<x&&e.hp<1000,"detective field attracts and damages");
         g=arena(REPORTER);g.skill();check(g.careerSkillMode==4&&g.healingFactor()<.21f,"reporter attack state and healing penalty");
         g.careerCooldownRank=4;ActionGame restored=ActionSave.decode(ActionSave.encode(g));
-        check(restored.careerCooldownRank==4&&restored.careerSkillMode==4,"v12 saves career cooldown and active state");
+        check(restored.careerCooldownRank==4&&restored.careerSkillMode==4,"v13 saves career cooldown and active state");
         g.soulCd=5;g.generateRoom();check(g.skillCd==0&&g.soulCd==0,"room transition resets both skill cooldowns");
         System.out.println("CAREER ABILITY CHECKS PASSED: "+checks);
     }
