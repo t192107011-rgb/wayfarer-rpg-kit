@@ -17,7 +17,7 @@ public final class ActionGame {
     public float enemySpeed(float base){return base*(1+Math.min(.45f,(threat-1)*.08f));}
     public float enemyPower(Enemy e,float base){return Math.max(base*threat,encounterDamageFloor)*enemyForce(e);}
     public float reachFactor(){return rank(3)>0&&hp<maxHp()*.4f?1.25f:1;}
-    public float meleeReach(){return (hero==0?120:100)*reachFactor()*(job()==HUNTER&&careerSkillTime>0?1.35f:1);}
+    public float meleeReach(){return (hero==0?120:100)*reachFactor();}
     public float activeRadius(){int k=soulKind();return (skillStyle()==0?(k==1?235:k==2?260:200):(k==1?180:k==2?190:160))*reachFactor();}
     public float followUpDuration(){return rank(7)>0?3:2;}
     public float talentShieldLimit(){return rank(9)*6+(rank(11)>0?12:0);}
@@ -393,7 +393,7 @@ public final class ActionGame {
         if(mode!=Mode.PLAY)return;
         updateHazards(dt);if(mode!=Mode.PLAY)return;updateShots(dt);if(mode!=Mode.PLAY)return;
         Iterator<Enemy> it=enemies.iterator();while(it.hasNext()){
-            Enemy e=it.next();if(e.hp<=0){if(careerSkillMode==3&&careerSkillTime>0&&careerSkillDeathCd<=0){careerSkillDeathCd=2f;for(Enemy q:enemies)if(q!=e&&q.hp>0&&len(q.x-e.x,q.y-e.y)<190)hit(q,damage()*.65f,false);signal("detectiveBurst",e.x,e.y,190);}it.remove();kills=Math.min(99999,kills+1);drops.add(new Drop(e.x,e.y,(e.type==3?55:5+room)+(background()==6?2:0),false));if(background()==5){heal(1);gainSoul(e.type==3?8:2);}if(random(6)==0)drops.add(new Drop(e.x+15,e.y,15,true));if(random(100)<ThreatSystem.potionChance(e.type)){Drop bottle=new Drop(e.x-15,e.y,1,false);bottle.potion=true;drops.add(bottle);}signal("defeat",e.x,e.y,e.type);}
+            Enemy e=it.next();if(e.hp<=0){it.remove();kills=Math.min(99999,kills+1);drops.add(new Drop(e.x,e.y,(e.type==3?55:5+room)+(background()==6?2:0),false));if(background()==5){heal(1);gainSoul(e.type==3?8:2);}if(random(6)==0)drops.add(new Drop(e.x+15,e.y,15,true));if(random(100)<ThreatSystem.potionChance(e.type)){Drop bottle=new Drop(e.x-15,e.y,1,false);bottle.potion=true;drops.add(bottle);}signal("defeat",e.x,e.y,e.type);}
         }
         Iterator<Drop> d=drops.iterator();while(d.hasNext()){
             Drop p=d.next();float dist=len(p.x-x,p.y-y);if(dist<100&&dist>1){float speed=270*dt;p.x+=(x-p.x)/dist*Math.min(speed,dist);p.y+=(y-p.y)/dist*Math.min(speed,dist);}
