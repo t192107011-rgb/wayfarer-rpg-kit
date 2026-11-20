@@ -39,7 +39,7 @@ public final class ActionSave {
         for(ActionGame.Block b:g.blocks)p.setProperty("b"+i++,csv(b.x,b.y,b.w,b.h,b.style));
         put(p,"drops",g.drops.size());i=0;
         for(ActionGame.Drop d:g.drops){p.setProperty("dropPotion"+i,Boolean.toString(d.potion));p.setProperty("d"+i++,csv(d.x,d.y,d.amount,d.heal?1:0));}
-        ByteArrayOutputStream out=new ByteArrayOutputStream();p.store(out,"Wayfarer Action save v11");return out.toByteArray();
+        ByteArrayOutputStream out=new ByteArrayOutputStream();p.store(out,"Wayfarer Action save v12");return out.toByteArray();
     }
     private static void put(Properties p,String k,Number value){p.setProperty(k,value.toString());}
     private static String csv(Number... values){StringJoiner j=new StringJoiner(",");for(Number n:values)j.add(n.toString());return j.toString();}
@@ -104,7 +104,7 @@ public final class ActionSave {
                 if(g.mode==ActionGame.Mode.CAMP&&g.careerWard>0)throw new IllegalArgumentException("营地职能状态无效");
                 if(g.soulCd>g.soulPeriod()+.0001f)throw new IllegalArgumentException("魂技冷却与专精不符");
             }
-            if(version>=11){g.careerSkillTime=f(p,"careerSkillTime",0,10);g.careerSkillDeathCd=f(p,"careerSkillDeathCd",0,2);g.careerSkillMode=n(p,"careerSkillMode",0,4);}else{g.careerSkillTime=0;g.careerSkillDeathCd=0;g.careerSkillMode=0;g.skillCd=0;g.followUpWindow=0;}
+            if(version>=12){g.careerSkillTime=f(p,"careerSkillTime",0,10);g.careerSkillDeathCd=f(p,"careerSkillDeathCd",0,2);g.careerSkillMode=n(p,"careerSkillMode",0,4);}else{g.careerSkillTime=0;g.careerSkillDeathCd=0;g.careerSkillMode=0;g.skillCd=0;g.followUpWindow=0;}
             g.careerCooldownRank=version>=12?n(p,"careerCooldownRank",0,8):0;
             float shieldLimit=g.rank(9)*6+(g.rank(11)>0?12:0);if(version<11)g.shield=Math.min(g.shield,shieldLimit);else if(g.job()==CareerSystem.ASSASSIN)shieldLimit=Math.max(shieldLimit,g.maxHp()*.4f);if(g.shield>shieldLimit)throw new IllegalArgumentException("护盾来源无效");
             if(version>=9){
