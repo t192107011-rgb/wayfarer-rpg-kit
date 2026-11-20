@@ -308,7 +308,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     private void rewards(Canvas c){
         shade(c);text(c,"封 锁 线 补 给",480,126,29,cream,true);text(c,"选择一项本轮增益，再选择出口继续前进",480,160,16,muted,true);
         if(game.room>0)text(c,WorldSetting.REPORTS[game.room-1],480,190,12,gold,true);
-        String[] titles={game.damageBonus>=40?"职业技能冷却": "锋芒",game.maxHp()>=99999?"局内资金":"生息",game.speedBonus>=6?"局内资金":"轻羽"};String[] body={game.damageBonus<40?"所有攻击伤害 +4（上限40）":game.careerCooldownRank<8?"职业技能冷却速度 +10%（上限80%）":"冷却速度已满，票券 +12",game.maxHp()<99999?"生命上限 +20（最高99999），基础恢复35":"生命上限已达99999，票券 +15",game.speedBonus<6?"移动速度 +8%，技能就绪":"局内资金 +15"};
+        String[] titles={game.damageBonus>=40?"职业技能冷却": "锋芒",game.healthBonus>=200?(game.maxHp()>=99999?"局内资金":"生命上限"):"生息",game.speedBonus>=6?"局内资金":"轻羽"};String[] body={game.damageBonus<40?"所有攻击伤害 +4（上限40）":game.careerCooldownRank<8?"职业技能冷却速度 +10%（上限80%）":"冷却速度已满，票券 +12",game.healthBonus<200?"生命上限 +20（原升级阶段上限200）":game.maxHp()<99999?"生命上限继续 +20（最高99999）":"生命上限已达99999，票券 +15",game.speedBonus<6?"移动速度 +8%，技能就绪":"局内资金 +15"};
         for(int i=0;i<3;i++){rounded(c,45+i*300,211,270,165,12,0xFF2D4545);text(c,titles[i],180+i*300,266,26,gold,true);text(c,body[i],180+i*300,311,15,cream,true);text(c,"点击获取",180+i*300,351,13,muted,true);}
         button(c,260,391,440,43,"现场线索 · "+StorySystem.TITLES[game.room-1],true);
         if(game.lastRelic!=0){text(c,game.relicDiscovery(),480,457,16,gold,true);text(c,"圣遗物收藏永久保留；本轮携行不变",480,486,13,muted,true);}
