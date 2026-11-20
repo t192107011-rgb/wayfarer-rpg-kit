@@ -120,7 +120,7 @@ public final class ActionSave {
                 if(g.mode==ActionGame.Mode.CAMP&&(g.followUpWindow>0||g.ruptureTime>0||g.ruptureLatched||zones>0)||zones>0&&(g.mode==ActionGame.Mode.REWARD||g.roomCleared))throw new IllegalArgumentException("战斗扩展状态无效");
             }
             g.x=f(p,"x",48,1072);g.y=f(p,"y",48,712);g.hp=f(p,"hp",0,g.maxHp());g.faceX=f(p,"faceX",-1,1);g.faceY=f(p,"faceY",-1,1);g.time=f(p,"time",0,10000000);
-            g.attackCd=f(p,"attackCd",0,1);g.rollTime=f(p,"rollTime",0,.3f);g.rollCd=f(p,"rollCd",0,1.2f);g.skillCd=f(p,"skillCd",0,7.5f);g.invulnerable=f(p,"invulnerable",0,1);g.comboWindow=f(p,"comboWindow",0,1);g.rollX=f(p,"rollX",-1,1);g.rollY=f(p,"rollY",-1,1);
+            g.attackCd=f(p,"attackCd",0,1);g.rollTime=f(p,"rollTime",0,.3f);g.rollCd=f(p,"rollCd",0,1.2f);g.skillCd=f(p,"skillCd",0,version>=12?60:7.5f);g.invulnerable=f(p,"invulnerable",0,1);g.comboWindow=f(p,"comboWindow",0,1);g.rollX=f(p,"rollX",-1,1);g.rollY=f(p,"rollY",-1,1);
             if(version<11){g.skillCd=0;g.followUpWindow=0;}
             int count=n(p,"blocks",0,32);for(int i=0;i<count;i++){float[] a=array(p,"b"+i,5);g.blocks.add(new ActionGame.Block(range(a[0],48,1072),range(a[1],48,712),range(a[2],1,200),range(a[3],1,200),integer(a[4],0,1)));}
             count=n(p,"enemies",0,40);Set<Integer> ids=new HashSet<>();
