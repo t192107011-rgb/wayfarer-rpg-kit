@@ -300,7 +300,7 @@ public final class ActionGame {
         if(kind==2)payForbidden(.08f,30);
         float power=damage();
         if(kind==1&&art==0){soulWard=Math.max(soulWard,30);soulFields.add(new SoulField(1,x,y,power));signal("radiant",x,y,175);}
-        else if(kind==1){
+        else if(kind==1&&art==1){
             soulWard=Math.max(soulWard,12);float endX=x+faceX*520,endY=y+faceY*520;
             for(Enemy e:enemies)if(e.hp>0&&segmentDistance(e.x,e.y,x,y,endX,endY)<28+e.radius()&&lineClear(x,y,e.x,e.y)){hit(e,power*3.6f,false);e.stun=Math.max(e.stun,e.type==3?.15f:.6f);}
             shots.removeIf(p->!p.friendly&&segmentDistance(p.x,p.y,x,y,endX,endY)<35&&lineClear(x,y,p.x,p.y));
