@@ -256,13 +256,44 @@ public final class ActionGame {
     }
     public void openShop(){if(mode==Mode.REWARD){tacticDraftOpen=false;shopOpen=true;}}
     public void closeShop(){shopOpen=false;}
-    public int shopPrice(int item){return item==0?24:item==1?28:item==2?32:-1;}
+    public int shopPrice(int item){return item==0?24:item==1?28:item==2?32:item==3?38:item==4?42:item==5?55:-1;}
     public boolean buyShopItem(int item){
-        if(mode!=Mode.REWARD||!shopOpen||item<0||item>2)return false;
+        if(mode!=Mode.REWARD||!shopOpen||item<0||item>5)return false;
         int price=shopPrice(item);if(loot<price){notice="票券不足，还差 "+(price-loot)+"。";return false;}
         if(item==0&&bombs>=3||item==1&&snares>=3||item==2&&tonics>=3){notice="该道具已达到携带上限（3）。";return false;}
-        loot-=price;if(item==0)bombs++;else if(item==1)snares++;else tonics++;
-        notice=item==0?"购入爆裂瓶":item==1?"购入捕缚钉":"购入战斗兴奋剂";return true;
+        if(item==3&&hp>=maxHp()-.01f){notice="生命值已满，无需急救补给。";return false;}
+        if(item==4&&(soulKind()==0||soulEnergy>=99.99f)){notice="当前无法使用魂能结晶。";return false;}
+        if(item==5&&damageBonus>=40&&careerCooldownRank>=8&&speedBonus>=6){notice="本轮战术改装已全部达到上限。";return false;}
+        loot-=price;
+        if(item==0)bombs++;else if(item==1)snares++;else if(item==2)tonics++;
+        else if(item==3){float before=hp;heal(maxHp()*.30f);notice="急救补给 · 恢复 "+Math.round(hp-before)+" 点生命";}
+        else if(item==4){float before=soulEnergy;soulEnergy=Math.min(100,soulEnergy+35);notice="魂能结晶 · 恢复 "+Math.round(soulEnergy-before)+" 点魂能";}
+        else if(damageBonus<40){damageBonus=Math.min(40,damageBonus+4);notice="战术改装 · 本轮伤害 +4";}
+        else if(careerCooldownRank<8){careerCooldownRank++;notice="战术改装 · 职业技能冷却速度 +5%";}
+        else{speedBonus=Math.min(6,speedBonus+1);notice="战术改装 · 移动速度 +8%";}
+        if(item<3)notice=item==0?"购入爆裂瓶":item==1?"购入捕缚钉":"购入战斗兴奋剂";
+        signal("purchase",x,y,item);return true;
+    }
+    public boolean soulWardAction(){
+        if(mode!=Mode.PLAY||soulKind()==0||soulEnergy<25)return false;
+        soulEnergy-=25;
+        if(soulKind()==1){soulWard=Math.min(60,soulWard+30);notice="灵魂灌注 · 获得30点辉盾";}
+        else{payForbidden(0,8);soulWard=Math.min(60,soulWard+24);notice="禁忌灌注 · 获得24点魂盾，侵蚀 +8";}
+        signal("shield",x,y,30);return true;
+    }
+    public boolean soulTuneAction(){
+        if(mode!=Mode.PLAY||soulKind()==0||soulEnergy<30||soulCd<=0)return false;
+        soulEnergy-=30;soulCd=Math.max(0,soulCd-(soulKind()==1?5f:4f));
+        if(soulKind()==2)corruption=Math.min(100,corruption+4);
+        notice=soulKind()==1?"灵魂调律 · 魂技冷却缩短5秒":"禁忌调律 · 魂技冷却缩短4秒，侵蚀 +4";
+        signal("echo",x,y,120);return true;
+    }
+    public boolean soulResonanceAction(){
+        if(mode!=Mode.PLAY||soulKind()==0||soulEnergy<35)return false;
+        soulEnergy-=35;soulBuff=Math.max(soulBuff,4f);
+        if(soulKind()==2)corruption=Math.min(100,corruption+10);
+        notice=soulKind()==1?"灵魂共鸣 · 4秒内伤害与攻速强化":"禁忌共鸣 · 4秒强化，侵蚀 +10";
+        signal("radiant",x,y,140);return true;
     }
     public void useBomb(){
         if(mode!=Mode.PLAY||bombs<=0)return;bombs--;int hitCount=0;
