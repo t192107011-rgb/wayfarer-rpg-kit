@@ -18,7 +18,7 @@ public final class ActionGame {
     public float enemyPower(Enemy e,float base){return Math.max(base*threat,encounterDamageFloor)*enemyForce(e);}
     public float reachFactor(){return rank(3)>0&&hp<maxHp()*.4f?1.25f:1;}
     public float meleeReach(){return (hero==0?120:100)*reachFactor();}
-    public float activeRadius(){int k=soulKind();return (skillStyle()==0?(k==1?235:k==2?260:200):(k==1?180:k==2?190:160))*reachFactor();}
+    public float activeRadius(){int k=soulKind();return (skillStyle()==0?(k==1?235:k==2?260:200):(k==1?180:k==2?190:160))*reachFactor()*(specialtyRank(7)>0?1.10f:1); }
     public float followUpDuration(){return rank(7)>0?3:2;}
     /** Persistent talent shield has only a safety cap; it does not decay by time or room. */
     public float talentShieldLimit(){return maxHp();}
@@ -31,6 +31,7 @@ public final class ActionGame {
     public int custom=-1;
     public final BuildSystem.Profile[] profiles=new BuildSystem.Profile[3];
     public final int[][] talents=new int[6][12];
+    public final int[][] specialties=new int[6][8];
     public final int[][] training=new int[6][4];
     public float shield=0,dodgeCharge=0;
     public final int[][] careers=new int[6][3];
@@ -50,7 +51,7 @@ public final class ActionGame {
     }
     public float careerWardLimit(){return entryCareerWard();}
     public float entryCareerWard(){return background()==1?10:0;}
-    public float soulPeriod(){return Math.max(4f,SoulSystem.COOLDOWNS[soulKind()][soulArt()]-.3f*training[buildId()][3]);}
+    public float soulPeriod(){return Math.max(4f,SoulSystem.COOLDOWNS[soulKind()][soulArt()]-.3f*training[buildId()][3]-.8f*specialtyRank(1));}
     public float springRatio(){return background()==2?.26f:.18f;}
     public int storyUnlocked=0;
     public final int[] storyChoices=new int[5],characterUnlocked=new int[6],characterJobs={-1,-1,-1,-1,-1,-1};
@@ -105,7 +106,7 @@ public final class ActionGame {
         clearSoulRuntime();hp=maxHp();notice="已缔结："+SoulSystem.NAMES[kind];return true;
     }
     private void clearSoulRuntime(){soulEnergy=0;soulCd=0;soulWard=0;corruption=0;soulQuiet=0;soulBuff=0;ruptureTime=0;ruptureTick=0;ruptureLatched=false;soulFields.clear();}
-    private void gainSoul(float value){if(soulKind()!=0&&mode==Mode.PLAY)soulEnergy=Math.min(100,soulEnergy+value*(hasRelic(12)?1.1f:1));}
+    private void gainSoul(float value){if(soulKind()!=0&&mode==Mode.PLAY)soulEnergy=Math.min(100,soulEnergy+value*(hasRelic(12)?1.1f:1)*(specialtyRank(3)>0?1.2f:1));}
     public float healingFactor(){return ordinaryHealingFactor();}
     private float ordinaryHealingFactor(){return (job()==REPORTER&&careerSkillMode==4&&careerSkillTime>0?.2f:1)*(soulKind()==1?1.15f:soulKind()==2?1-corruption*.003f:1)*(hasRelic(4)?1.1f:1);}
     private void heal(float amount){float restored=Math.min(maxHp()-hp,Math.max(0,amount)*healingFactor());hp+=restored;if(restored>.01f)signal("heal",x,y,(int)restored);}
@@ -126,9 +127,11 @@ public final class ActionGame {
     public int heroXp(){return custom<0?experience[hero]:profile().xp;}
     public int rank(int node){return talents[buildId()][node];}
     public int skillStyle(){return custom<0?hero:profile().skill;}
-    public int availablePoints(){return BuildSystem.points(heroXp())-BuildSystem.spent(talents[buildId()]);}
-    public boolean learn(int node){if(mode!=Mode.CAMP)return false;String reason=BuildSystem.lockReason(talents[buildId()],heroXp(),node);if(!reason.isEmpty()){notice=reason;return false;}talents[buildId()][node]++;hp=maxHp();notice="习得「"+BuildSystem.NODES[node].name+"」";return true;}
-    public void resetTalents(){if(mode==Mode.CAMP){Arrays.fill(talents[buildId()],0);hp=maxHp();shield=0;dodgeCharge=0;notice="天赋已重置，全部点数返还。";}}
+    public int specialtyRank(int node){return specialties[buildId()][node];}
+    public int availablePoints(){return BuildSystem.points(heroXp())-BuildSystem.spent(talents[buildId()])-BuildSystem.spent(specialties[buildId()]);}
+    public boolean learn(int node){if(mode!=Mode.CAMP)return false;String reason=BuildSystem.lockReason(talents[buildId()],heroXp(),node);if(!reason.isEmpty()){notice=reason;return false;}if(BuildSystem.spent(talents[buildId()])+BuildSystem.spent(specialties[buildId()])>=BuildSystem.points(heroXp())){notice="没有可用天赋点";return false;}talents[buildId()][node]++;hp=maxHp();notice="习得「"+BuildSystem.NODES[node].name+"」";return true;}
+    public boolean learnSpecialty(int node){if(mode!=Mode.CAMP)return false;String reason=BuildSystem.specialtyLockReason(specialties[buildId()],heroXp(),node);if(!reason.isEmpty()){notice=reason;return false;}if(BuildSystem.spent(talents[buildId()])+BuildSystem.spent(specialties[buildId()])>=BuildSystem.points(heroXp())){notice="没有可用天赋点";return false;}specialties[buildId()][node]++;hp=maxHp();notice="习得专精「"+BuildSystem.SPECIALTIES[node].name+"」";return true;}
+    public void resetTalents(){if(mode==Mode.CAMP){Arrays.fill(talents[buildId()],0);Arrays.fill(specialties[buildId()],0);hp=maxHp();shield=0;dodgeCharge=0;notice="天赋与专精已重置，全部点数返还。";}}
     public void selectCustom(int slot){if(mode==Mode.CAMP&&slot>=0&&slot<3){custom=slot;hero=profiles[slot].weapon;hp=maxHp();notice="已选择 "+heroName();}}
     public void customize(int slot,BuildSystem.Profile draft){
         if(mode!=Mode.CAMP||slot<0||slot>=3)throw new IllegalArgumentException("仅能在营地编辑角色");
@@ -190,7 +193,7 @@ public final class ActionGame {
     private float baseMaxHp(){return (hero==0?110:hero==1?85:90)+vitality*10+(heroLevel()-1)*3+rank(8)*(soulKind()==1?10:8)+originHp()-(custom>=0&&profile().trait==2?8:0)+(hasRelic(1)?12:0)+(hasRelic(9)?18:0)+(hasRelic(1)&&hasRelic(9)?6:0)+characterTrait(1)*4;}
     public float maxHp(){return Math.min(99999,baseMaxHp()+healthBonus+training[buildId()][1]*4);}
     public float baseDamage(){return (hero==0?22:hero==1?18:15)+power*2+damageBonus+(heroLevel()-1)+rank(0)*2+(custom>=0&&profile().origin==2?2:0)+characterTrait(2);}
-    public float damage(){return baseDamage()*(hasRelic(10)?1.05f:1)*(hasRelic(3)&&hasRelic(10)?1.04f:1)*(1+training[buildId()][0]*.025f)*(rank(3)>0&&hp<maxHp()*.4f?1.55f:1)*(soulBuff>0?1.25f:1)*(battleTonicTime>0?1.30f:1)*(soulKind()==2?(ruptureTime>0?1.4f:corruption>=75?1.25f:corruption>=50?1.15f:1):1);}
+    public float damage(){return baseDamage()*(1+specialtyRank(4)*.05f)*(hasRelic(10)?1.05f:1)*(hasRelic(3)&&hasRelic(10)?1.04f:1)*(1+training[buildId()][0]*.025f)*(rank(3)>0&&hp<maxHp()*.4f?1.55f:1)*(soulBuff>0?1.25f:1)*(battleTonicTime>0?1.30f:1)*(soulKind()==2?(ruptureTime>0?1.4f:corruption>=75?1.25f:corruption>=50?1.15f:1):1);}
     public float speed(){return (hero==2?240:hero==1?215:205)*(1+speedBonus*.08f+rank(4)*.03f)*(custom<0?1:profile().origin==0?.95f:profile().origin==1?1.07f:1)*(hasRelic(11)?1.03f:1)*(background()==2?1.03f:1)*(background()==3&&hp<maxHp()*.35f?1.12f:1)*(isSpec(HUNTER,2)?1.08f:1)*(job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0?1.45f:1);}
     public float attackPeriod(){return (hero==0?.48f:hero==1?.4f:.12f)*(hero==0?1.1f:1)*(custom>=0&&profile().trait==0?1.06f:1)*(soulBuff>0?.8f:1)*(job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0?.62f:1)*(job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0?1.12f:1)*(job()==REPORTER&&careerSkillMode==4&&careerSkillTime>0?.62f:1)*(1-training[buildId()][0]*.012f)*(battleTonicTime>0?.8f:1);}
     public int upgradeCost(int rank){return 30+rank*25;}
@@ -208,7 +211,7 @@ public final class ActionGame {
     public void start(long seed){beginRun(seed,false);}
     public void startEndless(long seed){beginRun(seed,true);}
     private void beginRun(long seed,boolean infinite){
-        if(mode!=Mode.CAMP)return;clearThreat();endless=infinite;endlessDepth=infinite?1:0;clearSoulRuntime();clearRelicRun();careerSkillTime=0;careerSkillDeathCd=0;careerSkillMode=0;careerCooldownRank=0;soulEnergy=soulKind()==0?0:Math.min(100,40+(hasRelic(5)?(soulKind()==1?30:15):0)+training[buildId()][3]*3+(hasRelic(12)?12:0)+(hasRelic(5)&&hasRelic(12)?10:0));rngState=seed==0?1:seed;runs=Math.min(999999,runs+1);
+        if(mode!=Mode.CAMP)return;clearThreat();endless=infinite;endlessDepth=infinite?1:0;clearSoulRuntime();clearRelicRun();careerSkillTime=0;careerSkillDeathCd=0;careerSkillMode=0;careerCooldownRank=0;soulEnergy=soulKind()==0?0:Math.min(100,40+(hasRelic(5)?(soulKind()==1?30:15):0)+training[buildId()][3]*3+(hasRelic(12)?12:0)+(hasRelic(5)&&hasRelic(12)?10:0)+specialtyRank(0)*8);rngState=seed==0?1:seed;runs=Math.min(999999,runs+1);
         loot=0;kills=0;nextId=1;room=1;potions=2;bombs=0;snares=0;tonics=0;battleTonicTime=0;shopOpen=false;damageBonus=0;healthBonus=0;speedBonus=0;combo=0;time=0;won=false;hp=maxHp();shield=0;soulWard=0;careerWard=entryCareerWard();
         generateRoom();
     }
@@ -311,7 +314,7 @@ public final class ActionGame {
         if(style==0||style==1||style==2){
             if(style==2){invulnerable=Math.max(invulnerable,.35f);for(int i=0;i<Math.min(42,(int)(range/5));i++)movePlayer(faceX*5,faceY*5);endX=x;endY=y;}
             for(Enemy e:enemies)if(e.hp>0&&segmentDistance(e.x,e.y,ox,oy,endX,endY)<(style==0?42:style==1?22:34)+e.radius()&&lineClear(ox,oy,e.x,e.y)){
-                if(style==1)e.guard=0;float before=e.hp;hit(e,damage()*(style==0?(e.stun>0?2.15f:1.55f):style==1?2.05f:1.8f));connected|=e.hp<before;
+                if(style==1)e.guard=0;float before=e.hp;hit(e,damage()*(specialtyRank(6)>0?1.15f:1)*(style==0?(e.stun>0?2.15f:1.55f):style==1?2.05f:1.8f));connected|=e.hp<before;
             }
         }else if(style==3){
             for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<range&&lineClear(x,y,e.x,e.y)&&(e.hex>0||e.stun>0)){float before=e.hp;hit(e,damage()*2.2f);connected|=e.hp<before;if(soulKind()==2&&e.hex>0){e.hex=0;heal(maxHp()*.025f);}if(soulKind()==1){e.stun=Math.max(e.stun,.35f);soulWard=Math.min(60,soulWard+3);}}
@@ -331,7 +334,7 @@ public final class ActionGame {
     }
     public void activeSkill(){
         if(mode!=Mode.PLAY||rollTime>0||activeSkillCd>0||roomCleared)return;
-        int style=skillStyle(),kind=soulKind();float power=damage();aimAtNearest(650);activeSkillCd=activeSkillPeriod();followUpWindow=followUpDuration();
+        int style=skillStyle(),kind=soulKind();float power=damage()*(specialtyRank(7)>0?1.12f:1);aimAtNearest(650);activeSkillCd=activeSkillPeriod();followUpWindow=followUpDuration();
         if(kind==2)payForbidden(.025f,10);
         if(style==0){
             float radius=kind==1?235:kind==2?210:190;
@@ -364,6 +367,7 @@ public final class ActionGame {
         int kind=soulKind(),art=soulArt();soulEnergy-=40;soulCd=soulPeriod();aimAtNearest(520);
         if(kind==2)payForbidden(.08f,30);
         float power=damage();
+        if(kind==1&&specialtyRank(2)>0)soulWard=Math.min(60,soulWard+12);
         if(kind==1&&art==0){soulWard=Math.max(soulWard,30);soulFields.add(new SoulField(1,x,y,power));signal("radiant",x,y,175);}
         else if(kind==1&&art==1){
             soulWard=Math.max(soulWard,12);float endX=x+faceX*520,endY=y+faceY*520;
@@ -568,6 +572,7 @@ public final class ActionGame {
     private void hit(Enemy e,float value,boolean charge,boolean echoEligible){
         if(e.hp<=0)return;
         if(echoEligible){
+            if(specialtyRank(5)>0&&e.hex>0)value*=1.10f;
             if(isSpec(HUNTER,1)&&len(e.x-x,e.y-y)>200)value*=1.18f;
             if(isSpec(HUNTER,2)&&len(e.x-x,e.y-y)<=200)value*=1.10f;
             if(isSpec(ASSASSIN,1)&&e.hp<=e.maxHp*.5f)value*=1.25f;
