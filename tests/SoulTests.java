@@ -10,11 +10,11 @@ public final class SoulTests {
     private static ActionGame.Enemy mob(ActionGame g,float x,float y){ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,x,y,1000);e.stun=1;g.enemies.add(e);return e;}
     private static void step(ActionGame g,int ticks,boolean attack){ActionGame.Input in=new ActionGame.Input();in.attack=attack;for(int i=0;i<ticks;i++){for(ActionGame.Enemy e:g.enemies)e.stun=1;g.update(1f/60f,in);g.signals.clear();}}
     private static void bindings()throws Exception{
-        check(SoulSystem.SKILLS.length==3&&SoulSystem.SKILLS[1].length==5&&SoulSystem.SKILLS[2].length==5&&SoulSystem.DETAILS[1].length==5&&SoulSystem.DETAILS[2].length==5,"both souls define variants for all five active skills");
+        check(SoulSystem.SKILLS.length==3&&SoulSystem.SKILLS[1].length==5&&SoulSystem.SKILLS[2].length==5&&SoulSystem.DETAILS[1].length==5&&SoulSystem.DETAILS[2].length==5&&SoulSystem.ARTS[1].length==5&&SoulSystem.ARTS[2].length==5,"both souls define five arts and variants for all five active skills");
         ActionGame g=new ActionGame();g.experience[0]=160;g.bank=200;g.learn(0);check(g.bindSoul(1,1),"bind preset soul");g.selectHero(1);check(g.soulKind()==0,"preset souls independent");g.selectCustom(0);g.bindSoul(2,1);g.selectHero(0);check(g.soulKind()==1&&g.soulArt()==1&&g.heroXp()==160&&g.bank==200&&g.rank(0)==1,"binding preserves progression");
         ActionGame a=ActionSave.decode(ActionSave.encode(g));a.selectCustom(0);check(a.soulKind()==2&&a.soulArt()==1,"custom binding persisted independently");
         g.start(90);check(!g.bindSoul(2,0)&&g.soulKind()==1,"cannot swap souls midrun");near(g.soulEnergy,40,"initial energy");g.pause();g.abandon();g.returnCamp();near(g.soulEnergy,0,"camp clears runtime but preserves binding");check(g.soulKind()==1,"binding persists between runs");
-        for(int[] pair:new int[][]{{0,1},{3,0},{-1,0},{1,3}}){boolean bad=false;try{SoulSystem.validate(pair[0],pair[1]);}catch(IllegalArgumentException e){bad=true;}check(bad,"invalid binding rejected");}
+        for(int[] pair:new int[][]{{0,1},{3,0},{-1,0},{1,5}}){boolean bad=false;try{SoulSystem.validate(pair[0],pair[1]);}catch(IllegalArgumentException e){bad=true;}check(bad,"invalid binding rejected");}
         System.out.println("PASS soul binding independence, camp-only swaps, progression preservation and fresh-run resources");
     }
     private static void variants()throws Exception{
@@ -36,6 +36,18 @@ public final class SoulTests {
         float cd=g.soulCd;g.soulEnergy=100;g.soulSkill();check(g.soulCd==cd&&g.soulEnergy==100,"cooldown blocks repeat art even with energy");g.pause();float buff=g.soulBuff,corrupt=g.corruption;step(g,120,false);near(g.soulCd,cd,"pause freezes soul cooldown");near(g.soulBuff,buff,"pause freezes soul buff");near(g.corruption,corrupt,"pause freezes corruption");
         System.out.println("PASS four exclusive arts, resource and cooldown gates, field lifetime, pause, lifesteal and no self-refill");
     }
+    private static void expandedArts()throws Exception{
+        ActionGame g=game(1,3,0);ActionGame.Enemy e=mob(g,610,600);g.hp-=20;g.shots.add(new ActionGame.Shot(600,600,0,1,10,false));g.soulSkill();
+        check(g.hp>g.maxHp()-20&&g.soulWard>=22&&e.stun>=.9f&&g.shots.isEmpty(),"radiant echo heals, shields, cleanses and controls");
+        g=game(1,4,0);e=mob(g,760,600);g.shots.add(new ActionGame.Shot(650,600,0,1,10,false));g.soulSkill();
+        check(e.hp<1000&&e.stun>=.8f&&g.shots.isEmpty(),"radiant star pierces and cleanses its path");
+        g=game(2,3,0);e=mob(g,610,600);float hp=g.hp;g.soulSkill();
+        check(e.hp<1000&&e.hex>=7&&hp-g.hp>=g.maxHp()*.06f-0.01f&&g.corruption>=24,"forbidden mark trades health for a high-damage hunt");
+        g=game(2,4,0);e=mob(g,650,600);hp=g.hp;g.soulSkill();
+        check(e.hp<1000&&e.hex>=6&&g.soulFields.size()==1&&hp-g.hp>=g.maxHp()*.10f-0.01f&&g.corruption>=38,"abyssal detonation leaves a persistent rift");
+        ActionGame restored=ActionSave.decode(ActionSave.encode(g));check(restored.soulFields.size()==1&&restored.soulArt()==4,"new forbidden field and art persist in v24 saves");
+        System.out.println("PASS two new radiant arts, two new forbidden arts and v24 soul save migration");
+    }
     private static void costsAndSynergies()throws Exception{
         ActionGame g=game(1,0,0);mob(g,300,300);g.hp=10;g.potion();near(g.hp,10+g.maxHp()*.45f*1.15f,"radiance amplifies healing");
         g=game(2,0,0);ActionGame.Enemy e=mob(g,590,600);g.corruption=100;g.soulQuiet=3;g.hp=10;g.potion();near(g.hp,10+g.maxHp()*.45f*.7f,"corruption reduces potion healing");float hp=g.hp;e.stun=0;e.state=1;e.timer=.001f;g.update(1f/60f,new ActionGame.Input());near(hp-g.hp,14*1.4f*1.12f,"corruption incoming damage composes with trait");step(g,240,false);check(g.corruption<100&&g.corruption>95,"corruption decays only after quiet delay");
@@ -50,15 +62,15 @@ public final class SoulTests {
         ActionGame g=new ActionGame();g.selectCustom(1);g.profile().xp=320;g.learn(0);g.bank=83;g.start(7);byte[] bytes=ActionSave.encode(g);
         ActionGame old=ActionSave.decode(edit(bytes,"version","2"));check(old.custom==1&&old.profile().xp==320&&old.rank(0)==1&&old.bank==83&&old.soulKind()==0&&old.soulEnergy==0,"v2 migration preserves builds and does not invent a soul");
         g=game(2,1,0);mob(g,610,600);g.soulSkill();g.pause();bytes=ActionSave.encode(g);ActionGame a=ActionSave.decode(bytes);near(a.soulBuff,g.soulBuff,"forbidden soul buff persisted");near(a.corruption,g.corruption,"debt persisted");near(a.soulCd,g.soulCd,"exclusive cooldown persisted");near(a.enemies.get(0).hex,g.enemies.get(0).hex,"curse persisted");
-        reject(bytes,"soulEnergy","101");reject(bytes,"soulCd","19");reject(bytes,"corruption","NaN");reject(bytes,"profile0.soul","3");reject(bytes,"profile0.art","3");reject(bytes,"soulFields","20");reject(bytes,"soulWard","1");reject(bytes,"hex0","4");reject(bytes,"soulBuff","9");
+        reject(bytes,"soulEnergy","101");reject(bytes,"soulCd","19");reject(bytes,"corruption","NaN");reject(bytes,"profile0.soul","3");reject(bytes,"profile0.art","5");reject(bytes,"soulFields","20");reject(bytes,"soulWard","1");reject(bytes,"hex0","4");reject(bytes,"soulBuff","9");
         g=game(1,0,0);mob(g,700,600);g.soulSkill();bytes=ActionSave.encode(g);reject(bytes,"field0","2,560,600,4,0.5,22");reject(bytes,"field0","1,560,600,5,2,22");
         System.out.println("PASS v2 migration, soul snapshots, pulse and curse continuity, malformed resources and pierce histories rejected");
     }
     private static void stress()throws Exception{
-        for(int kind=1;kind<=2;kind++)for(int art=0;art<2;art++)for(int style=0;style<3;style++){
+        for(int kind=1;kind<=2;kind++)for(int art=0;art<5;art++)for(int style=0;style<3;style++){
             ActionGame g=game(kind,art,style);g.mode=ActionGame.Mode.CAMP;g.profile().xp=1200;
             for(int root:new int[]{0,4,8}){for(int rank=0;rank<3;rank++)check(g.learn(root),"max root");for(int rank=0;rank<2;rank++)check(g.learn(root+1),"max middle");}
-            check(g.learn(new int[]{2,3,6,7,10,11}[style+art*3]),"select capstone");g.start(91+style);ActionGame.Input in=new ActionGame.Input();in.attack=true;
+            check(g.learn(new int[]{2,6,10}[style]),"select capstone");g.start(91+style);ActionGame.Input in=new ActionGame.Input();in.attack=true;
             for(int t=0;t<1800;t++){
                 if(g.mode==ActionGame.Mode.RESULT){g.returnCamp();g.start(100+t);}
                 if(g.mode==ActionGame.Mode.REWARD)g.chooseReward(t%3);
@@ -67,7 +79,7 @@ public final class SoulTests {
                 if(t%60==0){g=ActionSave.decode(ActionSave.encode(g));check(g.hp>=0&&g.soulEnergy>=0&&g.soulEnergy<=100&&g.corruption<=100,"soul stress state bounded");}
             }
         }
-        System.out.println("PASS 21600 simulation steps across both souls, four arts, three base skills and maxed talent builds with periodic restore");
+        System.out.println("PASS 54000 simulation steps across both souls, five arts, three base skills and maxed talent builds with periodic restore");
     }
-    public static void main(String[] args)throws Exception{bindings();variants();arts();costsAndSynergies();saves();stress();System.out.println("SOUL CHECKS PASSED: "+count);}
+    public static void main(String[] args)throws Exception{bindings();variants();arts();expandedArts();costsAndSynergies();saves();stress();System.out.println("SOUL CHECKS PASSED: "+count);}
 }
