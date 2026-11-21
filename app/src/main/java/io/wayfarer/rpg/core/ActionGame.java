@@ -404,6 +404,19 @@ public final class ActionGame {
         if(job()==ASSASSIN){double a=Math.atan2(faceY,faceX);for(int n=-1;n<=1;n++)throwKnife((float)Math.cos(a+n*.24),(float)Math.sin(a+n*.24),power*.22f);}
         if(job()==DETECTIVE){for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<(style==0?190:520))e.hex=Math.max(e.hex,2.5f);}
         if(job()==REPORTER)activeSkillCd=Math.max(0,activeSkillCd-.8f);
+        // Career-specific soul resonance: every profession converts the same soul
+        // into a different tactical advantage when using its general active skill.
+        if(kind==1){
+            if(job()==HUNTER){soulWard=Math.min(60,soulWard+6);cleanse(x,y,120);signal("radiant",x,y,120);}
+            else if(job()==ASSASSIN){soulWard=Math.min(60,soulWard+3);invulnerable=Math.max(invulnerable,.35f);}
+            else if(job()==DETECTIVE){soulWard=Math.min(60,soulWard+4);cleanse(x,y,180);for(Enemy e:enemies)if(e.hp>0&&e.hex>0&&len(e.x-x,e.y-y)<520)e.stun=Math.max(e.stun,.25f);}
+            else {heal(maxHp()*.025f);soulWard=Math.min(60,soulWard+2);}
+        }else if(kind==2){
+            if(job()==HUNTER){for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<220)e.hex=Math.max(e.hex,3);signal("forbidden",x,y,220);}
+            else if(job()==ASSASSIN){double a=Math.atan2(faceY,faceX);for(int n=-2;n<=2;n+=2)throwKnife((float)Math.cos(a+n*.18),(float)Math.sin(a+n*.18),power*.16f);payForbidden(.01f,4);}
+            else if(job()==DETECTIVE){for(Enemy e:enemies)if(e.hp>0&&e.hex>0&&len(e.x-x,e.y-y)<520){hit(e,power*.22f,false);e.stun=Math.max(e.stun,.35f);}}
+            else {gainSoul(5);corruption=Math.min(100,corruption+3);triggerRupture();}
+        }
         if(tacticRanks[5]>0)shield=Math.min(talentShieldLimit(),shield+6*tacticRanks[5]);
         signal("activeSkill",x,y,style);notice=SkillSystem.name(style)+(kind==1?" · 光辉共鸣":kind==2?" · 禁忌共鸣":"");
     }
