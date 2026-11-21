@@ -315,7 +315,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     private void controls(Canvas c){
         circle(c,117,423,69,0x8814252D);ring(c,117,423,69,0x7789A39A,2);circle(c,117+joyX*48,423+joyY*48,27,0xAA79968A);
         text(c,"移动",117,519,12,muted,true);
-        control(c,850,420,58,"攻击",0,input.attack);control(c,737,456,37,"闪避",game.rollCd,false);control(c,855,210,34,"职业技",game.skillCd,false);control(c,855,298,38,"主动技",game.activeSkillCd,false);control(c,735,332,34,"追击",game.followUpWindow>0?0:1,false);
+        control(c,850,420,58,"攻击",0,input.attack);control(c,737,456,37,"闪避",game.rollCd,false);control(c,855,210,34,"职业技",game.skillCd,false);control(c,855,298,38,game.followUpWindow>0?"追击":"主动技",game.activeSkillCd,false);
         control(c,648,456,29,"药×"+game.potions,0,false);control(c,550,456,27,"爆×"+game.bombs,0,false);control(c,575,390,27,"缚×"+game.snares,0,false);control(c,648,390,27,"剂×"+game.tonics,game.battleTonicTime,false);
         if(game.soulKind()>0){control(c,735,240,38,game.soulEnergy<40?"蓄能":"魂技",game.soulCd,false);ring(c,735,240,42,game.soulKind()==1?0xFFE8D493:0xFFBE8FDC,2);text(c,game.soulArtName(),735,287,11,game.soulKind()==1?gold:0xFFCAA9E2,true);}
     }
@@ -393,8 +393,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             else if(ActionGame.len(x-850,y-420)<67){attackPointer=id;input.attack=true;}
             else if(ActionGame.len(x-737,y-456)<45)game.dodge(input.mx,input.my);
             else if(ActionGame.len(x-855,y-210)<42)game.skill();
-            else if(ActionGame.len(x-855,y-298)<46)game.activeSkill();
-            else if(ActionGame.len(x-735,y-332)<42)game.followUp();
+            else if(ActionGame.len(x-855,y-298)<46){if(game.followUpWindow>0)game.followUp();else game.activeSkill();}
             else if(ActionGame.len(x-648,y-456)<35)game.potion();
             else if(ActionGame.len(x-550,y-456)<33)game.useBomb();
             else if(ActionGame.len(x-575,y-390)<33)game.useSnare();
