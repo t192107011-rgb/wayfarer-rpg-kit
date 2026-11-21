@@ -26,18 +26,18 @@ public final class RelicCabinet {
         }
         TextView detail=text(a,left,"",14),error=text(a,left,"",13);error.setTextColor(Color.rgb(239,175,141));
         text(a,left,"确认后生效；取消不修改。\n收藏共享，各角色独立装备。\n同件不能在同一角色上叠加。",13);
-        text(a,right,"圣遗物图鉴 · "+Integer.bitCount(g.relicOwned)+" / 8",17);
-        text(a,right,"初始赠予灯芯与罗盘。第2、4区域及首领清场各发现一件未拥有的圣遗物；发现即保留，回营装备。收集齐后改为本轮票券+15。",13);
+        text(a,right,"圣遗物图鉴 · "+Integer.bitCount(g.relicOwned)+" / 12",17);
+        text(a,right,"初始赠予灯芯与罗盘。第2、4区域及首领清场各发现一件未拥有的圣遗物；发现即保留，回营装备。共12件，收集齐后改为本轮票券+15。",13);
         for(int id=1;id<RelicSystem.NAMES.length;id++){
             boolean owned=RelicSystem.owns(g.relicOwned,id);
-            TextView name=text(a,right,(owned?"◆ 已收录 · ":"◇ 待发现 · ")+RelicSystem.NAMES[id],16);name.setTextColor(owned?Color.rgb(232,212,147):Color.rgb(170,176,176));
+            TextView name=text(a,right,(owned?"◆ 已收录 · ":"◇ 待发现 · ")+RelicSystem.RARITIES[id]+" · "+RelicSystem.CATEGORIES[id]+" · "+RelicSystem.NAMES[id],16);name.setTextColor(owned?Color.rgb(232,212,147):Color.rgb(170,176,176));
             text(a,right,RelicSystem.DETAILS[id],13);
         }
         AlertDialog dialog=new AlertDialog.Builder(a).setTitle(g.heroName()+" · 圣遗物收藏").setView(row)
             .setPositiveButton("确认装备",(d,w)->{if(g.equipRelics(draft[0],draft[1])){a.save();a.world.invalidate();}})
             .setNeutralButton("清空两槽",null).setNegativeButton("取消",null).create();
         Runnable refresh=()->{
-            detail.setText((draft[0]==0?"槽1未装备":RelicSystem.NAMES[draft[0]]+"\n"+RelicSystem.DETAILS[draft[0]])+"\n\n"+(draft[1]==0?"槽2未装备":RelicSystem.NAMES[draft[1]]+"\n"+RelicSystem.DETAILS[draft[1]]));
+            detail.setText((draft[0]==0?"槽1未装备":RelicSystem.NAMES[draft[0]]+"\n"+RelicSystem.DETAILS[draft[0]])+"\n\n"+(draft[1]==0?"槽2未装备":RelicSystem.NAMES[draft[1]]+"\n"+RelicSystem.DETAILS[draft[1]])+"\n\n套装效果："+RelicSystem.setBonus(draft[0],draft[1]));
             String issue=RelicSystem.invalid(g.relicOwned,draft[0],draft[1]);error.setText(issue);
             if(dialog.isShowing())dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(issue.isEmpty());
         };
