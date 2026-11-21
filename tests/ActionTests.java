@@ -124,6 +124,27 @@ public final class ActionTests {
         a.mode=ActionGame.Mode.RESULT;a.returnCamp();check(a.bombs==0&&a.snares==0&&a.tonics==0&&a.battleTonicTime==0,"run items clear after settlement");
         System.out.println("PASS in-run shop, currency validation, inventory, consumables and timed buff persistence");
     }
+    private static void expandedEconomy(){
+        ActionGame g=new ActionGame();g.start(71);g.mode=ActionGame.Mode.REWARD;g.loot=250;g.openShop();g.hp-=30;
+        float hp=g.hp;check(g.buyShopItem(3)&&g.hp>hp&&g.loot==212,"medical supply spends tickets and heals immediately");
+        g.soulEnergy=10;check(g.buyShopItem(4)&&g.soulEnergy==45&&g.loot==170,"soul crystal spends tickets and restores energy");
+        int oldDamage=g.damageBonus;check(g.buyShopItem(5)&&g.damageBonus==oldDamage+4&&g.loot==115,"field modification spends tickets and improves run damage");
+        check(g.shopPrice(5)>g.shopPrice(0)&&!g.buyShopItem(6),"expanded shop prices and invalid item guard");
+        ActionGame radiant=new ActionGame();radiant.bindSoul(1,0);radiant.start(72);radiant.soulEnergy=80;radiant.soulCd=8;
+        check(radiant.soulWardAction()&&radiant.soulEnergy==55&&radiant.soulWard==30,"radiant soul infusion converts energy into ward");
+        check(radiant.soulTuneAction()&&radiant.soulEnergy==25&&radiant.soulCd==3,"radiant tuning spends energy to shorten soul cooldown");
+        radiant.soulEnergy=35;float boosted=radiant.damage();check(radiant.soulResonanceAction()&&radiant.soulEnergy==0&&radiant.soulBuff==4&&radiant.damage()>boosted,"soul resonance spends energy for a timed combat boost");
+        ActionGame forbidden=new ActionGame();forbidden.bindSoul(2,0);forbidden.start(73);forbidden.soulEnergy=60;
+        check(forbidden.soulWardAction()&&forbidden.soulEnergy==35&&forbidden.corruption==8&&forbidden.soulWard==24,"forbidden infusion trades corruption for ward");
+        forbidden.soulCd=8;check(forbidden.soulTuneAction()&&forbidden.soulEnergy==5&&forbidden.soulCd==4&&forbidden.corruption==12,"forbidden tuning has distinct cost and corruption");
+        System.out.println("PASS expanded ticket shop and radiant/forbidden soul energy sinks");
+    }
+    private static void threatCap(){
+        ActionGame g=new ActionGame();g.startEndless(91);g.endlessDepth=2;float early=ThreatSystem.rating(g);
+        g.endlessDepth=80;float late=ThreatSystem.rating(g);check(late>early,"endless enemy threat grows with depth");
+        g.endlessDepth=10000;near(ThreatSystem.rating(g),99,"enemy threat reaches the new level-99 cap");
+        System.out.println("PASS endless enemy growth scales progressively and caps at 99");
+    }
     private static void fiveActiveSkills()throws Exception{
         for(int style=0;style<5;style++){
             ActionGame g=new ActionGame();g.selectCustom(0);BuildSystem.Profile draft=g.profile().copy();draft.skill=style;g.customize(0,draft);g.start(44+style);g.blocks.clear();g.enemies.clear();g.x=500;g.y=500;g.faceX=1;g.faceY=0;
@@ -139,5 +160,5 @@ public final class ActionTests {
         ActionGame g=new ActionGame();g.start(12);g.pause();float cd=g.activeSkillCd;for(int i=0;i<30;i++)g.update(1f/60f,new ActionGame.Input());near(g.activeSkillCd,cd,"pause freezes active cooldown");
         System.out.println("PASS five active skills, independent career cooldown, follow-ups, trap persistence and pause");
     }
-    public static void main(String[] args)throws Exception{movement();combat();shopAndItems();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
+    public static void main(String[] args)throws Exception{movement();combat();shopAndItems();expandedEconomy();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
 }
