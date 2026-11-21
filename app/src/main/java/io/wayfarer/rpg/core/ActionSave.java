@@ -108,7 +108,7 @@ public final class ActionSave {
             g.careerCooldownRank=version>=12?n(p,"careerCooldownRank",0,8):0;
             float shieldLimit=g.maxHp();if(version<14)g.shield=Math.min(g.shield,shieldLimit);else if(g.shield>shieldLimit)throw new IllegalArgumentException("护盾超过安全上限");
             if(version>=9){
-                g.followUpWindow=f(p,"followUpWindow",0,version>=17?3:version>=10?g.followUpDuration():2);g.ruptureTime=f(p,"ruptureTime",0,6);g.ruptureTick=f(p,"ruptureTick",0,1.5f);g.ruptureLatched=bool(p,"ruptureLatched");
+                g.followUpWindow=f(p,"followUpWindow",0,version>=10?g.followUpDuration():2);g.ruptureTime=f(p,"ruptureTime",0,6);g.ruptureTick=f(p,"ruptureTick",0,1.5f);g.ruptureLatched=bool(p,"ruptureLatched");
                 if(g.soulBuff>0&&g.soulArt()!=1&&g.ruptureTime<=0)throw new IllegalArgumentException("灵魂强化来源无效");
                 if(g.soulKind()!=2&&(g.ruptureTime>0||g.ruptureTick>0||g.ruptureLatched)||g.ruptureTime>0&&!g.ruptureLatched||g.ruptureTime==0&&g.ruptureTick>0)throw new IllegalArgumentException("侵蚀失控状态无效");
                 g.storyUnlocked=n(p,"storyUnlocked",0,31);for(int j=0;j<5;j++){g.storyChoices[j]=n(p,"storyChoice"+j,0,2);if(g.storyChoices[j]>0&&(g.storyUnlocked&(1<<j))==0)throw new IllegalArgumentException("主线选择未解锁");}
