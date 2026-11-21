@@ -80,7 +80,7 @@ public final class ActionTests {
         g=game(0);g.tacticRanks[6]=2;baseline=game(0);check(g.attackPeriod()<baseline.attackPeriod(),"combat tempo increases attack speed");
         g=game(0);g.tacticRanks[7]=2;g.drops.add(new ActionGame.Drop(g.x,g.y,100,false));g.update(1f/60f,new ActionGame.Input());check(g.loot==124,"scavenging inscription increases currency pickup");
         byte[] bytes=ActionSave.encode(g);rejects(bytes,"tacticRank0","4");rejects(bytes,"tacticOffer0","8");
-        System.out.println("PASS tactical inscription draft, per-room choice, eight run modifiers and v23 persistence");
+        System.out.println("PASS tactical inscription draft, per-room choice, eight run modifiers and v24 persistence");
     }
     private static void persistence()throws Exception{
         ActionGame g=new ActionGame();g.selectHero(1);g.start(123);g.skill();g.hp-=20;g.potion();
