@@ -6,7 +6,7 @@ public final class CareerAbilityTests {
     private static int checks;
     private static void check(boolean ok,String why){checks++;if(!ok)throw new AssertionError(why);}
     private static ActionGame arena(int career){
-        ActionGame g=new ActionGame();g.chooseCareer(career,0,0);g.start(91);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;g.invulnerable=0;return g;
+        ActionGame g=new ActionGame();g.chooseCareer(career,0,0);g.start(91);g.experience[g.hero]=160;g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;g.invulnerable=0;return g;
     }
     public static void main(String[] args)throws Exception{
         ActionGame g=arena(HUNTER);ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,700,600,1000);g.enemies.add(e);g.skill();
