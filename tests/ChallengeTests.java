@@ -55,10 +55,24 @@ public final class ChallengeTests {
         ActionGame a=ActionSave.decode(ActionSave.encode(g));check(a.job()==CareerSystem.REPORTER&&a.specialization()==2&&a.background()==4&&a.soulBuff==g.soulBuff,"new career schema roundtrips with soul and background");
         System.out.println("PASS four-career snapshot provenance and bounded state rejection");
     }
+    private static void specialties()throws Exception{
+        ActionGame g=new ActionGame();g.experience[0]=320;g.bindSoul(1,0);
+        check(g.learnSpecialty(0)&&g.learnSpecialty(0)&&g.learnSpecialty(1)&&g.learnSpecialty(1)&&g.learnSpecialty(3),"pact path follows prerequisites and permits one capstone");
+        check(g.availablePoints()==1&&!g.learn(0),"talents and specialties share one character point budget");
+        float expected=40+16;g.start(31);near(g.soulEnergy,expected,"pact path increases expedition starting soul energy");near(g.soulPeriod(),SoulSystem.COOLDOWNS[1][0]-.6f-1.6f,"deep current shortens soul cooldown");
+        ActionGame restored=ActionSave.decode(ActionSave.encode(g));check(restored.specialties[0][0]==2&&restored.specialties[0][3]==1,"specialty ranks persist in v22 snapshots");
+        g=new ActionGame();g.experience[0]=320;g.learnSpecialty(4);g.learnSpecialty(4);g.learnSpecialty(5);g.learnSpecialty(6);
+        check(g.specialtyRank(6)==1&&!g.learnSpecialty(7),"hunting capstones are mutually exclusive");
+        float ordinary=g.damage();ActionGame.Enemy e=new ActionGame.Enemy(1,0,700,600,1000);g.enemies.add(e);e.hex=3;g.hitForTest(e,100);
+        near(100*(1+.10f),e.maxHp-e.hp,"marked target takes the hunting specialization bonus");
+        check(g.damage()>ordinary,"hunting instinct changes baseline combat damage");
+        ActionGame other=new ActionGame();other.selectHero(1);check(other.specialtyRank(4)==0,"specialty progress is independent per character");
+        System.out.println("PASS pact and hunting specialization prerequisites, shared points, combat effects, character isolation and save migration");
+    }
     private static void pressure(){
         int hurtRuns=0;float damage=0;
         for(int seed=1;seed<=12;seed++){ActionGame g=new ActionGame();g.start(seed);g.room=3;g.generateRoom();g.x=560;g.y=420;float hp=g.hp;ActionGame.Input in=new ActionGame.Input();for(int t=0;t<1200&&g.mode==ActionGame.Mode.PLAY;t++){in.mx=(float)Math.cos(t*.025);in.my=(float)Math.sin(t*.025);g.update(1f/60,in);g.signals.clear();}if(g.hp<hp)hurtRuns++;damage+=hp-g.hp;}
         check(hurtRuns>=9,"simple circular running should not trivialize mixed encounters: "+hurtRuns+"/12");System.out.println("PASS pressure benchmark: basic circular movement hurt in "+hurtRuns+"/12 seeded encounters; mean loss "+String.format(Locale.ROOT,"%.1f",damage/12)+" HP (not a claim about optimal human play)");
     }
-    public static void main(String[] args)throws Exception{skills();erosion();enemies();story();snapshots();pressure();System.out.println("CHALLENGE CHECKS PASSED: "+checks);}
+    public static void main(String[] args)throws Exception{skills();erosion();enemies();story();snapshots();specialties();pressure();System.out.println("CHALLENGE CHECKS PASSED: "+checks);}
 }
