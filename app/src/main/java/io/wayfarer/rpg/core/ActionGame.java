@@ -577,7 +577,7 @@ public final class ActionGame {
         value*=e.hex>0?1.15f*(hasRelic(6)?1.1f:1):1;float absorbed=Math.min(e.guard,value);e.guard-=absorbed;value-=absorbed;if(absorbed>0)signal("enemyShield",e.x,e.y,(int)absorbed);float dealt=Math.min(e.hp,value);e.hp=Math.max(0,e.hp-value);
         e.flash=.12f;if(absorbed==0)e.stun=Math.max(e.stun,e.type==3?.03f:e.type==2||e.type==4?.06f:.12f);signal("hit",e.x,e.y,(int)value);
         if(dealt>0&&job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0)heal(dealt*.20f);
-        if(e.hp<=0&&job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0){skillCd=0;heal(maxHp()*.03f);}
+        if(e.hp<=0&&job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0){activeSkillCd=0;heal(maxHp()*.03f);}
         if(charge&&dealt>0){gainSoul(Math.min(4,dealt*.08f));if(soulBuff>0)heal(Math.min(maxHp()*.015f,dealt*.08f));}
     }
     private void hurt(float value){
