@@ -6,7 +6,7 @@ public final class ThreatSystem {
     public static float rating(ActionGame g){
         int relics=(g.relics[g.buildId()][0]>0?1:0)+(g.relics[g.buildId()][1]>0?1:0);
         float growth=(g.heroLevel()-1)*.035f+g.power*.04f+g.vitality*.025f+BuildSystem.spent(g.talents[g.buildId()])*.018f+relics*.07f+(g.specialization()>0?.08f:0)+(g.soulKind()>0?.1f:0)+(g.characterTrait(1)+g.characterTrait(2))*.03f;
-        float depth=g.endless?Math.min(90f,(g.endlessDepth-1)*.45f):0;
+        float depth=g.endless?Math.min(98f,(g.endlessDepth-1)*.49f):0;
         return Math.min(99f,1.2f+g.room*.18f+growth+g.pressure+depth);
     }
     public static void enter(ActionGame g){g.threat=rating(g);g.encounterHpFloor=g.maxHp()*1.2f+g.baseDamage()*2;g.encounterDamageFloor=g.baseDamage()*1.12f;g.roomDamage=0;g.roomElapsed=0;}
