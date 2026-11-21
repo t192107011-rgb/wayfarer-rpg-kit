@@ -214,8 +214,6 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         for(ActionGame.Hazard h:game.hazards){int tint=h.warning>0?0xFFEDB374:0xFFE36D54;circle(c,h.x,h.y,h.radius,h.warning>0?0x22E3A65C:0x66B94D37);ring(c,h.x,h.y,h.radius,tint,3);if(h.warning>0){ring(c,h.x,h.y,h.radius*Math.max(.05f,1-h.warning/1.5f),tint,1);text(c,String.format(java.util.Locale.ROOT,"%.1f",h.warning),h.x,h.y,14,tint,true);}else text(c,h.type==0?"灼烧":"裂地",h.x,h.y,12,tint,true);}
         for(ActionGame.Enemy e:game.enemies)if(e.state==1){
             if(e.type==3&&e.pattern==0){circle(c,e.x,e.y,game.enemyRange(220),0x33EB936D);ring(c,e.x,e.y,game.enemyRange(220),0xFFEC9A75,3);}
-            else if(e.type==2||e.type==4){float length=game.enemySpeed(e.type==2?440:520)*(e.type==2?.5f:.34f);line(c,e.x,e.y,e.x+e.aimX*length,e.y+e.aimY*length,0x88E5A46F,30);line(c,e.x,e.y,e.x+e.aimX*length,e.y+e.aimY*length,0xFFECD0A1,2);}
-            else if(e.type==1||e.type==3&&e.pattern==1){for(int k=-1;k<=1;k++){double a=Math.atan2(e.aimY,e.aimX)+k*.2;line(c,e.x,e.y,e.x+(float)Math.cos(a)*game.enemyRange(520),e.y+(float)Math.sin(a)*game.enemyRange(520),0x99E5A46F,2);}}
             else if(e.type==5||e.type==3&&e.pattern==2){ring(c,e.targetX,e.targetY,game.enemyRange(e.type==5?100:120),0xFFE4A373,2);text(c,"落点",e.targetX,e.targetY-12,12,0xFFE4A373,true);}
             else if(e.type==6)ring(c,e.x,e.y,260,0xAA8AC4D6,2);
             else {circle(c,e.x,e.y,game.enemyRange(110),0x33EB936D);ring(c,e.x,e.y,game.enemyRange(110),0xCCEB936D,2);}
