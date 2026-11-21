@@ -124,6 +124,13 @@ public final class ActionTests {
         a.mode=ActionGame.Mode.RESULT;a.returnCamp();check(a.bombs==0&&a.snares==0&&a.tonics==0&&a.battleTonicTime==0,"run items clear after settlement");
         System.out.println("PASS in-run shop, currency validation, inventory, consumables and timed buff persistence");
     }
+    private static void careerSoulResonance(){
+        ActionGame radiant=new ActionGame();radiant.bindSoul(1,0);radiant.start(811);radiant.shots.add(new ActionGame.Shot(radiant.x+60,radiant.y,0,0,5,false));radiant.skill();
+        check(radiant.soulWard>=12&&radiant.shots.isEmpty(),"radiant career skill grants ward and cleanses nearby hostile shots");
+        ActionGame forbidden=new ActionGame();forbidden.bindSoul(2,0);forbidden.start(812);ActionGame.Enemy target=new ActionGame.Enemy(forbidden.nextId++,0,forbidden.x+120,forbidden.y,500);forbidden.enemies.add(target);forbidden.skill();
+        check(forbidden.corruption==8&&target.hex>=3,"forbidden career skill builds corruption and marks nearby enemies");
+        System.out.println("PASS radiant and forbidden soul resonance with career overdrive");
+    }
     private static void expandedEconomy(){
         ActionGame g=new ActionGame();g.bindSoul(1,0);g.start(71);g.mode=ActionGame.Mode.REWARD;g.loot=250;g.openShop();g.hp-=30;
         float hp=g.hp;check(g.buyShopItem(3)&&g.hp>hp&&g.loot==212,"medical supply spends tickets and heals immediately");
@@ -171,5 +178,5 @@ public final class ActionTests {
         ActionGame g=new ActionGame();g.start(12);g.pause();float cd=g.activeSkillCd;for(int i=0;i<30;i++)g.update(1f/60f,new ActionGame.Input());near(g.activeSkillCd,cd,"pause freezes active cooldown");
         System.out.println("PASS five active skills, independent career cooldown, follow-ups, trap persistence and pause");
     }
-    public static void main(String[] args)throws Exception{movement();combat();shopAndItems();expandedEconomy();permanentEconomy();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
+    public static void main(String[] args)throws Exception{movement();combat();shopAndItems();expandedEconomy();careerSoulResonance();permanentEconomy();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
 }
