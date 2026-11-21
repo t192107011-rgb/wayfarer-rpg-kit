@@ -4,7 +4,7 @@ package io.wayfarer.rpg.core;
 public final class BuildSystem {
     private BuildSystem(){}
     public static final String[] WEAPONS={"军刀 · 弧形三连斩","卡宾枪 · 自动瞄准","双匕首 · 高速连击"};
-    public static final String[] SKILLS={"震地 · 范围重击","散射 · 扇形投射","环刃 · 近身爆发与无敌"};
+    public static final String[] SKILLS=SkillSystem.NAMES.clone();
     public static final String[] ORIGINS={"工业镇 · 生命 +18 / 移速 -5%","乡村 · 移速 +7% / 生命 -10","流民 · 伤害 +2 / 生命 -8"};
     public static final String[] TRAITS={"守誓 · 药水恢复55% / 攻速降低","逐猎 · 闪避冷却 -0.12秒 / 受伤 +12%","寻火 · 技能冷却 -0.8秒 / 生命 -8"};
     public static final String[] COLORS={"苔绿","赭金","雾紫","霜蓝","绯红","月白"};
@@ -24,7 +24,7 @@ public final class BuildSystem {
     }
     public static void validate(Profile p){
         SoulSystem.validate(p.soul,p.soulArt);
-        if(!cleanName(p.name).equals(p.name)||p.weapon<0||p.weapon>2||p.skill<0||p.skill>2||p.origin<0||p.origin>2||p.trait<0||p.trait>2||p.color<0||p.color>5||p.skin<0||p.skin>2||p.hair<0||p.hair>2||p.xp<0||p.xp>1000000)throw new IllegalArgumentException("角色配置无效");
+        if(!cleanName(p.name).equals(p.name)||p.weapon<0||p.weapon>2||p.skill<0||p.skill>=SKILLS.length||p.origin<0||p.origin>2||p.trait<0||p.trait>2||p.color<0||p.color>5||p.skin<0||p.skin>2||p.hair<0||p.hair>2||p.xp<0||p.xp>1000000)throw new IllegalArgumentException("角色配置无效");
     }
     public static final class Node {
         public final String name,description;public final int maxRank,parent,minLevel;
