@@ -133,14 +133,14 @@ public final class ActionGame {
         if(mode!=Mode.CAMP||slot<0||slot>=3)throw new IllegalArgumentException("仅能在营地编辑角色");
         BuildSystem.Profile copy=draft.copy();copy.name=BuildSystem.cleanName(copy.name);copy.xp=profiles[slot].xp;BuildSystem.validate(copy);profiles[slot]=copy;selectCustom(slot);
     }
-    public float skillPeriod(){return Math.max(12f,24f-rank(9)*.4f-(custom>=0&&profile().trait==2?.8f:0)+(soulKind()==1?.5f:soulKind()==2?-.6f:0));}
+    public float skillPeriod(){return Math.max(12f,24f-rank(9)*.4f-(custom>=0&&profile().trait==2?.8f:0)+(soulKind()==1?.5f:soulKind()==2?-.6f:0));}\n    public float activeSkillPeriod(){return Math.max(7f,18f-rank(9)*.35f-(custom>=0&&profile().trait==2?.7f:0)+(soulKind()==1?-.5f:soulKind()==2?.4f:0));}
     public float careerCooldownRate(){return 1f+careerCooldownRank*.1f+((careerSkillTime>0&&(careerSkillMode==3||careerSkillMode==4))?1f:0);}
     public float dodgePeriod(){return 1.15f-rank(4)*.07f-(custom>=0&&profile().trait==1?.12f:0)-(hasRelic(2)?.15f:0);}
     public float potionRatio(){return custom>=0&&profile().trait==0?.55f:.45f;}
     private float originHp(){return custom<0?0:profile().origin==0?18:profile().origin==1?-10:-8;}
     public int room=0,loot=0,kills=0,potions=2,damageBonus=0,healthBonus=0,speedBonus=0,careerCooldownRank=0,combo=0;
     public float x=560,y=620,hp=110,faceX=0,faceY=-1,time=0;
-    public float attackCd=0,attackAnim=0,rollTime=0,rollCd=0,skillCd=0,invulnerable=0,comboWindow=0;
+    public float attackCd=0,attackAnim=0,rollTime=0,rollCd=0,skillCd=0,activeSkillCd=0,activeSkillDelay=0,activeSkillX=0,activeSkillY=0,invulnerable=0,comboWindow=0;
     public float rollX=0,rollY=-1,hitStop=0;
     public boolean roomCleared=false,won=false;
     public String notice=WorldSetting.DATE+" · 点击上方事件档案了解封锁线。";
@@ -209,7 +209,7 @@ public final class ActionGame {
     }
     public void generateRoom(){
         mode=Mode.PLAY;roomCleared=false;lastRelic=0;relicEcho=0;x=WIDTH/2;y=HEIGHT-100;faceX=0;faceY=-1;
-        attackCd=0;attackAnim=0;rollTime=0;rollCd=0;skillCd=0;soulCd=0;careerSkillTime=0;careerSkillDeathCd=0;careerSkillMode=0;dodgeCharge=0;swingBoost=1;followUpWindow=0;hazards.clear();soulBuff=0;soulFields.clear();invulnerable=.8f;comboWindow=0;hitStop=0;
+        attackCd=0;attackAnim=0;rollTime=0;rollCd=0;skillCd=0;activeSkillCd=0;activeSkillDelay=0;soulCd=0;careerSkillTime=0;careerSkillDeathCd=0;careerSkillMode=0;dodgeCharge=0;swingBoost=1;followUpWindow=0;hazards.clear();soulBuff=0;soulFields.clear();invulnerable=.8f;comboWindow=0;hitStop=0;
         enemies.clear();shots.clear();blocks.clear();drops.clear();signals.clear();swingHits.clear();
         // Keep the central route and both exits connected in every layout.
         for(int i=0;i<6;i++) {
@@ -277,21 +277,59 @@ public final class ActionGame {
             notice="记者：静默之声";
         }
     }
-    private void followUp(){
-        followUpWindow=0;aimAtNearest(680);int style=skillStyle();
-        if(soulKind()==2)payForbidden(.02f,12);
-        float ox=x,oy=y,range=(style==0?320:style==1?640:180)*reachFactor();
-        float endX=x+faceX*range,endY=y+faceY*range;
-        if(style==2){for(int i=0;i<(int)(range/5);i++)movePlayer(faceX*5,faceY*5);endX=x;endY=y;}
-        boolean connected=false;
-        for(Enemy e:enemies)if(e.hp>0&&segmentDistance(e.x,e.y,ox,oy,endX,endY)<(style==0?36:style==1?19:30)+e.radius()&&lineClear(ox,oy,e.x,e.y)){
-            boolean cursed=e.hex>0;float factor=style==0?(e.stun>0?1.95f:1.3f):style==1?1.8f:e.state==1?2.1f:1.5f;
-            if(style==1)e.guard=0;float before=e.hp;hit(e,damage()*factor*(rank(7)>0?1.2f:1));connected|=e.hp<before;
-            if(soulKind()==2&&cursed){e.hex=0;signal("echo",e.x,e.y,85);for(Enemy other:enemies)if(other!=e&&other.hp>0&&len(other.x-e.x,other.y-e.y)<85&&lineClear(e.x,e.y,other.x,other.y))hit(other,damage()*.65f,false);}
+    public void followUp(){
+        if(mode!=Mode.PLAY||followUpWindow<=0||rollTime>0)return;
+        followUpWindow=0;aimAtNearest(680);int style=skillStyle();float ox=x,oy=y,range=style==0?340:style==1?620:style==2?210:style==3?420:260;
+        float endX=x+faceX*range,endY=y+faceY*range;boolean connected=false;
+        if(style==0||style==1||style==2){
+            if(style==2){invulnerable=Math.max(invulnerable,.35f);for(int i=0;i<Math.min(42,(int)(range/5));i++)movePlayer(faceX*5,faceY*5);endX=x;endY=y;}
+            for(Enemy e:enemies)if(e.hp>0&&segmentDistance(e.x,e.y,ox,oy,endX,endY)<(style==0?42:style==1?22:34)+e.radius()&&lineClear(ox,oy,e.x,e.y)){
+                if(style==1)e.guard=0;float before=e.hp;hit(e,damage()*(style==0?(e.stun>0?2.15f:1.55f):style==1?2.05f:1.8f));connected|=e.hp<before;
+            }
+        }else if(style==3){
+            for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<range&&lineClear(x,y,e.x,e.y)&&(e.hex>0||e.stun>0)){float before=e.hp;hit(e,damage()*2.2f);connected|=e.hp<before;if(soulKind()==2&&e.hex>0){e.hex=0;heal(maxHp()*.025f);}if(soulKind()==1){e.stun=Math.max(e.stun,.35f);soulWard=Math.min(60,soulWard+3);}}
+        }else{
+            for(Enemy e:enemies)if(e.hp>0&&len(e.x-activeSkillX,e.y-activeSkillY)<190){float before=e.hp;hit(e,damage()*2.25f);connected|=e.hp<before;e.stun=Math.max(e.stun,.25f);if(soulKind()==2)e.hex=3;}
+            signal("thunder",activeSkillX,activeSkillY,190);
         }
-        if(soulKind()==1){if(connected)soulWard=Math.min(30,soulWard+8);cleanse(x,y,110);}
-        if(connected){if(rank(10)>0){heal(maxHp()*(rank(3)>0&&hp<maxHp()*.4f?.06f:.03f));if(rank(7)>0)skillCd=Math.max(0,skillCd-.8f);}if(rank(11)>0)shield=Math.min(talentShieldLimit(),shield+6);}
-        signal("followup",ox,oy,style);notice=EncounterSystem.FOLLOWUPS[style];
+        if(soulKind()==2){payForbidden(.015f,8);for(Enemy e:enemies)if(e.hp>0&&e.hex>0&&len(e.x-x,e.y-y)<115)hit(e,damage()*.35f,false);}
+        if(soulKind()==1){cleanse(x,y,125);if(connected)soulWard=Math.min(60,soulWard+7);}
+        if(connected){if(job()==HUNTER)careerSkillTime=Math.min(30,careerSkillTime+1.5f);if(job()==ASSASSIN)activeSkillCd=Math.max(0,activeSkillCd-2);if(job()==DETECTIVE)for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<160)e.stun=Math.max(e.stun,.25f);if(job()==REPORTER)activeSkillCd=Math.max(0,activeSkillCd-1);}
+        signal("followup",ox,oy,style);notice=SkillSystem.followup(style);
+    }
+    private void resolveThunderTrap(){
+        float radius=soulKind()==1?220:190;
+        for(Enemy e:enemies)if(e.hp>0&&len(e.x-activeSkillX,e.y-activeSkillY)<radius&&lineClear(activeSkillX,activeSkillY,e.x,e.y)){hit(e,damage()*(soulKind()==2?1.5f:1.25f),false);e.stun=Math.max(e.stun,soulKind()==1?.65f:.25f);if(soulKind()==2)e.hex=Math.max(e.hex,4);}
+        if(soulKind()==1){cleanse(activeSkillX,activeSkillY,radius);soulWard=Math.min(60,soulWard+6);}signal("thunder",activeSkillX,activeSkillY,(int)radius);
+    }
+    public void activeSkill(){
+        if(mode!=Mode.PLAY||rollTime>0||activeSkillCd>0||roomCleared)return;
+        int style=skillStyle(),kind=soulKind();float power=damage();aimAtNearest(650);activeSkillCd=activeSkillPeriod();followUpWindow=4f;
+        if(kind==2)payForbidden(.025f,10);
+        if(style==0){
+            float radius=kind==1?235:kind==2?210:190;
+            for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<radius){hit(e,power*(kind==2?1.25f:1.4f),false);e.stun=Math.max(e.stun,kind==1?.8f:.4f);if(kind==2)e.hex=4;}
+            if(kind==1){soulWard=Math.min(60,soulWard+8);cleanse(x,y,radius);}
+        }else if(style==1){
+            double angle=Math.atan2(faceY,faceX);int count=kind==2?7:5;
+            for(int i=0;i<count;i++){double a=angle+(i-(count-1)/2f)*.18;Shot shot=new Shot(x+faceX*20,y+faceY*20,(float)Math.cos(a)*610,(float)Math.sin(a)*610,power*(kind==2?.72f:.9f),true);shot.pierce=kind==1?2:0;shot.effect=kind==2?2:0;shots.add(shot);}
+            if(kind==1)cleanse(x+faceX*80,y+faceY*80,90);
+        }else if(style==2){
+            invulnerable=Math.max(invulnerable,kind==1?.8f:.55f);float radius=kind==1?185:160;
+            for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<radius){hit(e,power*(kind==2?1.8f:1.55f),false);if(kind==2)e.hex=3;}
+            if(kind==1)soulWard=Math.min(60,soulWard+12);if(kind==2)heal(maxHp()*.045f);
+        }else if(style==3){
+            Enemy target=null;float best=500;
+            for(Enemy e:enemies){float dx=e.x-x,dy=e.y-y,d=len(dx,dy);if(e.hp>0&&d<best&&d>1&&(dx*faceX+dy*faceY)/d>.35f&&lineClear(x,y,e.x,e.y)){best=d;target=e;}}
+            if(target!=null){if(target.type==3)target.stun=Math.max(target.stun,.65f);else pull(target,x,y,kind==1?190:kind==2?155:125);hit(target,power*(kind==2?1.5f:1.25f),false);if(kind==1){target.stun=Math.max(target.stun,1.1f);for(Enemy e:enemies)if(e!=target&&e.hp>0&&len(e.x-target.x,e.y-target.y)<120)hit(e,power*.45f,false);}if(kind==2)target.hex=4;}
+        }else{
+            activeSkillX=Math.max(70,Math.min(WIDTH-70,x+faceX*180));activeSkillY=Math.max(70,Math.min(HEIGHT-70,y+faceY*180));activeSkillDelay=.65f;signal("thunderWarning",activeSkillX,activeSkillY,kind==1?220:190);
+        }
+        if(job()==HUNTER){swingBoost=Math.max(swingBoost,1.18f);careerSkillTime=Math.min(30,careerSkillTime+1f);}
+        if(job()==ASSASSIN){double a=Math.atan2(faceY,faceX);for(int n=-1;n<=1;n++)throwKnife((float)Math.cos(a+n*.24),(float)Math.sin(a+n*.24),power*.22f);}
+        if(job()==DETECTIVE){for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<(style==0?190:520))e.hex=Math.max(e.hex,2.5f);}
+        if(job()==REPORTER)activeSkillCd=Math.max(0,activeSkillCd-.8f);
+        signal("activeSkill",x,y,style);notice=SkillSystem.name(style)+(kind==1?" · 光辉共鸣":kind==2?" · 禁忌共鸣":"");
     }
     public void soulSkill(){
         if(mode!=Mode.PLAY||soulKind()==0||soulCd>0||rollTime>0||roomCleared||enemies.isEmpty())return;
@@ -368,7 +406,7 @@ public final class ActionGame {
         if(mode!=Mode.PLAY)return;
         if(!Float.isFinite(dt)||dt<=0)return;dt=Math.min(dt,.05f);
         if(hitStop>0){hitStop=Math.max(0,hitStop-dt);return;}
-        roomElapsed=Math.min(10000000,roomElapsed+dt);followUpWindow=dec(followUpWindow,dt);careerSkillTime=dec(careerSkillTime,dt);careerSkillDeathCd=dec(careerSkillDeathCd,dt);if(careerSkillTime<=0)careerSkillMode=0;
+        roomElapsed=Math.min(10000000,roomElapsed+dt);followUpWindow=dec(followUpWindow,dt);activeSkillCd=dec(activeSkillCd,dt*(1f+careerCooldownRank*.05f+(job()==REPORTER&&careerSkillTime>0?.5f:0)));if(activeSkillDelay>0){activeSkillDelay=dec(activeSkillDelay,dt);if(activeSkillDelay<=0)resolveThunderTrap();}careerSkillTime=dec(careerSkillTime,dt);careerSkillDeathCd=dec(careerSkillDeathCd,dt);if(careerSkillTime<=0)careerSkillMode=0;
         if(careerSkillMode==1&&careerSkillTime>0&&careerSkillDeathCd<=0){float floor=maxHp()*.30f;if(hp>floor){float before=hp;hp=Math.max(floor,hp-maxHp()*.01f);signal("sacrifice",x,y,(int)Math.ceil(before-hp));}careerSkillDeathCd=1f;}
         updateSoul(dt);relicEcho=dec(relicEcho,dt);time+=dt;attackCd=dec(attackCd,dt);rollCd=dec(rollCd,dt);skillCd=dec(skillCd,dt*careerCooldownRate());invulnerable=dec(invulnerable,dt);comboWindow=dec(comboWindow,dt);dodgeCharge=dec(dodgeCharge,dt);
         float mx=Float.isFinite(in.mx)?in.mx:0,my=Float.isFinite(in.my)?in.my:0,mag=len(mx,my);
