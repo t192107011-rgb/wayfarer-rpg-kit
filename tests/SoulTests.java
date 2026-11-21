@@ -25,7 +25,7 @@ public final class SoulTests {
         g=game(2,0,0);mob(g,680,600);g.hp=.5f;g.soulSkill();check(g.hp==.5f,"self-cost cannot kill critical player");
         g=game(1,2,0);e=mob(g,610,600);g.soulSkill();near(g.soulBuff,5,"radiant enhancement lasts five seconds");near(g.soulWard,20,"radiant enhancement accumulates ward");near(g.soulCd,14,"radiant enhancement starts independent cooldown");step(g,301,false);check(g.soulBuff==0&&g.soulCd>8,"enhancement expires well before cooldown");
         g=game(2,2,0);e=mob(g,610,600);hp=g.hp;g.soulSkill();near(hp-g.hp,g.maxHp()*.08f,"forbidden burst has explicit life cost");near(e.hp,1000-g.damage()*2.8f,"forbidden burst deals area damage");near(e.hex,4,"forbidden burst applies curse");near(g.soulCd,15,"forbidden damage art cooldown");
-        System.out.println("PASS three independent art categories per soul, cooldowns, fields, burst, rift, enhancement and buff");
+        System.out.println("PASS five soul art choices, cooldowns, fields, burst, rift, enhancement and buff");
     }
     private static void arts()throws Exception{
         ActionGame g=game(1,0,0);mob(g,680,600);g.soulEnergy=39;g.soulSkill();check(g.soulFields.isEmpty()&&g.soulCd==0,"insufficient energy blocks art");g.soulEnergy=40;g.hp=20;g.soulSkill();near(g.soulEnergy,0,"art consumes forty energy");near(g.soulWard,30,"domain grants ward");float base=g.damage(),max=g.maxHp();step(g,305,false);near(g.enemies.get(0).hp,1000-base*.35f*5,"domain exactly five pulses");near(g.hp,20+max*.02f*1.15f*5,"domain heals only over its five pulses");check(g.soulFields.isEmpty()&&g.soulEnergy==0,"domain expires without recharging itself");
@@ -34,12 +34,12 @@ public final class SoulTests {
         g=game(2,0,0);e=mob(g,800,600);float hp=g.hp;g.soulSkill();near(hp-g.hp,g.maxHp()*.08f,"forbidden art life cost");near(g.corruption,30,"forbidden art debt");step(g,31,false);check(e.x<800&&e.hex>0&&e.hp<1000,"rift pulls curses and damages");near(g.soulEnergy,0,"rift cannot self-charge");ActionGame restored=ActionSave.decode(ActionSave.encode(g));step(g,100,false);step(restored,100,false);near(restored.enemies.get(0).hp,g.enemies.get(0).hp,"saved rift continues same pulse schedule");near(restored.soulFields.get(0).life,g.soulFields.get(0).life,"field lifetime continuity");
         g=game(2,1,0);e=mob(g,610,600);g.hp=50;float original=g.damage(),interval=g.attackPeriod();g.soulSkill();near(g.soulBuff,6,"forbidden soul six-second buff");near(g.damage(),original*1.25f,"forbidden soul damage bonus");near(g.attackPeriod(),interval*.8f,"forbidden soul attack speed");hp=g.hp;step(g,10,true);check(g.hp>hp&&g.soulEnergy>0,"pact actual attacks steal life and charge");
         float cd=g.soulCd;g.soulEnergy=100;g.soulSkill();check(g.soulCd==cd&&g.soulEnergy==100,"cooldown blocks repeat art even with energy");g.pause();float buff=g.soulBuff,corrupt=g.corruption;step(g,120,false);near(g.soulCd,cd,"pause freezes soul cooldown");near(g.soulBuff,buff,"pause freezes soul buff");near(g.corruption,corrupt,"pause freezes corruption");
-        System.out.println("PASS four exclusive arts, resource and cooldown gates, field lifetime, pause, lifesteal and no self-refill");
+        System.out.println("PASS five exclusive arts, resource and cooldown gates, field lifetime, pause, lifesteal and no self-refill");
     }
     private static void expandedArts()throws Exception{
-        ActionGame g=game(1,3,0);ActionGame.Enemy e=mob(g,610,600);g.hp-=20;g.shots.add(new ActionGame.Shot(600,600,0,1,10,false));g.soulSkill();
+        ActionGame g=game(1,3,0);ActionGame.Enemy e=mob(g,610,600);e.stun=0;g.hp-=20;g.shots.add(new ActionGame.Shot(600,600,0,1,10,false));g.soulSkill();
         check(g.hp>g.maxHp()-20&&g.soulWard>=22&&e.stun>=.9f&&g.shots.isEmpty(),"radiant echo heals, shields, cleanses and controls");
-        g=game(1,4,0);e=mob(g,760,600);g.shots.add(new ActionGame.Shot(650,600,0,1,10,false));g.soulSkill();
+        g=game(1,4,0);e=mob(g,760,600);e.stun=0;g.shots.add(new ActionGame.Shot(650,600,0,1,10,false));g.soulSkill();
         check(e.hp<1000&&e.stun>=.8f&&g.shots.isEmpty(),"radiant star pierces and cleanses its path");
         g=game(2,3,0);e=mob(g,610,600);float hp=g.hp;g.soulSkill();
         check(e.hp<1000&&e.hex>=7&&hp-g.hp>=g.maxHp()*.06f-0.01f&&g.corruption>=24,"forbidden mark trades health for a high-damage hunt");
