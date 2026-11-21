@@ -378,27 +378,44 @@ public final class ActionGame {
         if(mode!=Mode.PLAY||soulKind()==0||soulCd>0||rollTime>0||roomCleared||enemies.isEmpty())return;
         if(soulEnergy<40){notice="专属技能需要40魂能，命中敌人可积累。";signal("soulLow",x,y,0);return;}
         int kind=soulKind(),art=soulArt();soulEnergy-=40;soulCd=soulPeriod();aimAtNearest(520);
-        if(kind==2)payForbidden(.08f,30);
+        if(kind==2&&art<=2)payForbidden(.08f,30);
         float power=damage();
         if(kind==1&&specialtyRank(2)>0)soulWard=Math.min(60,soulWard+12);
-        if(kind==1&&art==0){soulWard=Math.max(soulWard,30);soulFields.add(new SoulField(1,x,y,power));signal("radiant",x,y,175);}
-        else if(kind==1&&art==1){
+        if(kind==1&&art==0){
+            soulWard=Math.max(soulWard,30);soulFields.add(new SoulField(1,x,y,power));signal("radiant",x,y,175);
+        }else if(kind==1&&art==1){
             soulWard=Math.max(soulWard,12);float endX=x+faceX*520,endY=y+faceY*520;
             for(Enemy e:enemies)if(e.hp>0&&segmentDistance(e.x,e.y,x,y,endX,endY)<28+e.radius()&&lineClear(x,y,e.x,e.y)){hit(e,power*3.6f,false);e.stun=Math.max(e.stun,e.type==3?.15f:.6f);}
-            shots.removeIf(p->!p.friendly&&segmentDistance(p.x,p.y,x,y,endX,endY)<35&&lineClear(x,y,p.x,p.y));
-            signal("lance",x,y,(int)Math.toDegrees(Math.atan2(faceY,faceX)));
-        }else if(art==0){
+            shots.removeIf(p->!p.friendly&&segmentDistance(p.x,p.y,x,y,endX,endY)<35&&lineClear(x,y,p.x,p.y));signal("lance",x,y,(int)Math.toDegrees(Math.atan2(faceY,faceX)));
+        }else if(kind==1&&art==2){
+            soulBuff=5;soulWard=Math.min(60,soulWard+20);signal("radiant",x,y,160);
+        }else if(kind==1&&art==3){
+            soulWard=Math.min(60,soulWard+22);heal(maxHp()*.08f);cleanse(x,y,260);
+            for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<260)e.stun=Math.max(e.stun,.9f);
+            signal("radiant",x,y,260);notice="辉光回响 · 净化、治疗与辉盾";
+        }else if(kind==1){
+            soulWard=Math.min(60,soulWard+14);float endX=x+faceX*600,endY=y+faceY*600;
+            for(Enemy e:enemies)if(e.hp>0&&segmentDistance(e.x,e.y,x,y,endX,endY)<30+e.radius()&&lineClear(x,y,e.x,e.y)){hit(e,power*2.7f,false);e.stun=Math.max(e.stun,.8f);}
+            shots.removeIf(p->!p.friendly&&segmentDistance(p.x,p.y,x,y,endX,endY)<38&&lineClear(x,y,p.x,p.y));signal("lance",x,y,(int)Math.toDegrees(Math.atan2(faceY,faceX)));notice="星辉贯日 · 穿刺审判";
+        }else if(kind==2&&art==0){
             float fx=Math.max(60,Math.min(WIDTH-60,x+faceX*120)),fy=Math.max(60,Math.min(HEIGHT-60,y+faceY*120));
             soulFields.add(new SoulField(2,fx,fy,power));signal("forbidden",fx,fy,185);
         }else if(kind==2&&art==1){
-            soulBuff=6;
-            for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<160){hit(e,power*1.2f,false);e.hex=3;}
+            soulBuff=6;for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<160){hit(e,power*1.2f,false);e.hex=3;}
             signal("forbidden",x,y,160);
-        }else if(kind==1){
-            soulBuff=5;soulWard=Math.min(60,soulWard+20);signal("radiant",x,y,160);
-        }else{
+        }else if(kind==2&&art==2){
             for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<190){hit(e,power*2.8f,false);e.hex=4;}
             signal("forbidden",x,y,190);
+        }else if(kind==2&&art==3){
+            payForbidden(.06f,24);Enemy target=null;float best=520;
+            for(Enemy e:enemies){float d=len(e.x-x,e.y-y),dx=e.x-x,dy=e.y-y;if(e.hp>0&&d<best&&d>1&&(dx*faceX+dy*faceY)/d>.25f&&lineClear(x,y,e.x,e.y)){best=d;target=e;}}
+            if(target!=null){hit(target,power*3.4f,false);target.hex=Math.max(target.hex,7);if(target.hp<=0)heal(maxHp()*.08f);signal("forbidden",target.x,target.y,7);}
+            else signal("forbidden",x,y,520);notice="血咒猎印 · 锁定追猎";
+        }else{
+            payForbidden(.10f,38);
+            for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<240){hit(e,power*1.8f,false);e.hex=Math.max(e.hex,6);}
+            float fx=Math.max(60,Math.min(WIDTH-60,x+faceX*110)),fy=Math.max(60,Math.min(HEIGHT-60,y+faceY*110));
+            soulFields.add(new SoulField(2,fx,fy,power*1.2f));signal("forbidden",fx,fy,240);notice="深渊裂爆 · 领域吞噬";
         }
     }
     private void cleanse(float cx,float cy,float radius){shots.removeIf(p->!p.friendly&&len(p.x-cx,p.y-cy)<radius);}
