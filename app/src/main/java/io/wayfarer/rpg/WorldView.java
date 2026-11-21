@@ -355,7 +355,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         for(int i=0;i<3;i++){
             int id=game.tacticOffers[i],x=45+i*300;
             rounded(c,x,205,270,190,12,id>=0?0xFF2D4545:0xFF1B292E);
-            if(id>=0){text(c,ActionGame.TACTIC_NAMES[id],x+135,252,22,gold,true);text(c,ActionGame.TACTIC_DESCRIPTIONS[id],x+135,302,14,cream,true);text(c,"当前等级 "+game.tacticRanks[id]+" / 3",x+135,356,14,muted,true);text(c,"选择刻印",x+135,378,12,muted,true);}
+            if(id>=0){text(c,ActionGame.TACTIC_NAMES[id],x+135,252,22,gold,true);String[] desc=ActionGame.TACTIC_DESCRIPTIONS[id].split("；");text(c,desc[0],x+135,302,12,cream,true);if(desc.length>1)text(c,desc[1],x+135,324,12,cream,true);text(c,"当前等级 "+game.tacticRanks[id]+" / 3",x+135,356,14,muted,true);text(c,"选择刻印",x+135,378,12,muted,true);}
             else{text(c,"已全部强化",x+135,290,19,muted,true);}
         }
         button(c,365,450,230,42,"返回补给选择",true);
