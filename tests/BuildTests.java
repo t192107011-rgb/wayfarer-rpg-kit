@@ -21,7 +21,7 @@ public final class BuildTests {
         ActionGame restored=ActionSave.decode(ActionSave.encode(g));
         check(Arrays.equals(restored.training[1],new int[]{1,1,1,1}),"training persists per character");
         restored.selectHero(0);check(restored.training[0][0]==0,"training remains independent per character");
-        restored.selectHero(1);restored.start(3);check(restored.soulEnergy==43,"soul research grants initial energy");
+        restored.selectHero(1);restored.bindSoul(1,0);restored.start(3);check(restored.soulEnergy==43,"soul research grants initial energy");
         restored.pause();restored=ActionSave.decode(ActionSave.encode(restored));check(restored.training[1][3]==1,"training persists during expedition save");
         System.out.println("PASS four permanent training routes, effects, currency and persistence");
     }
