@@ -66,8 +66,11 @@ public final class ActionTests {
         check(g.chooseTactic(0)&&g.tacticRanks[0]==1&&g.tacticChosen&&!g.tacticDraftOpen,"one inscription can be selected per cleared room");
         g.openTacticDraft();check(!g.tacticDraftOpen&&!g.chooseTactic(1),"second inscription cannot be claimed in the same room");
         ActionGame saved=ActionSave.decode(ActionSave.encode(g));check(saved.tacticRanks[0]==1&&saved.tacticChosen,"chosen inscription persists in reward snapshot");
-        g=game(0);g.tacticRanks[0]=2;g.activeSkill();check(g.activeSkillCd>0,"signature technique still uses normal cooldown");
-        ActionGame baseline=game(0);baseline.activeSkill();check(g.enemies.size()==0&&baseline.enemies.size()==0,"empty arena remains safe");
+        g=game(0);g.tacticRanks[0]=2;g.enemies.add(new ActionGame.Enemy(1,0,620,600,1000));g.activeSkill();check(g.activeSkillCd>0,"signature technique still uses normal cooldown");
+        ActionGame baseline=game(0);baseline.enemies.add(new ActionGame.Enemy(1,0,620,600,1000));baseline.activeSkill();check(1000-g.enemies.get(0).hp>1000-baseline.enemies.get(0).hp,"signature technique increases active skill damage");
+        ActionGame radiant=new ActionGame();radiant.bindSoul(1,0);radiant.start(1);radiant.blocks.clear();radiant.enemies.clear();radiant.tacticRanks[2]=2;radiant.hitForTest(new ActionGame.Enemy(1,0,620,600,1000),100);
+        ActionGame radiantBase=new ActionGame();radiantBase.bindSoul(1,0);radiantBase.start(1);radiantBase.blocks.clear();radiantBase.enemies.clear();radiantBase.hitForTest(new ActionGame.Enemy(1,0,620,600,1000),100);
+        check(radiant.soulEnergy>radiantBase.soulEnergy,"soul current inscription increases energy gained from hits");
         g=game(0);g.tacticRanks[1]=2;g.followUpWindow=1;g.enemies.add(new ActionGame.Enemy(1,0,620,600,1000));g.followUp();float enhanced=1000-g.enemies.get(0).hp;
         baseline=game(0);baseline.followUpWindow=1;baseline.enemies.add(new ActionGame.Enemy(1,0,620,600,1000));baseline.followUp();check(enhanced>1000-baseline.enemies.get(0).hp,"follow-through inscription increases follow-up damage");
         g=game(0);g.tacticRanks[3]=2;near(g.activeSkillPeriod(),baseline.activeSkillPeriod()-2,"cooldown inscription shortens active skill cycle");
