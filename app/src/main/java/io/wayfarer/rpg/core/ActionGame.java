@@ -370,6 +370,7 @@ public final class ActionGame {
         if(soulKind()==2){payForbidden(.015f,8);for(Enemy e:enemies)if(e.hp>0&&e.hex>0&&len(e.x-x,e.y-y)<115)hit(e,damage()*.35f,false);}
         if(soulKind()==1){cleanse(x,y,125);if(connected)soulWard=Math.min(60,soulWard+7);}
         if(connected){
+            resolveFollowUpChain(style,followPower);
             if(job()==HUNTER)careerSkillTime=Math.min(30,careerSkillTime+1.5f);
             if(job()==ASSASSIN)activeSkillCd=Math.max(0,activeSkillCd-2);
             if(job()==DETECTIVE)for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<160)e.stun=Math.max(e.stun,.25f);
@@ -381,6 +382,41 @@ public final class ActionGame {
             else {heal(maxHp()*.03f);gainSoul(4);}
         }
         signal("followup",ox,oy,style);notice=SkillSystem.followup(style);
+    }
+    /** Resolve the skill-specific second beat only after a confirmed follow-up hit. */
+    private void resolveFollowUpChain(int style,float power){
+        int affected=0;
+        if(style==0){
+            for(Enemy e:enemies)if(e.hp>0&&len(e.x-activeSkillX,e.y-activeSkillY)<145&&lineClear(activeSkillX,activeSkillY,e.x,e.y)){
+                hit(e,power*.48f,false);e.stun=Math.max(e.stun,.28f);affected++;
+            }
+            signal("chainEarth",activeSkillX,activeSkillY,145);
+        }else if(style==1){
+            double a=Math.atan2(faceY,faceX);
+            for(int n=-1;n<=1;n+=2){
+                Shot s=new Shot(x+faceX*18,y+faceY*18,(float)Math.cos(a+n*.075)*720,(float)Math.sin(a+n*.075)*720,power*.38f,true);
+                s.pierce=soulKind()==1?1:0;shots.add(s);
+            }
+            for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<560&&(e.hex>0||e.stun>0)){e.hex=Math.max(e.hex,2.5f);affected++;}
+            signal("chainFan",x,y,2);
+        }else if(style==2){
+            invulnerable=Math.max(invulnerable,.28f);gainSoul(4);
+            for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<125){hit(e,power*.42f,false);affected++;}
+            signal("chainRing",x,y,125);
+        }else if(style==3){
+            for(Enemy e:enemies)if(e.hp>0&&len(e.x-activeSkillX,e.y-activeSkillY)<230){
+                e.hex=Math.max(e.hex,soulKind()==2?5:3);e.stun=Math.max(e.stun,.3f);affected++;
+            }
+            signal("chainLink",activeSkillX,activeSkillY,230);
+        }else{
+            float radius=210;
+            for(Enemy e:enemies)if(e.hp>0&&len(e.x-activeSkillX,e.y-activeSkillY)<radius&&lineClear(activeSkillX,activeSkillY,e.x,e.y)){
+                hit(e,power*.62f,false);e.stun=Math.max(e.stun,.35f);if(soulKind()==2)e.hex=Math.max(e.hex,4);affected++;
+            }
+            signal("chainThunder",activeSkillX,activeSkillY,(int)radius);
+        }
+        if(soulKind()==1){soulWard=Math.min(60,soulWard+Math.min(8,3+affected));cleanse(x,y,95);}
+        else if(soulKind()==2&&affected>0){for(Enemy e:enemies)if(e.hp>0&&e.hex>0&&len(e.x-x,e.y-y)<260)e.hex=Math.min(8,e.hex+.5f);}
     }
     private void resolveThunderTrap(){
         float radius=(soulKind()==1?220:190)*(1+.08f*tacticRanks[0]);
