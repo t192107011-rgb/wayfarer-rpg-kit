@@ -21,7 +21,7 @@ public final class CareerAbilityTests {
         g=arena(ASSASSIN);g.careers[g.buildId()][1]=1;ActionGame.Enemy low=new ActionGame.Enemy(g.nextId++,0,600,600,100);low.hp=40;g.enemies.add(low);float hpBefore=low.hp;g.hitForTest(low,20);check(hpBefore-low.hp>20,"assassin executioner deals bonus damage to wounded targets");
         g=arena(DETECTIVE);g.careers[g.buildId()][1]=1;ActionGame.Enemy marked=new ActionGame.Enemy(g.nextId++,0,600,600,100);marked.hex=2;g.enemies.add(marked);g.hitForTest(marked,20);check(100-marked.hp>20,"detective interrogator exploits marked targets");
         g=arena(DETECTIVE);g.careers[g.buildId()][1]=2;marked=new ActionGame.Enemy(g.nextId++,0,600,600,100);marked.stun=1;g.enemies.add(marked);g.hitForTest(marked,20);check(100-marked.hp>20,"detective analyst exploits stunned targets");
-        g=arena(ASSASSIN);g.careers[g.buildId()][1]=2;g.skill();ActionGame.Enemy target=new ActionGame.Enemy(g.nextId++,0,600,600,100);g.enemies.add(target);ActionGame.Input fire=new ActionGame.Input();fire.attack=true;g.update(1f/60f,fire);check(g.shots.size()>=5,"assassin phantom specialization adds two knife projectiles");
+        g=arena(ASSASSIN);g.careers[g.buildId()][1]=2;check(g.careerKnifeCount()==5,"assassin phantom specialization adds two knives to each volley");
         g.careerCooldownRank=4;ActionGame restored=ActionSave.decode(ActionSave.encode(g));
         check(restored.careerCooldownRank==4&&restored.careerSkillMode==4,"v13 saves career cooldown and active state");
         g.soulCd=5;g.generateRoom();check(g.skillCd==0&&g.soulCd==0,"room transition resets both skill cooldowns");

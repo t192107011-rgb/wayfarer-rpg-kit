@@ -412,9 +412,10 @@ public final class ActionGame {
             if(f.life<=0)it.remove();
         }
     }
+    public int careerKnifeCount(){return isSpec(ASSASSIN,2)?5:3;}
     private void beginAttack(){
         aimAtNearest(hero==1?640:meleeReach()+30);
-        if(job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0){double base=Math.atan2(faceY,faceX);int spread=isSpec(ASSASSIN,2)?2:1;for(int i=-spread;i<=spread;i++)throwKnife((float)Math.cos(base+i*.22),(float)Math.sin(base+i*.22),damage()*(spread==2?.28f:.35f));}
+        if(job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0){double base=Math.atan2(faceY,faceX);int spread=(careerKnifeCount()-1)/2;for(int i=-spread;i<=spread;i++)throwKnife((float)Math.cos(base+i*.22),(float)Math.sin(base+i*.22),damage()*(spread==2?.28f:.35f));}
         attackCd=attackPeriod();attackAnim=hero==1?.18f:.24f;
         combo=comboWindow>0?(combo+1)%3:0;comboWindow=.85f;swingHits.clear();
         swingBoost=(dodgeCharge>0?1+rank(5)*(soulKind()==2?.20f:.15f):1)*(combo==2?1.35f+rank(1)*(soulKind()==2?.18f:.12f):1);dodgeCharge=0;
