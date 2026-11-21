@@ -71,7 +71,7 @@ public final class ActionSave {
             if(version>=3){
                 for(int j=0;j<3;j++){
                     g.presetSouls[j]=n(p,"presetSoul"+j,0,2);g.presetArts[j]=n(p,"presetArt"+j,0,version>=24?4:version>=15?2:1);SoulSystem.validate(g.presetSouls[j],g.presetArts[j]);
-                    g.profiles[j].soul=n(p,"profile"+j+".soul",0,2);g.profiles[j].soulArt=n(p,"profile"+j+".art",0,version>=15?2:1);BuildSystem.validate(g.profiles[j]);
+                    g.profiles[j].soul=n(p,"profile"+j+".soul",0,2);g.profiles[j].soulArt=n(p,"profile"+j+".art",0,version>=24?4:version>=15?2:1);BuildSystem.validate(g.profiles[j]);
                 }
                 g.soulEnergy=f(p,"soulEnergy",0,100);g.soulCd=f(p,"soulCd",0,SoulSystem.COOLDOWNS[g.soulKind()][g.soulArt()]);g.soulWard=f(p,"soulWard",0,99999);g.corruption=f(p,"corruption",0,100);g.soulQuiet=f(p,"soulQuiet",0,version>=9?8:3);g.soulBuff=f(p,"soulBuff",0,6);
                 int fields=n(p,"soulFields",0,1);for(int j=0;j<fields;j++){float[] a=array(p,"field"+j,6);int type=integer(a[0],1,2);ActionGame.SoulField f=new ActionGame.SoulField(type,range(a[1],48,1072),range(a[2],48,712),range(a[5],1,300));f.life=range(a[3],0,type==1?5:4);f.tick=range(a[4],0,type==1?1:.5f);
