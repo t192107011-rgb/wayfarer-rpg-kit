@@ -24,7 +24,7 @@ public final class SoulTests {
         g=game(2,1,0);e=mob(g,610,600);g.hp=50;float original=g.damage(),interval=g.attackPeriod();g.soulSkill();near(g.soulBuff,6,"forbidden art grants six-second buff");near(g.damage(),original*1.25f,"forbidden art damage bonus");near(g.attackPeriod(),interval*.8f,"forbidden art attack speed");
         g=game(2,0,0);mob(g,680,600);g.hp=.5f;g.soulSkill();check(g.hp==.5f,"self-cost cannot kill critical player");
         g=game(1,2,0);e=mob(g,610,600);g.soulSkill();near(g.soulBuff,5,"radiant enhancement lasts five seconds");near(g.soulWard,20,"radiant enhancement accumulates ward");near(g.soulCd,14,"radiant enhancement starts independent cooldown");step(g,301,false);check(g.soulBuff==0&&g.soulCd>8,"enhancement expires well before cooldown");
-        g=game(2,2,0);e=mob(g,610,600);hp=g.hp;g.soulSkill();near(hp-g.hp,g.maxHp()*.08f,"forbidden burst has explicit life cost");near(e.hp,1000-g.damage()*2.8f,"forbidden burst deals area damage");near(e.hex,4,"forbidden burst applies curse");near(g.soulCd,15,"forbidden damage art cooldown");
+        g=game(2,2,0);g.careers[g.buildId()][0]=CareerSystem.REPORTER;e=mob(g,610,600);hp=g.hp;g.soulSkill();near(hp-g.hp,g.maxHp()*.08f,"forbidden burst has explicit life cost");near(e.hp,1000-g.damage()*2.8f,"forbidden burst deals area damage");near(e.hex,4,"forbidden burst applies curse");near(g.soulCd,15,"forbidden damage art cooldown");
         System.out.println("PASS five soul art choices, cooldowns, fields, burst, rift, enhancement and buff");
     }
     private static void arts()throws Exception{
