@@ -4,7 +4,7 @@ package io.wayfarer.rpg.core;
 public final class RelicSystem {
     private RelicSystem(){}
     public static final int STARTERS=6, ALL=8190, DISCOVERY_ROOMS=26;
-    public static final String[] NAMES={"空槽","余烬灯芯","旅人罗盘","回响铜铃","慈悲圣杯","日冕碎片","渎誓指环","荆棘圣印","逆命沙漏"};
+    public static final String[] NAMES={"空槽","余烬灯芯","旅人罗盘","回响铜铃","慈悲圣杯","日冕碎片","渎誓指环","荆棘圣印","逆命沙漏","铸铁肩甲","枪匠徽章","巡夜披风","灵魂棱镜"};
     public static final String[] DETAILS={
         "不装备圣遗物。",
         "最大生命 +12。与等级、营地和天赋加成叠加。",
