@@ -186,7 +186,7 @@ public final class ActionTests {
             ActionGame g=new ActionGame();g.selectCustom(0);BuildSystem.Profile draft=g.profile().copy();draft.skill=style;g.customize(0,draft);
             g.bindSoul(kind,0);g.start(2100+kind*10+style);g.blocks.clear();g.enemies.clear();g.x=500;g.y=500;g.faceX=1;g.faceY=0;
             ActionGame.Enemy primary=new ActionGame.Enemy(g.nextId++,0,620,500,2500);primary.stun=1;primary.hex=2;
-            ActionGame.Enemy secondary=new ActionGame.Enemy(g.nextId++,0,690,500,2500);secondary.stun=1;secondary.hex=1;
+            ActionGame.Enemy secondary=new ActionGame.Enemy(g.nextId++,0,600,500,2500);secondary.stun=1;secondary.hex=1;
             g.enemies.add(primary);g.enemies.add(secondary);
             g.activeSkill();int shotsBefore=g.shots.size();float secondaryBefore=secondary.hp;
             g.followUp();check(g.followUpWindow==0,"chain consumes follow-up window "+kind+"/"+style);
