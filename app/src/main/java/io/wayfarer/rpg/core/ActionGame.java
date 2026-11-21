@@ -261,7 +261,7 @@ public final class ActionGame {
     }
     public void pause(){if(mode==Mode.PLAY){mode=Mode.PAUSED;notice="已暂停";}}
     public void resume(){if(mode==Mode.PAUSED)mode=Mode.PLAY;}
-    public void returnCamp(){if(mode==Mode.RESULT){mode=Mode.CAMP;clearThreat();clearSoulRuntime();clearRelicRun();careerCooldownRank=0;careerWard=0;room=0;damageBonus=0;healthBonus=0;speedBonus=0;roomCleared=false;shield=0;dodgeCharge=0;enemies.clear();shots.clear();blocks.clear();drops.clear();hazards.clear();followUpWindow=0;hp=maxHp();notice="冒险所得已结算。选择角色，再次出发。";}}
+    public void returnCamp(){if(mode==Mode.RESULT){mode=Mode.CAMP;clearThreat();clearSoulRuntime();clearRelicRun();careerCooldownRank=0;careerWard=0;room=0;damageBonus=0;healthBonus=0;speedBonus=0;bombs=0;snares=0;tonics=0;battleTonicTime=0;shopOpen=false;roomCleared=false;shield=0;dodgeCharge=0;enemies.clear();shots.clear();blocks.clear();drops.clear();hazards.clear();followUpWindow=0;hp=maxHp();notice="冒险所得已结算。选择角色，再次出发。";}}
     public void abandon(){if(mode==Mode.PAUSED)finish(false);}
     public void dodge(float dx,float dy){
         if(mode!=Mode.PLAY||rollCd>0||rollTime>0)return;
