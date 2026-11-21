@@ -334,6 +334,8 @@ public final class ActionGame {
         careerSkillMode=j+1;
         careerSkillTime=30f;
         careerSkillDeathCd=j==HUNTER?1f:0f;
+        if(soulKind()==1){soulWard=Math.min(60,soulWard+12);cleanse(x,y,160);signal("shield",x,y,12);}
+        else if(soulKind()==2){corruption=Math.min(100,corruption+8);for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<280)e.hex=Math.max(e.hex,3);triggerRupture();signal("forbidden",x,y,280);}
         skillCd=skillPeriod();
         if(j==HUNTER){
             for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<430)hit(e,damage()*2.2f,false);
