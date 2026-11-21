@@ -7,7 +7,7 @@ import java.util.*;
 public final class ActionSave {
     private ActionSave(){}
     public static byte[] encode(ActionGame g) throws IOException {
-        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",24);
+        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",25);
         p.setProperty("endless",Boolean.toString(g.endless));put(p,"endlessDepth",g.endlessDepth);put(p,"bestDepth",g.bestDepth);put(p,"threat",g.threat);put(p,"pressure",g.pressure);put(p,"encounterHpFloor",g.encounterHpFloor);put(p,"encounterDamageFloor",g.encounterDamageFloor);put(p,"roomDamage",g.roomDamage);put(p,"roomElapsed",g.roomElapsed);
         p.setProperty("mode",g.mode.name());p.setProperty("rng",Long.toString(g.rngState));p.setProperty("won",Boolean.toString(g.won));p.setProperty("cleared",Boolean.toString(g.roomCleared));
         String[] ik={"hero","bank","power","vitality","runs","wins","room","loot","kills","potions","damageBonus","healthBonus","speedBonus","combo","nextId"};
@@ -47,13 +47,13 @@ public final class ActionSave {
         if(data==null||data.length==0||data.length>131072)throw new IOException("存档大小不正确");
         try{
             Properties p=new Properties();p.load(new ByteArrayInputStream(data));
-            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,24);
+            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,25);
             ActionGame g=new ActionGame();g.mode=ActionGame.Mode.valueOf(required(p,"mode"));g.rngState=Long.parseLong(required(p,"rng"));if(g.rngState==0)throw new IllegalArgumentException("随机状态无效");
             g.won=bool(p,"won");g.roomCleared=bool(p,"cleared");g.hero=n(p,"hero",0,2);g.bank=n(p,"bank",0,999999);g.power=n(p,"power",0,10);g.vitality=n(p,"vitality",0,10);g.runs=n(p,"runs",0,999999);g.wins=n(p,"wins",0,g.runs);
             g.room=n(p,"room",0,5);g.loot=n(p,"loot",0,99999);g.kills=n(p,"kills",0,99999);g.potions=n(p,"potions",0,version>=10?ActionGame.MAX_POTIONS:2);if(version>=18){g.bombs=n(p,"bombs",0,3);g.snares=n(p,"snares",0,3);g.tonics=n(p,"tonics",0,3);g.battleTonicTime=f(p,"battleTonicTime",0,10);g.shopOpen=bool(p,"shopOpen");}if(version>=23){for(int i=0;i<8;i++)g.tacticRanks[i]=n(p,"tacticRank"+i,0,3);for(int i=0;i<3;i++)g.tacticOffers[i]=n(p,"tacticOffer"+i,-1,7);g.tacticChosen=bool(p,"tacticChosen");g.tacticDraftOpen=bool(p,"tacticDraftOpen");}g.damageBonus=n(p,"damageBonus",0,version>=10?40:16);g.healthBonus=n(p,"healthBonus",0,version>=12?99999:version>=10?200:80);g.speedBonus=n(p,"speedBonus",0,version>=10?6:4);g.combo=n(p,"combo",0,2);g.nextId=n(p,"nextId",1,Integer.MAX_VALUE-1);
             if(version>=10){
                 g.endless=bool(p,"endless");g.endlessDepth=n(p,"endlessDepth",0,999999);g.bestDepth=n(p,"bestDepth",0,999999);
-                g.threat=f(p,"threat",1,12);g.pressure=f(p,"pressure",0,.6f);g.encounterHpFloor=f(p,"encounterHpFloor",0,150000);g.encounterDamageFloor=f(p,"encounterDamageFloor",0,1000);g.roomDamage=f(p,"roomDamage",0,100000);g.roomElapsed=f(p,"roomElapsed",0,10000000);
+                g.threat=f(p,"threat",1,version>=25?99:12);g.pressure=f(p,"pressure",0,.6f);g.encounterHpFloor=f(p,"encounterHpFloor",0,version>=25?300000:150000);g.encounterDamageFloor=f(p,"encounterDamageFloor",0,1000);g.roomDamage=f(p,"roomDamage",0,100000);g.roomElapsed=f(p,"roomElapsed",0,10000000);
                 if(g.endless&&(g.endlessDepth<1||g.mode==ActionGame.Mode.CAMP||g.won||g.room!=(g.endlessDepth-1)%5+1)||!g.endless&&g.endlessDepth!=0||(g.encounterHpFloor==0)!=(g.encounterDamageFloor==0))throw new IllegalArgumentException("无尽或敌势来源无效");
                 if(g.mode==ActionGame.Mode.CAMP&&(g.threat!=1||g.pressure>0||g.encounterHpFloor>0||g.encounterDamageFloor>0||g.roomDamage>0||g.roomElapsed>0))throw new IllegalArgumentException("营地敌势状态无效");
             }
@@ -130,14 +130,14 @@ public final class ActionSave {
             count=n(p,"enemies",0,40);Set<Integer> ids=new HashSet<>();
             for(int i=0;i<count;i++){
                 float[] a=array(p,"e"+i,13);int id=integer(a[0],1,g.nextId-1);if(!ids.add(id))throw new IllegalArgumentException("重复敌人ID");
-                ActionGame.Enemy e=new ActionGame.Enemy(id,integer(a[1],0,version>=9?6:3),range(a[3],48,1072),range(a[4],48,712),range(a[6],1,version>=14?150000:version>=10?12000:1000));
+                ActionGame.Enemy e=new ActionGame.Enemy(id,integer(a[1],0,version>=9?6:3),range(a[3],48,1072),range(a[4],48,712),range(a[6],1,version>=25?300000:version>=14?150000:version>=10?12000:1000));
                 e.hp=range(a[5],0,e.maxHp);e.state=integer(a[2],0,version>=9?3:2);e.timer=range(a[7],-.1f,2);e.aimX=range(a[8],-1,1);e.aimY=range(a[9],-1,1);e.stun=range(a[10],0,version>=18?3:1);e.flash=range(a[11],0,1);e.struck=integer(a[12],0,1)==1;
                 if(version>=9){float[] t=array(p,"enemyTactics"+i,4);e.guard=range(t[0],0,version>=21?90:40);e.targetX=range(t[1],64,1056);e.targetY=range(t[2],64,696);e.pattern=integer(t[3],0,e.type==3?2:0);if(e.state==3&&e.type!=2&&e.type!=3&&e.type!=4)throw new IllegalArgumentException("敌人恢复状态无效");}
                 if(version>=3)e.hex=f(p,"hex"+i,0,version>=24?8:3);
                 if(!g.free(e.x,e.y,e.radius()))throw new IllegalArgumentException("敌人位置无效");g.enemies.add(e);
             }
             count=n(p,"shots",0,160);for(int i=0;i<count;i++){
-                float[] a=array(p,"s"+i,8);ActionGame.Shot s=new ActionGame.Shot(range(a[0],0,1120),range(a[1],0,760),range(a[2],-1000,1000),range(a[3],-1000,1000),range(a[5],1,version>=9?800:500),integer(a[7],0,1)==1);
+                float[] a=array(p,"s"+i,8);ActionGame.Shot s=new ActionGame.Shot(range(a[0],0,1120),range(a[1],0,760),range(a[2],-1000,1000),range(a[3],-1000,1000),range(a[5],1,version>=25?6000:version>=9?800:500),integer(a[7],0,1)==1);
                 s.life=range(a[4],0,3);s.radius=range(a[6],1,10);
                 if(version>=3){s.effect=n(p,"shotEffect"+i,0,2);s.pierce=n(p,"shotPierce"+i,0,2);String text=required(p,"shotHits"+i);
                     if(!text.isEmpty()){String[] hits=text.split(",",-1);if(hits.length>2)throw new IllegalArgumentException("穿透命中记录过多");for(String h:hits){int id=Integer.parseInt(h);if(id<1||id>=g.nextId||!s.hitIds.add(id))throw new IllegalArgumentException("穿透命中ID无效");}}
