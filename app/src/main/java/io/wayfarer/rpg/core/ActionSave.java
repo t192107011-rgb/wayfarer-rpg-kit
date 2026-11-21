@@ -7,7 +7,7 @@ import java.util.*;
 public final class ActionSave {
     private ActionSave(){}
     public static byte[] encode(ActionGame g) throws IOException {
-        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",19);
+        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",20);
         p.setProperty("endless",Boolean.toString(g.endless));put(p,"endlessDepth",g.endlessDepth);put(p,"bestDepth",g.bestDepth);put(p,"threat",g.threat);put(p,"pressure",g.pressure);put(p,"encounterHpFloor",g.encounterHpFloor);put(p,"encounterDamageFloor",g.encounterDamageFloor);put(p,"roomDamage",g.roomDamage);put(p,"roomElapsed",g.roomElapsed);
         p.setProperty("mode",g.mode.name());p.setProperty("rng",Long.toString(g.rngState));p.setProperty("won",Boolean.toString(g.won));p.setProperty("cleared",Boolean.toString(g.roomCleared));
         String[] ik={"hero","bank","power","vitality","runs","wins","room","loot","kills","potions","damageBonus","healthBonus","speedBonus","combo","nextId"};
@@ -47,7 +47,7 @@ public final class ActionSave {
         if(data==null||data.length==0||data.length>131072)throw new IOException("存档大小不正确");
         try{
             Properties p=new Properties();p.load(new ByteArrayInputStream(data));
-            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,19);
+            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,20);
             ActionGame g=new ActionGame();g.mode=ActionGame.Mode.valueOf(required(p,"mode"));g.rngState=Long.parseLong(required(p,"rng"));if(g.rngState==0)throw new IllegalArgumentException("随机状态无效");
             g.won=bool(p,"won");g.roomCleared=bool(p,"cleared");g.hero=n(p,"hero",0,2);g.bank=n(p,"bank",0,999999);g.power=n(p,"power",0,10);g.vitality=n(p,"vitality",0,10);g.runs=n(p,"runs",0,999999);g.wins=n(p,"wins",0,g.runs);
             g.room=n(p,"room",0,5);g.loot=n(p,"loot",0,99999);g.kills=n(p,"kills",0,99999);g.potions=n(p,"potions",0,version>=10?ActionGame.MAX_POTIONS:2);if(version>=18){g.bombs=n(p,"bombs",0,3);g.snares=n(p,"snares",0,3);g.tonics=n(p,"tonics",0,3);g.battleTonicTime=f(p,"battleTonicTime",0,10);g.shopOpen=bool(p,"shopOpen");}g.damageBonus=n(p,"damageBonus",0,version>=10?40:16);g.healthBonus=n(p,"healthBonus",0,version>=12?99999:version>=10?200:80);g.speedBonus=n(p,"speedBonus",0,version>=10?6:4);g.combo=n(p,"combo",0,2);g.nextId=n(p,"nextId",1,Integer.MAX_VALUE-1);
@@ -84,10 +84,10 @@ public final class ActionSave {
                 g.relicOwned=n(p,"relicOwned",0,RelicSystem.ALL);
                 if((g.relicOwned&~RelicSystem.ALL)!=0||(g.relicOwned&RelicSystem.STARTERS)!=RelicSystem.STARTERS)throw new IllegalArgumentException("圣遗物收藏无效");
                 for(int b=0;b<6;b++){
-                    for(int slot=0;slot<2;slot++)g.relics[b][slot]=n(p,"relic"+b+"."+slot,0,8);
+                    for(int slot=0;slot<2;slot++)g.relics[b][slot]=n(p,"relic"+b+"."+slot,0,12);
                     String error=RelicSystem.invalid(g.relicOwned,g.relics[b][0],g.relics[b][1]);if(!error.isEmpty())throw new IllegalArgumentException(error);
                 }
-                g.relicAwards=n(p,"relicAwards",0,RelicSystem.DISCOVERY_ROOMS);g.lastRelic=n(p,"lastRelic",-1,8);g.relicEcho=f(p,"relicEcho",0,3);g.relicRevived=bool(p,"relicRevived");
+                g.relicAwards=n(p,"relicAwards",0,RelicSystem.DISCOVERY_ROOMS);g.lastRelic=n(p,"lastRelic",-1,12);g.relicEcho=f(p,"relicEcho",0,3);g.relicRevived=bool(p,"relicRevived");
                 if((g.relicAwards&~RelicSystem.DISCOVERY_ROOMS)!=0||(g.relicAwards&~((1<<(g.endless?Math.min(5,g.endlessDepth):g.room))-1))!=0)throw new IllegalArgumentException("圣遗物发现进度无效");
                 if(g.lastRelic!=0&&(g.room<1||(g.relicAwards&(1<<(g.room-1)))==0||!RelicSystem.owns(g.relicOwned,g.lastRelic<0?0:g.lastRelic)||g.lastRelic==1||g.lastRelic==2||g.lastRelic==-1&&g.relicOwned!=RelicSystem.ALL))throw new IllegalArgumentException("圣遗物发现记录无效");
                 if(g.relicEcho>0&&!g.hasRelic(3)||g.relicRevived&&!g.hasRelic(8))throw new IllegalArgumentException("圣遗物触发状态无效");
