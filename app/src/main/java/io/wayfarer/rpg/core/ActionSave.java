@@ -87,7 +87,7 @@ public final class ActionSave {
                     for(int slot=0;slot<2;slot++)g.relics[b][slot]=n(p,"relic"+b+"."+slot,0,12);
                     String error=RelicSystem.invalid(g.relicOwned,g.relics[b][0],g.relics[b][1]);if(!error.isEmpty())throw new IllegalArgumentException(error);
                 }
-                g.relicAwards=n(p,"relicAwards",0,RelicSystem.DISCOVERY_ROOMS);g.lastRelic=n(p,"lastRelic",-1,12);g.relicEcho=f(p,"relicEcho",0,3);g.relicRevived=bool(p,"relicRevived");
+                g.relicAwards=n(p,"relicAwards",0,RelicSystem.DISCOVERY_ROOMS);g.lastRelic=n(p,"lastRelic",-1,12);if(version<20&&g.lastRelic==-1)g.lastRelic=0;g.relicEcho=f(p,"relicEcho",0,3);g.relicRevived=bool(p,"relicRevived");
                 if((g.relicAwards&~RelicSystem.DISCOVERY_ROOMS)!=0||(g.relicAwards&~((1<<(g.endless?Math.min(5,g.endlessDepth):g.room))-1))!=0)throw new IllegalArgumentException("圣遗物发现进度无效");
                 if(g.lastRelic!=0&&(g.room<1||(g.relicAwards&(1<<(g.room-1)))==0||!RelicSystem.owns(g.relicOwned,g.lastRelic<0?0:g.lastRelic)||g.lastRelic==1||g.lastRelic==2||g.lastRelic==-1&&g.relicOwned!=RelicSystem.ALL))throw new IllegalArgumentException("圣遗物发现记录无效");
                 if(g.relicEcho>0&&!g.hasRelic(3)||g.relicRevived&&!g.hasRelic(8))throw new IllegalArgumentException("圣遗物触发状态无效");
