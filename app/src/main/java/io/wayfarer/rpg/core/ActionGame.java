@@ -262,7 +262,6 @@ public final class ActionGame {
         careerSkillTime=30f;
         careerSkillDeathCd=j==HUNTER?1f:0f;
         skillCd=skillPeriod();
-        followUpWindow=0;
         if(j==HUNTER){
             for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<430)hit(e,damage()*2.2f,false);
             signal("careerSkill",x,y,1);
