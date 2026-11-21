@@ -7,7 +7,7 @@ import java.util.*;
 public final class ActionSave {
     private ActionSave(){}
     public static byte[] encode(ActionGame g) throws IOException {
-        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",17);
+        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",18);
         p.setProperty("endless",Boolean.toString(g.endless));put(p,"endlessDepth",g.endlessDepth);put(p,"bestDepth",g.bestDepth);put(p,"threat",g.threat);put(p,"pressure",g.pressure);put(p,"encounterHpFloor",g.encounterHpFloor);put(p,"encounterDamageFloor",g.encounterDamageFloor);put(p,"roomDamage",g.roomDamage);put(p,"roomElapsed",g.roomElapsed);
         p.setProperty("mode",g.mode.name());p.setProperty("rng",Long.toString(g.rngState));p.setProperty("won",Boolean.toString(g.won));p.setProperty("cleared",Boolean.toString(g.roomCleared));
         String[] ik={"hero","bank","power","vitality","runs","wins","room","loot","kills","potions","damageBonus","healthBonus","speedBonus","combo","nextId"};
@@ -15,7 +15,7 @@ public final class ActionSave {
         for(int i=0;i<ik.length;i++)put(p,ik[i],iv[i]);for(int i=0;i<3;i++)put(p,"xp"+i,g.experience[i]);
         for(int b=0;b<6;b++)for(int slot=0;slot<3;slot++)put(p,"career"+b+"."+slot,g.careers[b][slot]);
         put(p,"careerSkillTime",g.careerSkillTime);put(p,"careerSkillDeathCd",g.careerSkillDeathCd);put(p,"careerSkillMode",g.careerSkillMode);put(p,"careerCooldownRank",g.careerCooldownRank);
-        put(p,"careerWard",g.careerWard);
+        put(p,"careerWard",g.careerWard);put(p,"bombs",g.bombs);put(p,"snares",g.snares);put(p,"tonics",g.tonics);put(p,"battleTonicTime",g.battleTonicTime);p.setProperty("shopOpen",Boolean.toString(g.shopOpen));
         put(p,"relicOwned",g.relicOwned);put(p,"relicAwards",g.relicAwards);put(p,"lastRelic",g.lastRelic);put(p,"relicEcho",g.relicEcho);p.setProperty("relicRevived",Boolean.toString(g.relicRevived));
         for(int b=0;b<6;b++)for(int slot=0;slot<2;slot++)put(p,"relic"+b+"."+slot,g.relics[b][slot]);
         put(p,"activeSkillCd",g.activeSkillCd);put(p,"activeSkillDelay",g.activeSkillDelay);put(p,"activeSkillX",g.activeSkillX);put(p,"activeSkillY",g.activeSkillY);put(p,"followUpWindow",g.followUpWindow);put(p,"ruptureTime",g.ruptureTime);put(p,"ruptureTick",g.ruptureTick);p.setProperty("ruptureLatched",Boolean.toString(g.ruptureLatched));
@@ -47,10 +47,10 @@ public final class ActionSave {
         if(data==null||data.length==0||data.length>131072)throw new IOException("存档大小不正确");
         try{
             Properties p=new Properties();p.load(new ByteArrayInputStream(data));
-            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,17);
+            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,18);
             ActionGame g=new ActionGame();g.mode=ActionGame.Mode.valueOf(required(p,"mode"));g.rngState=Long.parseLong(required(p,"rng"));if(g.rngState==0)throw new IllegalArgumentException("随机状态无效");
             g.won=bool(p,"won");g.roomCleared=bool(p,"cleared");g.hero=n(p,"hero",0,2);g.bank=n(p,"bank",0,999999);g.power=n(p,"power",0,10);g.vitality=n(p,"vitality",0,10);g.runs=n(p,"runs",0,999999);g.wins=n(p,"wins",0,g.runs);
-            g.room=n(p,"room",0,5);g.loot=n(p,"loot",0,99999);g.kills=n(p,"kills",0,99999);g.potions=n(p,"potions",0,version>=10?ActionGame.MAX_POTIONS:2);g.damageBonus=n(p,"damageBonus",0,version>=10?40:16);g.healthBonus=n(p,"healthBonus",0,version>=12?99999:version>=10?200:80);g.speedBonus=n(p,"speedBonus",0,version>=10?6:4);g.combo=n(p,"combo",0,2);g.nextId=n(p,"nextId",1,Integer.MAX_VALUE-1);
+            g.room=n(p,"room",0,5);g.loot=n(p,"loot",0,99999);g.kills=n(p,"kills",0,99999);g.potions=n(p,"potions",0,version>=10?ActionGame.MAX_POTIONS:2);if(version>=18){g.bombs=n(p,"bombs",0,3);g.snares=n(p,"snares",0,3);g.tonics=n(p,"tonics",0,3);g.battleTonicTime=f(p,"battleTonicTime",0,10);g.shopOpen=bool(p,"shopOpen");}g.damageBonus=n(p,"damageBonus",0,version>=10?40:16);g.healthBonus=n(p,"healthBonus",0,version>=12?99999:version>=10?200:80);g.speedBonus=n(p,"speedBonus",0,version>=10?6:4);g.combo=n(p,"combo",0,2);g.nextId=n(p,"nextId",1,Integer.MAX_VALUE-1);
             if(version>=10){
                 g.endless=bool(p,"endless");g.endlessDepth=n(p,"endlessDepth",0,999999);g.bestDepth=n(p,"bestDepth",0,999999);
                 g.threat=f(p,"threat",1,12);g.pressure=f(p,"pressure",0,.6f);g.encounterHpFloor=f(p,"encounterHpFloor",0,150000);g.encounterDamageFloor=f(p,"encounterDamageFloor",0,1000);g.roomDamage=f(p,"roomDamage",0,100000);g.roomElapsed=f(p,"roomElapsed",0,10000000);
@@ -119,6 +119,7 @@ public final class ActionSave {
                 int zones=n(p,"hazards",0,18);for(int j=0;j<zones;j++){float[] a=array(p,"hazard"+j,8);int type=integer(a[0],0,1);ActionGame.Hazard h=new ActionGame.Hazard(type,range(a[1],64,1056),range(a[2],64,696),range(a[3],1,version>=10?300:190),range(a[4],0,1.5f),range(a[5],0,type==0?2.3f:.1f),range(a[7],1,version>=10?300:60));h.tick=range(a[6],0,.65f);if(h.life<=0)throw new IllegalArgumentException("已结束的危险区");g.hazards.add(h);}
                 if(g.mode==ActionGame.Mode.CAMP&&(g.followUpWindow>0||g.ruptureTime>0||g.ruptureLatched||zones>0)||zones>0&&(g.mode==ActionGame.Mode.REWARD||g.roomCleared))throw new IllegalArgumentException("战斗扩展状态无效");
             }
+            if(g.shopOpen&&g.mode!=ActionGame.Mode.REWARD||g.mode==ActionGame.Mode.CAMP&&(g.bombs>0||g.snares>0||g.tonics>0||g.battleTonicTime>0))throw new IllegalArgumentException("商店或道具状态无效");
             g.x=f(p,"x",48,1072);g.y=f(p,"y",48,712);g.hp=f(p,"hp",0,g.maxHp());g.faceX=f(p,"faceX",-1,1);g.faceY=f(p,"faceY",-1,1);g.time=f(p,"time",0,10000000);
             g.attackCd=f(p,"attackCd",0,1);g.rollTime=f(p,"rollTime",0,.3f);g.rollCd=f(p,"rollCd",0,1.2f);g.skillCd=f(p,"skillCd",0,version>=12?60:7.5f);if(version>=17){g.activeSkillCd=f(p,"activeSkillCd",0,25);g.activeSkillDelay=f(p,"activeSkillDelay",0,.65f);g.activeSkillX=f(p,"activeSkillX",64,1056);g.activeSkillY=f(p,"activeSkillY",64,696);}g.invulnerable=f(p,"invulnerable",0,1);g.comboWindow=f(p,"comboWindow",0,1);g.rollX=f(p,"rollX",-1,1);g.rollY=f(p,"rollY",-1,1);
             if(version<11){g.skillCd=0;g.followUpWindow=0;}
