@@ -71,7 +71,16 @@ public final class MainActivity extends Activity implements WorldView.Host {
             .setPositiveButton("学习 · 1点",(d,w)->{if(g.learn(id)){save();world.invalidate();}}).setNegativeButton("返回",null).create();
         talentDialog.show();talentDialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(reason.isEmpty());
     }
-    @Override public void resetTalents(){if(world.game.mode!=ActionGame.Mode.CAMP)return;new AlertDialog.Builder(this).setTitle("重置「"+world.game.heroName()+"」的天赋？").setMessage("免费返还全部已投入点数，保留角色经验、外观和其他角色的天赋。")
+    @Override public void specialty(int id){
+        ActionGame g=world.game;if(g.mode!=ActionGame.Mode.CAMP||id<0||id>=8)return;
+        BuildSystem.Node node=BuildSystem.SPECIALTIES[id];String reason=BuildSystem.specialtyLockReason(g.specialties[g.buildId()],g.heroXp(),id);
+        String requirements="需要角色 Lv."+node.minLevel+(node.parent<0?" · 无前置":" · 前置「"+BuildSystem.SPECIALTIES[node.parent].name+"」"+(BuildSystem.specialtyUltimate(id)?2:1)+"级");
+        talentDialog=new AlertDialog.Builder(this).setTitle(node.name+"  "+g.specialtyRank(id)+" / "+node.maxRank)
+            .setMessage(node.description+"\n\n"+requirements+"\n"+(BuildSystem.specialtyUltimate(id)?"本分支终阶二选一。\n":"")+"可用天赋点："+g.availablePoints()+"\n"+(reason.isEmpty()?"消耗1点学习。":reason))
+            .setPositiveButton("学习 · 1点",(d,w)->{if(g.learnSpecialty(id)){save();world.invalidate();}}).setNegativeButton("返回",null).create();
+        talentDialog.show();talentDialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(reason.isEmpty()&&g.availablePoints()>0);
+    }
+    @Override public void resetTalents(){if(world.game.mode!=ActionGame.Mode.CAMP)return;new AlertDialog.Builder(this).setTitle("重置「"+world.game.heroName()+"」的天赋？").setMessage("免费返还全部天赋与专精点数，保留角色经验、外观和其他角色的成长。")
         .setPositiveButton("重置",(d,w)->{world.game.resetTalents();save();world.invalidate();}).setNegativeButton("取消",null).show();}
     @Override public void sound(String event){if(audio!=null)audio.play(event);}
     @Override protected void onResume(){super.onResume();if(world!=null)world.startFrames();}
