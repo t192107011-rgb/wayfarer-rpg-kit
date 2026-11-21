@@ -137,7 +137,7 @@ public final class ActionGame {
     public float skillPeriod(){return Math.max(8f,24f-rank(9)*.4f-training[buildId()][2]*.35f-(custom>=0&&profile().trait==2?.8f:0)+(soulKind()==1?.5f:soulKind()==2?-.6f:0));}
     public float activeSkillPeriod(){return Math.max(6f,18f-rank(9)*.35f-training[buildId()][2]*.35f-(custom>=0&&profile().trait==2?.7f:0)+(soulKind()==1?-.5f:soulKind()==2?.4f:0));}
     public float careerCooldownRate(){return 1f+careerCooldownRank*.1f+((careerSkillTime>0&&(careerSkillMode==3||careerSkillMode==4))?1f:0);}
-    public float dodgePeriod(){return Math.max(.45f,1.15f-rank(4)*.07f-training[buildId()][2]*.045f-(custom>=0&&profile().trait==1?.12f:0)-(hasRelic(2)?.15f:0)-(hasRelic(11)?.12f:0)-(hasRelic(2)&&hasRelic(11)?.08f:0));}
+    public float dodgePeriod(){return Math.max(.45f,1.15f-rank(4)*.07f-training[buildId()][2]*.045f-(custom>=0&&profile().trait==1?.12f:0)-(hasRelic(2)?.15f:0)-(hasRelic(11)?.12f:0)-(hasRelic(2)&&hasRelic(11)?.08f:0)-(isSpec(HUNTER,2)?.12f:0));}
     public float potionRatio(){return custom>=0&&profile().trait==0?.55f:.45f;}
     private float originHp(){return custom<0?0:profile().origin==0?18:profile().origin==1?-10:-8;}
     public int room=0,loot=0,kills=0,potions=2,damageBonus=0,healthBonus=0,speedBonus=0,careerCooldownRank=0,combo=0;
@@ -191,7 +191,7 @@ public final class ActionGame {
     public float maxHp(){return Math.min(99999,baseMaxHp()+healthBonus+training[buildId()][1]*4);}
     public float baseDamage(){return (hero==0?22:hero==1?18:15)+power*2+damageBonus+(heroLevel()-1)+rank(0)*2+(custom>=0&&profile().origin==2?2:0)+characterTrait(2);}
     public float damage(){return baseDamage()*(hasRelic(10)?1.05f:1)*(hasRelic(3)&&hasRelic(10)?1.04f:1)*(1+training[buildId()][0]*.025f)*(rank(3)>0&&hp<maxHp()*.4f?1.55f:1)*(soulBuff>0?1.25f:1)*(battleTonicTime>0?1.30f:1)*(soulKind()==2?(ruptureTime>0?1.4f:corruption>=75?1.25f:corruption>=50?1.15f:1):1);}
-    public float speed(){return (hero==2?240:hero==1?215:205)*(1+speedBonus*.08f+rank(4)*.03f)*(custom<0?1:profile().origin==0?.95f:profile().origin==1?1.07f:1)*(hasRelic(11)?1.03f:1)*(background()==2?1.03f:1)*(background()==3&&hp<maxHp()*.35f?1.12f:1)*(job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0?1.45f:1);}
+    public float speed(){return (hero==2?240:hero==1?215:205)*(1+speedBonus*.08f+rank(4)*.03f)*(custom<0?1:profile().origin==0?.95f:profile().origin==1?1.07f:1)*(hasRelic(11)?1.03f:1)*(background()==2?1.03f:1)*(background()==3&&hp<maxHp()*.35f?1.12f:1)*(isSpec(HUNTER,2)?1.08f:1)*(job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0?1.45f:1);}
     public float attackPeriod(){return (hero==0?.48f:hero==1?.4f:.12f)*(hero==0?1.1f:1)*(custom>=0&&profile().trait==0?1.06f:1)*(soulBuff>0?.8f:1)*(job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0?.62f:1)*(job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0?1.12f:1)*(job()==REPORTER&&careerSkillMode==4&&careerSkillTime>0?.62f:1)*(1-training[buildId()][0]*.012f)*(battleTonicTime>0?.8f:1);}
     public int upgradeCost(int rank){return 30+rank*25;}
     public int trainingCost(int rank){return 45+rank*35;}
@@ -414,7 +414,7 @@ public final class ActionGame {
     }
     private void beginAttack(){
         aimAtNearest(hero==1?640:meleeReach()+30);
-        if(job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0){double base=Math.atan2(faceY,faceX);for(int i=-1;i<=1;i++)throwKnife((float)Math.cos(base+i*.22),(float)Math.sin(base+i*.22),damage()*.35f);}
+        if(job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0){double base=Math.atan2(faceY,faceX);int spread=isSpec(ASSASSIN,2)?2:1;for(int i=-spread;i<=spread;i++)throwKnife((float)Math.cos(base+i*.22),(float)Math.sin(base+i*.22),damage()*(spread==2?.28f:.35f));}
         attackCd=attackPeriod();attackAnim=hero==1?.18f:.24f;
         combo=comboWindow>0?(combo+1)%3:0;comboWindow=.85f;swingHits.clear();
         swingBoost=(dodgeCharge>0?1+rank(5)*(soulKind()==2?.20f:.15f):1)*(combo==2?1.35f+rank(1)*(soulKind()==2?.18f:.12f):1);dodgeCharge=0;
@@ -559,12 +559,17 @@ public final class ActionGame {
             p.x=nx;p.y=ny;if(gone)it.remove();
         }
     }
+    void hitForTest(Enemy e,float value){hit(e,value,true);}
     private void hit(Enemy e,float value){hit(e,value,true);}
     private void hit(Enemy e,float value,boolean charge){hit(e,value,charge,charge);}
     private void hit(Enemy e,float value,boolean charge,boolean echoEligible){
         if(e.hp<=0)return;
         if(echoEligible){
             if(isSpec(HUNTER,1)&&len(e.x-x,e.y-y)>200)value*=1.18f;
+            if(isSpec(HUNTER,2)&&len(e.x-x,e.y-y)<=200)value*=1.10f;
+            if(isSpec(ASSASSIN,1)&&e.hp<=e.maxHp*.5f)value*=1.25f;
+            if(isSpec(DETECTIVE,1)&&e.hex>0)value*=1.25f;
+            if(isSpec(DETECTIVE,2)&&e.stun>0)value*=1.20f;
             if(isSpec(REPORTER,1)&&e.type==3)value*=1.15f;
         }
         if(echoEligible&&relicEcho>0&&hasRelic(3)){value*=1.35f;relicEcho=0;signal("echo",e.x,e.y,65);}
