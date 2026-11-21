@@ -17,13 +17,13 @@ public final class CareerAbilityTests {
         for(int i=0;i<20;i++){g.hitStop=0;g.update(1f/60f,new ActionGame.Input());}
         check(g.careerSkillMode==3&&e.x<x&&e.hp<1000,"detective field attracts and damages");
         g=arena(REPORTER);g.skill();check(g.careerSkillMode==4&&g.healingFactor()<.21f,"reporter attack state and healing penalty");
+        g.careerCooldownRank=4;ActionGame restored=ActionSave.decode(ActionSave.encode(g));
+        check(restored.careerCooldownRank==4&&restored.careerSkillMode==4,"v13 saves career cooldown and active state");
         g=arena(HUNTER);g.careers[g.buildId()][1]=2;check(g.speed()>205&&g.dodgePeriod()<1.15f,"hunter skirmisher improves mobility");
         g=arena(ASSASSIN);g.careers[g.buildId()][1]=1;ActionGame.Enemy low=new ActionGame.Enemy(g.nextId++,0,600,600,100);low.hp=40;g.enemies.add(low);float hpBefore=low.hp;g.hitForTest(low,20);check(hpBefore-low.hp>20,"assassin executioner deals bonus damage to wounded targets");
         g=arena(DETECTIVE);g.careers[g.buildId()][1]=1;ActionGame.Enemy marked=new ActionGame.Enemy(g.nextId++,0,600,600,100);marked.hex=2;g.enemies.add(marked);g.hitForTest(marked,20);check(100-marked.hp>20,"detective interrogator exploits marked targets");
         g=arena(DETECTIVE);g.careers[g.buildId()][1]=2;marked=new ActionGame.Enemy(g.nextId++,0,600,600,100);marked.stun=1;g.enemies.add(marked);g.hitForTest(marked,20);check(100-marked.hp>20,"detective analyst exploits stunned targets");
         g=arena(ASSASSIN);g.careers[g.buildId()][1]=2;check(g.careerKnifeCount()==5,"assassin phantom specialization adds two knives to each volley");
-        g.careerCooldownRank=4;ActionGame restored=ActionSave.decode(ActionSave.encode(g));
-        check(restored.careerCooldownRank==4&&restored.careerSkillMode==4,"v13 saves career cooldown and active state");
         g.soulCd=5;g.generateRoom();check(g.skillCd==0&&g.soulCd==0,"room transition resets both skill cooldowns");
         System.out.println("CAREER ABILITY CHECKS PASSED: "+checks);
     }
