@@ -17,6 +17,15 @@ public final class RelicTests {
         g.start(4);check(!g.equipRelics(0,0)&&g.hasRelic(1),"combat swap blocked");g.pause();check(!g.equipRelics(0,0),"paused swap blocked");g.abandon();g.returnCamp();check(g.equipRelics(0,0),"unequip camp");near(g.maxHp(),110,"unequip restores baseline");
         System.out.println("PASS collection ownership, two-slot constraints, six character identities, camp-only equip and stat removal");
     }
+    private static void expandedRelics()throws Exception{
+        ActionGame g=game(0,1,9);near(g.maxHp(),146,"iron route set grants combined health");
+        g=game(0,3,10);check(g.damage()>g.baseDamage()*1.05f,"gunsmith and echo set damage bonus");
+        g=game(0,2,11);near(g.dodgePeriod(),.8f,"night route set cooldown bonus");
+        g=game(1,5,12);near(g.soulEnergy,92,"astral set starting energy bonus");
+        check(RelicSystem.NAMES.length==13&&RelicSystem.CATEGORIES.length==13&&RelicSystem.RARITIES.length==13,"all relic metadata arrays align");
+        check(RelicSystem.setBonus(1,9).contains("铁路线卫队"),"set bonus is described");
+        System.out.println("PASS four new relics, rarity/category metadata and four two-piece sets");
+    }
     private static void effects()throws Exception{
         ActionGame g=game(0,3,0);g.dodge(0,-1);near(g.relicEcho,3,"dodge primes bell");g.rollTime=0;attackShot(g,20);near(g.enemies.get(0).hp,973,"bell boosts one hit");near(g.relicEcho,0,"bell consumed");attackShot(g,20);near(g.enemies.get(0).hp,953,"second hit unboosted");
         g=game(1,3,0);g.dodge(0,-1);g.rollTime=0;g.soulSkill();for(int i=0;i<65;i++){g.enemies.get(0).stun=1;tick(g);}check(g.relicEcho>0,"domain cannot consume bell");g.pause();float echo=g.relicEcho;for(int i=0;i<200;i++)tick(g);near(g.relicEcho,echo,"pause freezes bell");ActionGame a=ActionSave.decode(ActionSave.encode(g));near(a.relicEcho,echo,"bell persists");a.resume();for(int i=0;i<200;i++){a.enemies.get(0).stun=1;tick(a);}near(a.relicEcho,0,"bell expires");
@@ -28,14 +37,14 @@ public final class RelicTests {
         g=game(1,7,3);g.relicEcho=3;g.soulEnergy=0;g.soulWard=20;enemyHit(g,10);near(g.enemies.get(0).hp,1000,"fully blocked hit does not reflect");g.soulWard=0;g.soulEnergy=0;enemyHit(g,20);near(g.enemies.get(0).hp,995,"thorns reflects actual life damage");near(g.soulEnergy,0,"thorns cannot charge energy");check(g.relicEcho>0,"thorns cannot spend bell");
         g=game(2,8,0);g.corruption=100;g.soulQuiet=3;g.hp=2;enemyHit(g,100);check(g.mode==ActionGame.Mode.PLAY&&g.relicRevived,"hourglass rescues lethal enemy hit");near(g.hp,g.maxHp()*.25f,"rescue ignores healing penalty");near(g.invulnerable,1,"rescue invulnerability");g.pause();a=ActionSave.decode(ActionSave.encode(g));check(a.relicRevived,"rescue use persists");a.resume();a.room=2;a.generateRoom();a.blocks.clear();a.enemies.clear();a.enemies.add(new ActionGame.Enemy(a.nextId++,0,650,500,100));a.hp=1;enemyHit(a,100);check(a.mode==ActionGame.Mode.RESULT,"second lethal hit across room cannot rescue");a.returnCamp();a.start(12);check(!a.relicRevived,"new run replenishes hourglass");
         g=game(2,8,6);g.hp=.5f;g.soulSkill();check(g.hp==.5f&&!g.relicRevived,"nonlethal self sacrifice never consumes rescue");
-        System.out.println("PASS all eight relic effects, radiant/forbidden synergies, proc exclusions, pause and once-per-run rescue");
+        System.out.println("PASS all twelve relic effects, radiant/forbidden synergies, proc exclusions, pause and once-per-run rescue");
     }
     private static void discoveries()throws Exception{
         ActionGame g=new ActionGame();g.start(400);g.enemies.clear();tick(g);check(g.lastRelic==0&&g.relicOwned==6,"first room has no relic");g.chooseReward(0);g.x=800;g.y=80;tick(g);check(g.room==2,"normal exit advances room");g.enemies.clear();tick(g);check(g.mode==ActionGame.Mode.REWARD&&g.lastRelic>=3&&Integer.bitCount(g.relicOwned)==3,"second room discovers unowned relic");int found=g.lastRelic,owned=g.relicOwned;long rng=g.rngState;
         ActionGame a=ActionSave.decode(ActionSave.encode(g));tick(a);check(a.relicOwned==owned&&a.rngState==rng,"reward restore never rolls again");a.chooseReward(0);for(int i=0;i<10;i++)tick(a);check(a.lastRelic==found&&a.relicOwned==owned,"claim cannot duplicate relic");a.pause();a.abandon();a.returnCamp();check(a.relicOwned==owned&&a.relicAwards==0&&a.lastRelic==0,"death keeps collection, camp clears run state");check(a.equipRelics(found,1),"discovery equip after return");
-        g=new ActionGame();for(int run=0;run<2;run++){
+        g=new ActionGame();for(int run=0;run<4;run++){
             g.start(500+run);for(int room=1;room<=5;room++){g.room=room;g.generateRoom();g.enemies.clear();tick(g);if(room<5)g.chooseReward(0);}check(g.won,"fixture clears boss");g.returnCamp();
-        }check(g.relicOwned==RelicSystem.ALL,"two complete expeditions collect all six nonstarters without duplicates");
+        }check(g.relicOwned==RelicSystem.ALL,"four complete expeditions collect all ten nonstarters without duplicates");
         g.start(33);g.room=2;g.generateRoom();g.enemies.clear();tick(g);check(g.lastRelic==-1&&g.loot==15,"complete collection gives run currency");ActionSave.decode(ActionSave.encode(g));
         ActionGame d1=new ActionGame(),d2=new ActionGame();for(ActionGame d:new ActionGame[]{d1,d2}){d.start(73);d.room=2;d.generateRoom();d.enemies.clear();tick(d);}check(d1.lastRelic==d2.lastRelic&&d1.rngState==d2.rngState,"discovery uses serialized deterministic RNG");
         System.out.println("PASS checkpoint discovery, no duplicates, no reward reroll, failure retention, boss reward and full-collection compensation");
@@ -50,7 +59,7 @@ public final class RelicTests {
     }
     private static void combinations()throws Exception{
         int steps=0;
-        for(int first=0;first<=8;first++)for(int second=0;second<=8;second++){
+        for(int first=0;first<=12;first++)for(int second=0;second<=12;second++){
             if(second!=0&&second<=first)continue;
             for(int soul=0;soul<=2;soul++){
                 ActionGame g=game(soul,first,second);g.pause();g.abandon();g.returnCamp();g.experience[0]=1200;
@@ -65,5 +74,5 @@ public final class RelicTests {
         }
         System.out.println("PASS "+steps+" steps across all relic pairs/empty slots, three soul states and maxed talent builds");
     }
-    public static void main(String[] args)throws Exception{equipment();effects();discoveries();saves();combinations();System.out.println("RELIC CHECKS PASSED: "+count);}
+    public static void main(String[] args)throws Exception{equipment();expandedRelics();effects();discoveries();saves();combinations();System.out.println("RELIC CHECKS PASSED: "+count);}
 }
