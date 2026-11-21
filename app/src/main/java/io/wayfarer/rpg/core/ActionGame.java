@@ -334,10 +334,10 @@ public final class ActionGame {
     }
     public void activeSkill(){
         if(mode!=Mode.PLAY||rollTime>0||activeSkillCd>0||roomCleared)return;
-        int style=skillStyle(),kind=soulKind();float power=damage()*(specialtyRank(7)>0?1.12f:1);aimAtNearest(650);activeSkillCd=activeSkillPeriod();followUpWindow=followUpDuration();
+        int style=skillStyle(),kind=soulKind();float power=damage()*(specialtyRank(7)>0?1.12f:1),areaScale=specialtyRank(7)>0?1.10f:1;aimAtNearest(650);activeSkillCd=activeSkillPeriod();followUpWindow=followUpDuration();
         if(kind==2)payForbidden(.025f,10);
         if(style==0){
-            float radius=kind==1?235:kind==2?210:190;
+            float radius=(kind==1?235:kind==2?210:190)*areaScale;
             for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<radius){hit(e,power*(kind==2?1.25f:1.4f),false);e.stun=Math.max(e.stun,kind==1?.8f:.4f);if(kind==2)e.hex=4;}
             if(kind==1){soulWard=Math.min(60,soulWard+8);cleanse(x,y,radius);}
         }else if(style==1){
@@ -345,13 +345,13 @@ public final class ActionGame {
             for(int i=0;i<count;i++){double a=angle+(i-(count-1)/2f)*.18;Shot shot=new Shot(x+faceX*20,y+faceY*20,(float)Math.cos(a)*610,(float)Math.sin(a)*610,power*(kind==2?.72f:.9f),true);shot.pierce=kind==1?2:0;shot.effect=kind==2?2:0;shots.add(shot);}
             if(kind==1)cleanse(x+faceX*80,y+faceY*80,90);
         }else if(style==2){
-            invulnerable=Math.max(invulnerable,kind==1?.8f:.55f);float radius=kind==1?185:160;
+            invulnerable=Math.max(invulnerable,kind==1?.8f:.55f);float radius=(kind==1?185:160)*areaScale;
             for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<radius){hit(e,power*(kind==2?1.8f:1.55f),false);if(kind==2)e.hex=3;}
             if(kind==1)soulWard=Math.min(60,soulWard+12);if(kind==2)heal(maxHp()*.045f);
         }else if(style==3){
-            Enemy target=null;float best=500;
+            Enemy target=null;float best=500*areaScale;
             for(Enemy e:enemies){float dx=e.x-x,dy=e.y-y,d=len(dx,dy);if(e.hp>0&&d<best&&d>1&&(dx*faceX+dy*faceY)/d>.35f&&lineClear(x,y,e.x,e.y)){best=d;target=e;}}
-            if(target!=null){if(target.type==3)target.stun=Math.max(target.stun,.65f);else pull(target,x,y,kind==1?190:kind==2?155:125);hit(target,power*(kind==2?1.5f:1.25f),false);if(kind==1){target.stun=Math.max(target.stun,1.1f);for(Enemy e:enemies)if(e!=target&&e.hp>0&&len(e.x-target.x,e.y-target.y)<120)hit(e,power*.45f,false);}if(kind==2)target.hex=4;}
+            if(target!=null){if(target.type==3)target.stun=Math.max(target.stun,.65f);else pull(target,x,y,(kind==1?190:kind==2?155:125)*areaScale);hit(target,power*(kind==2?1.5f:1.25f),false);if(kind==1){target.stun=Math.max(target.stun,1.1f);for(Enemy e:enemies)if(e!=target&&e.hp>0&&len(e.x-target.x,e.y-target.y)<120)hit(e,power*.45f,false);}if(kind==2)target.hex=4;}
         }else{
             activeSkillX=Math.max(70,Math.min(WIDTH-70,x+faceX*180));activeSkillY=Math.max(70,Math.min(HEIGHT-70,y+faceY*180));activeSkillDelay=.65f;signal("thunderWarning",activeSkillX,activeSkillY,kind==1?220:190);
         }
