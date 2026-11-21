@@ -559,7 +559,7 @@ public final class ActionGame {
             p.x=nx;p.y=ny;if(gone)it.remove();
         }
     }
-    void hitForTest(Enemy e,float value){hit(e,value,true);}
+    public void hitForTest(Enemy e,float value){hit(e,value,true);}
     private void hit(Enemy e,float value){hit(e,value,true);}
     private void hit(Enemy e,float value,boolean charge){hit(e,value,charge,charge);}
     private void hit(Enemy e,float value,boolean charge,boolean echoEligible){
