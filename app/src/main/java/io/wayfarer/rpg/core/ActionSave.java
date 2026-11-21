@@ -7,7 +7,7 @@ import java.util.*;
 public final class ActionSave {
     private ActionSave(){}
     public static byte[] encode(ActionGame g) throws IOException {
-        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",16);
+        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",17);
         p.setProperty("endless",Boolean.toString(g.endless));put(p,"endlessDepth",g.endlessDepth);put(p,"bestDepth",g.bestDepth);put(p,"threat",g.threat);put(p,"pressure",g.pressure);put(p,"encounterHpFloor",g.encounterHpFloor);put(p,"encounterDamageFloor",g.encounterDamageFloor);put(p,"roomDamage",g.roomDamage);put(p,"roomElapsed",g.roomElapsed);
         p.setProperty("mode",g.mode.name());p.setProperty("rng",Long.toString(g.rngState));p.setProperty("won",Boolean.toString(g.won));p.setProperty("cleared",Boolean.toString(g.roomCleared));
         String[] ik={"hero","bank","power","vitality","runs","wins","room","loot","kills","potions","damageBonus","healthBonus","speedBonus","combo","nextId"};
@@ -18,7 +18,7 @@ public final class ActionSave {
         put(p,"careerWard",g.careerWard);
         put(p,"relicOwned",g.relicOwned);put(p,"relicAwards",g.relicAwards);put(p,"lastRelic",g.lastRelic);put(p,"relicEcho",g.relicEcho);p.setProperty("relicRevived",Boolean.toString(g.relicRevived));
         for(int b=0;b<6;b++)for(int slot=0;slot<2;slot++)put(p,"relic"+b+"."+slot,g.relics[b][slot]);
-        put(p,"followUpWindow",g.followUpWindow);put(p,"ruptureTime",g.ruptureTime);put(p,"ruptureTick",g.ruptureTick);p.setProperty("ruptureLatched",Boolean.toString(g.ruptureLatched));
+        put(p,"activeSkillCd",g.activeSkillCd);put(p,"activeSkillDelay",g.activeSkillDelay);put(p,"activeSkillX",g.activeSkillX);put(p,"activeSkillY",g.activeSkillY);put(p,"followUpWindow",g.followUpWindow);put(p,"ruptureTime",g.ruptureTime);put(p,"ruptureTick",g.ruptureTick);p.setProperty("ruptureLatched",Boolean.toString(g.ruptureLatched));
         put(p,"storyUnlocked",g.storyUnlocked);for(int j=0;j<5;j++)put(p,"storyChoice"+j,g.storyChoices[j]);
         for(int j=0;j<6;j++){put(p,"characterUnlocked"+j,g.characterUnlocked[j]);put(p,"characterJob"+j,g.characterJobs[j]);for(int k=0;k<3;k++)put(p,"characterChoice"+j+"."+k,g.characterChoices[j][k]);}
         put(p,"hazards",g.hazards.size());int hz=0;for(ActionGame.Hazard h:g.hazards)p.setProperty("hazard"+hz++,csv(h.type,h.x,h.y,h.radius,h.warning,h.life,h.tick,h.damage));
@@ -47,7 +47,7 @@ public final class ActionSave {
         if(data==null||data.length==0||data.length>131072)throw new IOException("存档大小不正确");
         try{
             Properties p=new Properties();p.load(new ByteArrayInputStream(data));
-            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,16);
+            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,17);
             ActionGame g=new ActionGame();g.mode=ActionGame.Mode.valueOf(required(p,"mode"));g.rngState=Long.parseLong(required(p,"rng"));if(g.rngState==0)throw new IllegalArgumentException("随机状态无效");
             g.won=bool(p,"won");g.roomCleared=bool(p,"cleared");g.hero=n(p,"hero",0,2);g.bank=n(p,"bank",0,999999);g.power=n(p,"power",0,10);g.vitality=n(p,"vitality",0,10);g.runs=n(p,"runs",0,999999);g.wins=n(p,"wins",0,g.runs);
             g.room=n(p,"room",0,5);g.loot=n(p,"loot",0,99999);g.kills=n(p,"kills",0,99999);g.potions=n(p,"potions",0,version>=10?ActionGame.MAX_POTIONS:2);g.damageBonus=n(p,"damageBonus",0,version>=10?40:16);g.healthBonus=n(p,"healthBonus",0,version>=12?99999:version>=10?200:80);g.speedBonus=n(p,"speedBonus",0,version>=10?6:4);g.combo=n(p,"combo",0,2);g.nextId=n(p,"nextId",1,Integer.MAX_VALUE-1);
@@ -120,7 +120,7 @@ public final class ActionSave {
                 if(g.mode==ActionGame.Mode.CAMP&&(g.followUpWindow>0||g.ruptureTime>0||g.ruptureLatched||zones>0)||zones>0&&(g.mode==ActionGame.Mode.REWARD||g.roomCleared))throw new IllegalArgumentException("战斗扩展状态无效");
             }
             g.x=f(p,"x",48,1072);g.y=f(p,"y",48,712);g.hp=f(p,"hp",0,g.maxHp());g.faceX=f(p,"faceX",-1,1);g.faceY=f(p,"faceY",-1,1);g.time=f(p,"time",0,10000000);
-            g.attackCd=f(p,"attackCd",0,1);g.rollTime=f(p,"rollTime",0,.3f);g.rollCd=f(p,"rollCd",0,1.2f);g.skillCd=f(p,"skillCd",0,version>=12?60:7.5f);g.invulnerable=f(p,"invulnerable",0,1);g.comboWindow=f(p,"comboWindow",0,1);g.rollX=f(p,"rollX",-1,1);g.rollY=f(p,"rollY",-1,1);
+            g.attackCd=f(p,"attackCd",0,1);g.rollTime=f(p,"rollTime",0,.3f);g.rollCd=f(p,"rollCd",0,1.2f);g.skillCd=f(p,"skillCd",0,version>=12?60:7.5f);if(version>=17){g.activeSkillCd=f(p,"activeSkillCd",0,25);g.activeSkillDelay=f(p,"activeSkillDelay",0,.65f);g.activeSkillX=f(p,"activeSkillX",64,1056);g.activeSkillY=f(p,"activeSkillY",64,696);}g.invulnerable=f(p,"invulnerable",0,1);g.comboWindow=f(p,"comboWindow",0,1);g.rollX=f(p,"rollX",-1,1);g.rollY=f(p,"rollY",-1,1);
             if(version<11){g.skillCd=0;g.followUpWindow=0;}
             int count=n(p,"blocks",0,32);for(int i=0;i<count;i++){float[] a=array(p,"b"+i,5);g.blocks.add(new ActionGame.Block(range(a[0],48,1072),range(a[1],48,712),range(a[2],1,200),range(a[3],1,200),integer(a[4],0,1)));}
             count=n(p,"enemies",0,40);Set<Integer> ids=new HashSet<>();
