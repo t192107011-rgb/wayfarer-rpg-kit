@@ -181,6 +181,23 @@ public final class ActionTests {
         }
         System.out.println("PASS eight career/soul combinations across follow-up and dedicated soul arts");
     }
+    private static void skillChainReactions(){
+        for(int kind=1;kind<=2;kind++)for(int style=0;style<5;style++){
+            ActionGame g=new ActionGame();g.selectCustom(0);BuildSystem.Profile draft=g.profile().copy();draft.skill=style;g.customize(0,draft);
+            g.bindSoul(kind,0);g.start(2100+kind*10+style);g.blocks.clear();g.enemies.clear();g.x=500;g.y=500;g.faceX=1;g.faceY=0;
+            ActionGame.Enemy primary=new ActionGame.Enemy(g.nextId++,0,620,500,2500);primary.stun=1;primary.hex=2;
+            ActionGame.Enemy secondary=new ActionGame.Enemy(g.nextId++,0,690,500,2500);secondary.stun=1;secondary.hex=1;
+            g.enemies.add(primary);g.enemies.add(secondary);
+            g.activeSkill();int shotsBefore=g.shots.size();float secondaryBefore=secondary.hp;
+            g.followUp();check(g.followUpWindow==0,"chain consumes follow-up window "+kind+"/"+style);
+            if(style==0||style==2||style==4)check(secondary.hp<secondaryBefore,"area chain reaches secondary target "+kind+"/"+style);
+            if(style==1)check(g.shots.size()>=shotsBefore+2,"fan follow-up adds converging projectiles "+kind);
+            if(style==3)check(secondary.hex>=3||secondary.stun>=.3f,"chain follow-up propagates control "+kind);
+            if(kind==1)check(g.soulWard>0,"radiant chain converts confirmed follow-up into ward "+style);
+            else check(g.corruption>0&&g.enemies.stream().anyMatch(e->e.hex>0),"forbidden chain preserves curse interaction "+style);
+        }
+        System.out.println("PASS five active-skill chain reactions across both soul types");
+    }
     private static void expandedEconomy(){
         ActionGame g=new ActionGame();g.bindSoul(1,0);g.start(71);g.mode=ActionGame.Mode.REWARD;g.loot=250;g.openShop();g.hp-=30;
         float hp=g.hp;check(g.buyShopItem(3)&&g.hp>hp&&g.loot==212,"medical supply spends tickets and heals immediately");
@@ -228,5 +245,5 @@ public final class ActionTests {
         ActionGame g=new ActionGame();g.start(12);g.pause();float cd=g.activeSkillCd;for(int i=0;i<30;i++)g.update(1f/60f,new ActionGame.Input());near(g.activeSkillCd,cd,"pause freezes active cooldown");
         System.out.println("PASS five active skills, independent career cooldown, follow-ups, trap persistence and pause");
     }
-    public static void main(String[] args)throws Exception{movement();combat();shopAndItems();expandedEconomy();careerSoulResonance();careerActiveSoulResonance();careerFollowUpAndSoulSynergy();permanentEconomy();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
+    public static void main(String[] args)throws Exception{movement();combat();shopAndItems();expandedEconomy();careerSoulResonance();careerActiveSoulResonance();careerFollowUpAndSoulSynergy();skillChainReactions();permanentEconomy();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
 }
