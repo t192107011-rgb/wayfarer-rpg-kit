@@ -139,6 +139,17 @@ public final class ActionTests {
         forbidden.soulCd=8;check(forbidden.soulTuneAction()&&forbidden.soulEnergy==5&&forbidden.soulCd==4&&forbidden.corruption==12,"forbidden tuning has distinct cost and corruption");
         System.out.println("PASS expanded ticket shop and radiant/forbidden soul energy sinks");
     }
+    private static void permanentEconomy()throws Exception{
+        ActionGame g=new ActionGame();g.bank=100000;
+        for(int i=0;i<20;i++){g.upgrade(false);g.upgrade(true);}
+        for(int route=0;route<4;route++)for(int i=0;i<10;i++)check(g.train(route),"permanent training purchase "+route+"/"+i);
+        check(g.power==20&&g.vitality==20,"permanent camp upgrades reach level 20");
+        for(int route=0;route<4;route++)check(g.training[0][route]==10,"permanent training route reaches level 10");
+        int bank=g.bank;g.upgrade(false);check(g.bank==bank&&g.power==20,"permanent upgrade cap prevents overspending");
+        ActionGame restored=ActionSave.decode(ActionSave.encode(g));check(restored.power==20&&restored.vitality==20,"expanded permanent upgrade levels persist");
+        for(int route=0;route<4;route++)check(restored.training[0][route]==10,"expanded training levels persist");
+        System.out.println("PASS permanent ticket sinks, level-20 camp upgrades and level-10 training");
+    }
     private static void threatCap(){
         ActionGame g=new ActionGame();g.startEndless(91);g.endlessDepth=2;float early=ThreatSystem.rating(g);
         g.endlessDepth=80;float late=ThreatSystem.rating(g);check(late>early,"endless enemy threat grows with depth");
@@ -160,5 +171,5 @@ public final class ActionTests {
         ActionGame g=new ActionGame();g.start(12);g.pause();float cd=g.activeSkillCd;for(int i=0;i<30;i++)g.update(1f/60f,new ActionGame.Input());near(g.activeSkillCd,cd,"pause freezes active cooldown");
         System.out.println("PASS five active skills, independent career cooldown, follow-ups, trap persistence and pause");
     }
-    public static void main(String[] args)throws Exception{movement();combat();shopAndItems();expandedEconomy();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
+    public static void main(String[] args)throws Exception{movement();combat();shopAndItems();expandedEconomy();permanentEconomy();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
 }
