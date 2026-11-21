@@ -48,7 +48,7 @@ public final class ActionTests {
             }
         }
         ActionGame g=game(0);mob(g,0,600,600,0);ActionGame.Input in=new ActionGame.Input();ticks(g,in,1);
-        check(g.mode==ActionGame.Mode.REWARD,"room clear enters reward selection");g.chooseReward(0);check(g.damageBonus==4&&g.roomCleared,"reward applies once");g.chooseReward(0);check(g.damageBonus==4,"cannot claim reward twice");
+        check(g.mode==ActionGame.Mode.REWARD,"room clear enters reward selection");check(g.hasTacticDraft()&&g.tacticOffers[0]>=0,"room clear prepares tactical inscription offers");g.chooseReward(0);check(g.damageBonus==4&&g.roomCleared,"reward applies once");g.chooseReward(0);check(g.damageBonus==4,"cannot claim reward twice");
         g.hp=50;g.x=280;g.y=80;ticks(g,in,1);check(g.room==2&&g.hp>50,"spring exit advances and heals");
         g.enemies.clear();ticks(g,in,1);g.chooseReward(2);int loot=g.loot;g.x=840;g.y=80;ticks(g,in,1);check(g.room==3&&g.loot==loot+12,"ember exit advances and rewards");
         g.loot=100;g.pause();g.abandon();check(g.mode==ActionGame.Mode.RESULT&&g.bank==70,"abandon uses defeat settlement");int bank=g.bank;g.abandon();check(g.bank==bank,"settlement idempotent");
@@ -62,7 +62,7 @@ public final class ActionTests {
     private static void rejects(byte[] bytes,String key,String value)throws Exception{boolean rejected=false;try{ActionSave.decode(mutate(bytes,key,value));}catch(IOException e){rejected=true;}check(rejected,"reject invalid "+key);}
     private static void tacticalInscriptions()throws Exception{
         ActionGame g=game(0);g.mode=ActionGame.Mode.REWARD;g.tacticOffers[0]=0;g.tacticOffers[1]=1;g.tacticOffers[2]=2;
-        g.openTacticDraft();check(g.tacticDraftOpen,"reward opens tactical inscription draft");
+        g.openTacticDraft();check(g.tacticDraftOpen,"reward opens tactical inscription draft");ActionGame draftSave=ActionSave.decode(ActionSave.encode(g));check(draftSave.tacticDraftOpen,"open inscription draft persists across save restore");
         check(g.chooseTactic(0)&&g.tacticRanks[0]==1&&g.tacticChosen&&!g.tacticDraftOpen,"one inscription can be selected per cleared room");
         g.openTacticDraft();check(!g.tacticDraftOpen&&!g.chooseTactic(1),"second inscription cannot be claimed in the same room");
         ActionGame saved=ActionSave.decode(ActionSave.encode(g));check(saved.tacticRanks[0]==1&&saved.tacticChosen,"chosen inscription persists in reward snapshot");
