@@ -318,7 +318,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         if(game.ruptureTime>0)text(c,"失控 "+(int)Math.ceil(game.ruptureTime)+"秒 · 生命流失",480,71,13,0xFFFF879B,true);
         button(c,855,15,88,45,"Ⅱ 暂停",false);
         if(game.roomCleared){rounded(c,280,82,400,35,8,0xDF18372F);text(c,"出口已开启：向上走，选择补给所或货栈",480,105,14,0xFFCADEB0,true);}
-        for(ActionGame.Enemy e:game.enemies)if(e.type==3){text(c,e.hp<e.maxHp*.5f?"失魂监工 · 狂怒":"失魂监工",480,87,14,gold,true);box(c,340,97,280,7,0xFF273239);box(c,340,97,280*e.hp/e.maxHp,7,0xFFB36C5B);}
+        for(ActionGame.Enemy e:game.enemies)if(e.type==3){String boss=EncounterSystem.bossName(game.room);text(c,boss+(e.hp<e.maxHp*.5f?" · 狂怒":" · 首领"),480,87,14,e.hp<e.maxHp*.5f?0xFFFF927A:gold,true);box(c,340,97,280,7,0xFF273239);box(c,340,97,280*e.hp/e.maxHp,7,e.hp<e.maxHp*.5f?0xFFE66D68:0xFFB36C5B);}
     }
     private void control(Canvas c,float x,float y,float r,String label,float cooldown,boolean held){circle(c,x,y,r,held?0xCC6C8271:0xBB192D36);ring(c,x,y,r,0x998AA598,2);text(c,cooldown>.05f?String.format(java.util.Locale.ROOT,"%.1f",cooldown):label,x,y+6,18,cooldown>.05f?muted:cream,true);}
     private void controls(Canvas c){
