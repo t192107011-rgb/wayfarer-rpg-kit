@@ -7,7 +7,7 @@ import java.util.*;
 public final class ActionSave {
     private ActionSave(){}
     public static byte[] encode(ActionGame g) throws IOException {
-        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",18);
+        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",19);
         p.setProperty("endless",Boolean.toString(g.endless));put(p,"endlessDepth",g.endlessDepth);put(p,"bestDepth",g.bestDepth);put(p,"threat",g.threat);put(p,"pressure",g.pressure);put(p,"encounterHpFloor",g.encounterHpFloor);put(p,"encounterDamageFloor",g.encounterDamageFloor);put(p,"roomDamage",g.roomDamage);put(p,"roomElapsed",g.roomElapsed);
         p.setProperty("mode",g.mode.name());p.setProperty("rng",Long.toString(g.rngState));p.setProperty("won",Boolean.toString(g.won));p.setProperty("cleared",Boolean.toString(g.roomCleared));
         String[] ik={"hero","bank","power","vitality","runs","wins","room","loot","kills","potions","damageBonus","healthBonus","speedBonus","combo","nextId"};
@@ -24,7 +24,7 @@ public final class ActionSave {
         put(p,"hazards",g.hazards.size());int hz=0;for(ActionGame.Hazard h:g.hazards)p.setProperty("hazard"+hz++,csv(h.type,h.x,h.y,h.radius,h.warning,h.life,h.tick,h.damage));
         put(p,"custom",g.custom);put(p,"shield",g.shield);put(p,"dodgeCharge",g.dodgeCharge);
         for(int i=0;i<3;i++){BuildSystem.Profile b=g.profiles[i];String k="profile"+i+".";p.setProperty(k+"name",b.name);p.setProperty(k+"data",csv(b.weapon,b.skill,b.origin,b.trait,b.color,b.skin,b.hair,b.xp));}
-        for(int b=0;b<6;b++)for(int t=0;t<12;t++)put(p,"talent"+b+"."+t,g.talents[b][t]);
+        for(int b=0;b<6;b++){for(int t=0;t<12;t++)put(p,"talent"+b+"."+t,g.talents[b][t]);for(int r=0;r<4;r++)put(p,"training"+b+"."+r,g.training[b][r]);}
         for(int j=0;j<3;j++){put(p,"presetSoul"+j,g.presetSouls[j]);put(p,"presetArt"+j,g.presetArts[j]);put(p,"profile"+j+".soul",g.profiles[j].soul);put(p,"profile"+j+".art",g.profiles[j].soulArt);}
         put(p,"soulEnergy",g.soulEnergy);put(p,"soulCd",g.soulCd);put(p,"soulWard",g.soulWard);put(p,"corruption",g.corruption);put(p,"soulQuiet",g.soulQuiet);put(p,"soulBuff",g.soulBuff);
         put(p,"soulFields",g.soulFields.size());int fieldIndex=0;for(ActionGame.SoulField f:g.soulFields)p.setProperty("field"+fieldIndex++,csv(f.type,f.x,f.y,f.life,f.tick,f.power));
@@ -47,7 +47,7 @@ public final class ActionSave {
         if(data==null||data.length==0||data.length>131072)throw new IOException("存档大小不正确");
         try{
             Properties p=new Properties();p.load(new ByteArrayInputStream(data));
-            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,18);
+            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,19);
             ActionGame g=new ActionGame();g.mode=ActionGame.Mode.valueOf(required(p,"mode"));g.rngState=Long.parseLong(required(p,"rng"));if(g.rngState==0)throw new IllegalArgumentException("随机状态无效");
             g.won=bool(p,"won");g.roomCleared=bool(p,"cleared");g.hero=n(p,"hero",0,2);g.bank=n(p,"bank",0,999999);g.power=n(p,"power",0,10);g.vitality=n(p,"vitality",0,10);g.runs=n(p,"runs",0,999999);g.wins=n(p,"wins",0,g.runs);
             g.room=n(p,"room",0,5);g.loot=n(p,"loot",0,99999);g.kills=n(p,"kills",0,99999);g.potions=n(p,"potions",0,version>=10?ActionGame.MAX_POTIONS:2);if(version>=18){g.bombs=n(p,"bombs",0,3);g.snares=n(p,"snares",0,3);g.tonics=n(p,"tonics",0,3);g.battleTonicTime=f(p,"battleTonicTime",0,10);g.shopOpen=bool(p,"shopOpen");}g.damageBonus=n(p,"damageBonus",0,version>=10?40:16);g.healthBonus=n(p,"healthBonus",0,version>=12?99999:version>=10?200:80);g.speedBonus=n(p,"speedBonus",0,version>=10?6:4);g.combo=n(p,"combo",0,2);g.nextId=n(p,"nextId",1,Integer.MAX_VALUE-1);
@@ -63,7 +63,7 @@ public final class ActionSave {
                 g.custom=n(p,"custom",-1,2);g.shield=f(p,"shield",0,99999);g.dodgeCharge=f(p,"dodgeCharge",0,3);
                 for(int i=0;i<3;i++){BuildSystem.Profile b=g.profiles[i];String k="profile"+i+".";b.name=required(p,k+"name");float[] a=array(p,k+"data",8);
                     b.weapon=integer(a[0],0,2);b.skill=integer(a[1],0,version>=16?SkillSystem.COUNT-1:2);b.origin=integer(a[2],0,2);b.trait=integer(a[3],0,2);b.color=integer(a[4],0,5);b.skin=integer(a[5],0,2);b.hair=integer(a[6],0,2);b.xp=integer(a[7],0,1000000);BuildSystem.validate(b);}
-                for(int b=0;b<6;b++){for(int t=0;t<12;t++)g.talents[b][t]=n(p,"talent"+b+"."+t,0,BuildSystem.NODES[t].maxRank);if(version>=10)BuildSystem.validateTree(g.talents[b],b<3?g.experience[b]:g.profiles[b-3].xp);else BuildSystem.validateLegacyTree(g.talents[b],b<3?g.experience[b]:g.profiles[b-3].xp);}
+                for(int b=0;b<6;b++){for(int t=0;t<12;t++)g.talents[b][t]=n(p,"talent"+b+"."+t,0,BuildSystem.NODES[t].maxRank);if(version>=10)BuildSystem.validateTree(g.talents[b],b<3?g.experience[b]:g.profiles[b-3].xp);else BuildSystem.validateLegacyTree(g.talents[b],b<3?g.experience[b]:g.profiles[b-3].xp);if(version>=19)for(int r=0;r<4;r++)g.training[b][r]=n(p,"training"+b+"."+r,0,5);}
                 if(g.custom>=0&&g.hero!=g.profile().weapon)throw new IllegalArgumentException("角色与武器不一致");
                 if(g.dodgeCharge>0&&g.rank(5)==0)throw new IllegalArgumentException("天赋状态无效");
             }
