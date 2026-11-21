@@ -174,7 +174,17 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         text(c,"初始2点，每80经验+1点，最多18点。各角色独立成长。",50,501,13,gold,false);
         button(c,700,475,210,42,"免费重置天赋",false);
     }
-    private void specialtyTree(Canvas c){\n        box(c,0,0,960,540,0xFF12282D);glow(c,480,270,370,0x224F8B76);\n        text(c,game.heroName()+" · 专精星图",40,48,27,cream,false);\n        text(c,"与原天赋共享点数 · 可用 "+game.availablePoints()+" / 总点数 "+BuildSystem.points(game.heroXp()),40,82,15,gold,false);\n        button(c,855,15,88,45,"返回",false);button(c,515,15,170,45,"天赋星图",false);button(c,700,15,140,45,"局外训练",false);\n        for(int b=0;b<2;b++){int tint=b==0?0xFF9BC9D4:0xFFE0A875;text(c,BuildSystem.SPECIALTY_BRANCHES[b],55+b*430,125,19,tint,true);}\n        for(int id=0;id<8;id++){int x=55+(id%2)*430,y=145+(id/2)*82;BuildSystem.Node n=BuildSystem.SPECIALTIES[id];int rank=game.specialties[game.buildId()][id];String lock=BuildSystem.specialtyLockReason(game.specialties[game.buildId()],game.heroXp(),id);rounded(c,x,y,390,68,10,rank>0?0xFF36554F:lock.isEmpty()&&game.availablePoints()>0?0xFF2F4148:0xFF1D3037);text(c,n.name+"  "+rank+" / "+n.maxRank,x+18,y+27,18,rank>0?tintForSpecialty(id):cream,false);text(c,n.description,x+18,y+51,12,muted,false);}\n        text(c,"灵契终阶：魂盾 / 回响汲取二选一；猎场终阶：终结追击 / 战术布置二选一。",55,493,13,gold,false);button(c,700,475,210,42,"免费重置全部成长",false);\n    }\n    private int tintForSpecialty(int id){return id<4?0xFF9BC9D4:0xFFE0A875;}\n    private void trainingTree(Canvas c){
+    private void specialtyTree(Canvas c){
+        box(c,0,0,960,540,0xFF12282D);glow(c,480,270,370,0x224F8B76);
+        text(c,game.heroName()+" · 专精星图",40,48,27,cream,false);
+        text(c,"与原天赋共享点数 · 可用 "+game.availablePoints()+" / 总点数 "+BuildSystem.points(game.heroXp()),40,82,15,gold,false);
+        button(c,855,15,88,45,"返回",false);button(c,515,15,170,45,"天赋星图",false);button(c,700,15,140,45,"局外训练",false);
+        for(int b=0;b<2;b++){int tint=b==0?0xFF9BC9D4:0xFFE0A875;text(c,BuildSystem.SPECIALTY_BRANCHES[b],55+b*430,125,19,tint,true);}
+        for(int id=0;id<8;id++){int x=55+(id%2)*430,y=145+(id/2)*82;BuildSystem.Node n=BuildSystem.SPECIALTIES[id];int rank=game.specialties[game.buildId()][id];String lock=BuildSystem.specialtyLockReason(game.specialties[game.buildId()],game.heroXp(),id);rounded(c,x,y,390,68,10,rank>0?0xFF36554F:lock.isEmpty()&&game.availablePoints()>0?0xFF2F4148:0xFF1D3037);text(c,n.name+"  "+rank+" / "+n.maxRank,x+18,y+27,18,rank>0?tintForSpecialty(id):cream,false);text(c,n.description,x+18,y+51,12,muted,false);}
+        text(c,"灵契终阶：魂盾 / 回响汲取二选一；猎场终阶：终结追击 / 战术布置二选一。",55,493,13,gold,false);button(c,700,475,210,42,"免费重置全部成长",false);
+    }
+    private int tintForSpecialty(int id){return id<4?0xFF9BC9D4:0xFFE0A875;}
+    private void trainingTree(Canvas c){
         box(c,0,0,960,540,0xFF12282D);glow(c,480,270,370,0x224F8B76);
         text(c,game.heroName()+" · 局外成长",40,48,27,cream,false);
         text(c,"共享票券 "+game.bank+"  ·  四条独立路线，每条最多5级；不同角色分别培养",40,82,15,gold,false);
