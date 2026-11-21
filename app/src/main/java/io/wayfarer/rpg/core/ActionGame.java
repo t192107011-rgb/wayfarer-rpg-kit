@@ -148,7 +148,7 @@ public final class ActionGame {
     public final int[] tacticRanks=new int[8],tacticOffers={0,1,2};
     public boolean tacticChosen=false,tacticDraftOpen=false;
     public static final String[] TACTIC_NAMES={"专属技式","追击余势","魂流共鸣","迅捷循环","诅咒猎杀","护盾回路","战斗节拍","战地搜刮"};
-    public static final String[] TACTIC_DESCRIPTIONS={"主动技能伤害 +12% / 级；并强化对应技能的范围或弹幕。","追击伤害 +12% / 级。","魂能获取 +15% / 级。","主动技能冷却 -1秒 / 级。","对诅咒目标额外造成12%伤害 / 级。","释放主动技能获得6点护盾 / 级。","攻击速度提高4% / 级。","敌人掉落票券提高12% / 级。"};
+    public static final String[] TACTIC_DESCRIPTIONS={"主动技能伤害 +12% / 级；范围或弹幕强化。","追击伤害 +12% / 级。","魂能获取 +15% / 级。","主动技能冷却 -1秒 / 级。","诅咒目标额外伤害 +12% / 级。","主动技能获得6点护盾 / 级。","攻击速度提高4% / 级。","票券拾取提高12% / 级。"};
     public boolean hasTacticDraft(){for(int id:tacticOffers)if(id>=0&&id<8&&tacticRanks[id]<3)return true;return false;}
     private int randomTactic(int a,int b){int[] pool=new int[8];int n=0;for(int i=0;i<8;i++)if(i!=a&&i!=b&&tacticRanks[i]<3)pool[n++]=i;return n==0?-1:pool[random(n)];}
     private void prepareTacticDraft(){tacticChosen=false;tacticDraftOpen=false;tacticOffers[0]=tacticRanks[0]<3?0:randomTactic(-1,-1);tacticOffers[1]=randomTactic(tacticOffers[0],-1);tacticOffers[2]=randomTactic(tacticOffers[0],tacticOffers[1]);}
