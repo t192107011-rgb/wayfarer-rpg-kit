@@ -139,13 +139,13 @@ public final class ActionTests {
             ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,620,500,1200);e.stun=1;g.enemies.add(e);
             if(kind==1){g.soulWard=0;g.hp=g.maxHp()-12;g.shots.add(new ActionGame.Shot(550,500,0,0,5,false));}
             else {g.soulEnergy=10;g.corruption=0;}
-            float before=e.hp;g.activeSkill();
+            float before=e.hp,hpBefore=g.hp;g.activeSkill();
             check(g.activeSkillCd>0&&g.followUpWindow>0,"career active soul resonance consumes active skill "+kind+"/"+job);
             if(kind==1){
                 if(job==HUNTER)check(g.soulWard>=6&&g.shots.isEmpty(),"radiant hunter converts active skill into ward and cleanse");
                 else if(job==ASSASSIN)check(g.soulWard>=3&&g.invulnerable>=.35f,"radiant assassin gains ward and brief protection");
                 else if(job==DETECTIVE)check(g.soulWard>=4&&g.shots.isEmpty(),"radiant detective gains ward and wider cleanse");
-                else check(g.hp>before&&g.soulWard>=2,"radiant reporter converts resonance into recovery");
+                else check(g.hp>hpBefore&&g.soulWard>=2,"radiant reporter converts resonance into recovery");
             }else{
                 if(job==HUNTER)check(e.hex>=3,"forbidden hunter spreads the mark");
                 else if(job==ASSASSIN)check(g.corruption>=14&&g.shots.size()>=2,"forbidden assassin pays extra debt for bonus knives");
