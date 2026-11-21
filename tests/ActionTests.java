@@ -125,7 +125,7 @@ public final class ActionTests {
         System.out.println("PASS in-run shop, currency validation, inventory, consumables and timed buff persistence");
     }
     private static void expandedEconomy(){
-        ActionGame g=new ActionGame();g.start(71);g.mode=ActionGame.Mode.REWARD;g.loot=250;g.openShop();g.hp-=30;
+        ActionGame g=new ActionGame();g.bindSoul(1,0);g.start(71);g.mode=ActionGame.Mode.REWARD;g.loot=250;g.openShop();g.hp-=30;
         float hp=g.hp;check(g.buyShopItem(3)&&g.hp>hp&&g.loot==212,"medical supply spends tickets and heals immediately");
         g.soulEnergy=10;check(g.buyShopItem(4)&&g.soulEnergy==45&&g.loot==170,"soul crystal spends tickets and restores energy");
         int oldDamage=g.damageBonus;check(g.buyShopItem(5)&&g.damageBonus==oldDamage+4&&g.loot==115,"field modification spends tickets and improves run damage");
