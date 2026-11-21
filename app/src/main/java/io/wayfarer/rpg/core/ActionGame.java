@@ -224,7 +224,7 @@ public final class ActionGame {
     public void startEndless(long seed){beginRun(seed,true);}
     private void beginRun(long seed,boolean infinite){
         if(mode!=Mode.CAMP)return;clearThreat();endless=infinite;endlessDepth=infinite?1:0;clearSoulRuntime();clearRelicRun();careerSkillTime=0;careerSkillDeathCd=0;careerSkillMode=0;careerCooldownRank=0;clearTactics();soulEnergy=soulKind()==0?0:Math.min(100,40+(hasRelic(5)?(soulKind()==1?30:15):0)+training[buildId()][3]*3+(hasRelic(12)?12:0)+(hasRelic(5)&&hasRelic(12)?10:0)+specialtyRank(0)*8);rngState=seed==0?1:seed;runs=Math.min(999999,runs+1);
-        loot=0;kills=0;nextId=1;room=1;potions=2;bombs=0;snares=0;tonics=0;battleTonicTime=0;shopOpen=false;clearTactics();damageBonus=0;healthBonus=0;speedBonus=0;combo=0;time=0;won=false;hp=maxHp();shield=0;soulWard=0;careerWard=entryCareerWard();
+        loot=0;kills=0;nextId=1;room=1;potions=2;bombs=0;snares=0;tonics=0;battleTonicTime=0;shopOpen=false;damageBonus=0;healthBonus=0;speedBonus=0;combo=0;time=0;won=false;hp=maxHp();shield=0;soulWard=0;careerWard=entryCareerWard();
         generateRoom();
     }
     public void generateRoom(){
