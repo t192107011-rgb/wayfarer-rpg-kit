@@ -161,7 +161,7 @@ public final class ActionTests {
             ActionGame f=new ActionGame();f.careers[f.buildId()][0]=job;f.bindSoul(kind,0);f.start(1200+kind*10+job);
             f.blocks.clear();f.enemies.clear();f.x=500;f.y=500;f.faceX=1;f.faceY=0;f.followUpWindow=2;
             ActionGame.Enemy target=new ActionGame.Enemy(f.nextId++,0,700,500,1500);target.stun=1;f.enemies.add(target);
-            float hpBefore=f.hp,energyBefore=f.soulEnergy;f.followUp();
+            f.hp=f.maxHp()-10;f.soulEnergy=0;float hpBefore=f.hp,energyBefore=f.soulEnergy;f.followUp();
             check(f.followUpWindow==0&&target.hp<1500,"career follow-up connects "+kind+"/"+job);
             if(job==CareerSystem.HUNTER)check(f.soulBuff>=1.25f,"hunter follow-up primes a short damage window");
             else if(job==CareerSystem.ASSASSIN)check(f.shots.size()>=2,"assassin follow-up emits twin knives");
