@@ -141,7 +141,7 @@ public final class ActionGame {
     private float originHp(){return custom<0?0:profile().origin==0?18:profile().origin==1?-10:-8;}
     public int room=0,loot=0,kills=0,potions=2,damageBonus=0,healthBonus=0,speedBonus=0,careerCooldownRank=0,combo=0;
     public float x=560,y=620,hp=110,faceX=0,faceY=-1,time=0;
-    public float attackCd=0,attackAnim=0,rollTime=0,rollCd=0,skillCd=0,activeSkillCd=0,activeSkillDelay=0,activeSkillX=0,activeSkillY=0,invulnerable=0,comboWindow=0;
+    public float attackCd=0,attackAnim=0,rollTime=0,rollCd=0,skillCd=0,activeSkillCd=0,activeSkillDelay=0,activeSkillX=560,activeSkillY=380,invulnerable=0,comboWindow=0;
     public float rollX=0,rollY=-1,hitStop=0;
     public boolean roomCleared=false,won=false;
     public String notice=WorldSetting.DATE+" · 点击上方事件档案了解封锁线。";
