@@ -7,7 +7,7 @@ import java.util.*;
 public final class ActionSave {
     private ActionSave(){}
     public static byte[] encode(ActionGame g) throws IOException {
-        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",20);
+        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",21);
         p.setProperty("endless",Boolean.toString(g.endless));put(p,"endlessDepth",g.endlessDepth);put(p,"bestDepth",g.bestDepth);put(p,"threat",g.threat);put(p,"pressure",g.pressure);put(p,"encounterHpFloor",g.encounterHpFloor);put(p,"encounterDamageFloor",g.encounterDamageFloor);put(p,"roomDamage",g.roomDamage);put(p,"roomElapsed",g.roomElapsed);
         p.setProperty("mode",g.mode.name());p.setProperty("rng",Long.toString(g.rngState));p.setProperty("won",Boolean.toString(g.won));p.setProperty("cleared",Boolean.toString(g.roomCleared));
         String[] ik={"hero","bank","power","vitality","runs","wins","room","loot","kills","potions","damageBonus","healthBonus","speedBonus","combo","nextId"};
@@ -129,7 +129,7 @@ public final class ActionSave {
                 float[] a=array(p,"e"+i,13);int id=integer(a[0],1,g.nextId-1);if(!ids.add(id))throw new IllegalArgumentException("重复敌人ID");
                 ActionGame.Enemy e=new ActionGame.Enemy(id,integer(a[1],0,version>=9?6:3),range(a[3],48,1072),range(a[4],48,712),range(a[6],1,version>=14?150000:version>=10?12000:1000));
                 e.hp=range(a[5],0,e.maxHp);e.state=integer(a[2],0,version>=9?3:2);e.timer=range(a[7],-.1f,2);e.aimX=range(a[8],-1,1);e.aimY=range(a[9],-1,1);e.stun=range(a[10],0,version>=18?3:1);e.flash=range(a[11],0,1);e.struck=integer(a[12],0,1)==1;
-                if(version>=9){float[] t=array(p,"enemyTactics"+i,4);e.guard=range(t[0],0,40);e.targetX=range(t[1],64,1056);e.targetY=range(t[2],64,696);e.pattern=integer(t[3],0,e.type==3?2:0);if(e.state==3&&e.type!=2&&e.type!=4)throw new IllegalArgumentException("敌人恢复状态无效");}
+                if(version>=9){float[] t=array(p,"enemyTactics"+i,4);e.guard=range(t[0],0,version>=21?90:40);e.targetX=range(t[1],64,1056);e.targetY=range(t[2],64,696);e.pattern=integer(t[3],0,e.type==3?2:0);if(e.state==3&&e.type!=2&&e.type!=4)throw new IllegalArgumentException("敌人恢复状态无效");}
                 if(version>=3)e.hex=f(p,"hex"+i,0,3);
                 if(!g.free(e.x,e.y,e.radius()))throw new IllegalArgumentException("敌人位置无效");g.enemies.add(e);
             }
