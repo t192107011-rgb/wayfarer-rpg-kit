@@ -132,7 +132,7 @@ public final class ActionTests {
         System.out.println("PASS radiant and forbidden soul resonance with career overdrive");
     }
     private static void careerActiveSoulResonance(){
-        int[] jobs={HUNTER,ASSASSIN,DETECTIVE,REPORTER};
+        int[] jobs={CareerSystem.HUNTER,CareerSystem.ASSASSIN,CareerSystem.DETECTIVE,CareerSystem.REPORTER};
         for(int kind=1;kind<=2;kind++)for(int job:jobs){
             ActionGame g=new ActionGame();g.bindSoul(kind,0);g.careers[g.buildId()][0]=job;g.start(910+kind*10+job);
             g.blocks.clear();g.enemies.clear();g.x=500;g.y=500;g.faceX=1;g.faceY=0;g.invulnerable=0;
@@ -142,9 +142,9 @@ public final class ActionTests {
             float before=e.hp,hpBefore=g.hp;g.activeSkill();
             check(g.activeSkillCd>0&&g.followUpWindow>0,"career active soul resonance consumes active skill "+kind+"/"+job);
             if(kind==1){
-                if(job==HUNTER)check(g.soulWard>=6&&g.shots.isEmpty(),"radiant hunter converts active skill into ward and cleanse");
-                else if(job==ASSASSIN)check(g.soulWard>=3&&g.invulnerable>=.35f,"radiant assassin gains ward and brief protection");
-                else if(job==DETECTIVE)check(g.soulWard>=4&&g.shots.isEmpty(),"radiant detective gains ward and wider cleanse");
+                if(job==CareerSystem.HUNTER)check(g.soulWard>=6&&g.shots.isEmpty(),"radiant hunter converts active skill into ward and cleanse");
+                else if(job==CareerSystem.ASSASSIN)check(g.soulWard>=3&&g.invulnerable>=.35f,"radiant assassin gains ward and brief protection");
+                else if(job==CareerSystem.DETECTIVE)check(g.soulWard>=4&&g.shots.isEmpty(),"radiant detective gains ward and wider cleanse");
                 else check(g.hp>hpBefore&&g.soulWard>=2,"radiant reporter converts resonance into recovery");
             }else{
                 if(job==HUNTER)check(e.hex>=3,"forbidden hunter spreads the mark");
