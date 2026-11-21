@@ -155,7 +155,7 @@ public final class ActionGame {
     private void clearTactics(){Arrays.fill(tacticRanks,0);tacticOffers[0]=0;tacticOffers[1]=1;tacticOffers[2]=2;tacticChosen=false;tacticDraftOpen=false;}
     public void openTacticDraft(){if(mode==Mode.REWARD&&!shopOpen&&!tacticChosen&&hasTacticDraft())tacticDraftOpen=true;}
     public void closeTacticDraft(){tacticDraftOpen=false;}
-    public boolean chooseTactic(int slot){if(mode!=Mode.REWARD||!tacticDraftOpen||tacticChosen||slot<0||slot>=3)return false;int id=tacticOffers[slot];if(id<0||id>=8||tacticRanks[id]>=3)return false;tacticRanks[id]++;tacticChosen=true;tacticDraftOpen=false;notice="战技刻印：「"+TACTIC_NAMES[id]+"」提升至 "+tacticRanks[id]+" 级";signal("tactic",x,y,id);return true;}
+    public boolean chooseTactic(int slot){if(mode!=Mode.REWARD||!tacticDraftOpen||tacticChosen||slot<0||slot>=3)return false;int id=tacticOffers[slot];if(id<0||id>=8||tacticRanks[id]>=3)return false;tacticRanks[id]++;tacticOffers[slot]=-1;tacticChosen=true;tacticDraftOpen=false;notice="战技刻印：「"+TACTIC_NAMES[id]+"」提升至 "+tacticRanks[id]+" 级";signal("tactic",x,y,id);return true;}
 
     public float x=560,y=620,hp=110,faceX=0,faceY=-1,time=0;
     public float attackCd=0,attackAnim=0,rollTime=0,rollCd=0,skillCd=0,activeSkillCd=0,activeSkillDelay=0,activeSkillX=560,activeSkillY=380,invulnerable=0,comboWindow=0;
@@ -252,7 +252,7 @@ public final class ActionGame {
         if(which==0){if(damageBonus<40){damageBonus=Math.min(40,damageBonus+4);notice="锋芒：本轮伤害 +4";}else if(careerCooldownRank<8){careerCooldownRank++;notice="职业技能冷却速度 +10%（累计 "+(careerCooldownRank*10)+"%）";}else{loot=Math.min(99999,loot+12);notice="职业冷却已满 · 本轮票券 +12";}}
         if(which==1){if(maxHp()<99999){int cap=healthBonus<200?200:99999-(int)baseMaxHp();int gain=(int)Math.min(20,Math.min(cap-healthBonus,99999-maxHp()));healthBonus+=Math.max(0,gain);heal(35);notice=(healthBonus<=200?"生息":"生命上限")+ "：生命上限 +"+Math.max(0,gain)+"，"+(healthBonus<=200?"阶段上限200":"最高99999")+"，基础恢复35";}else{loot=Math.min(99999,loot+15);notice="生命上限已达99999 · 本轮票券 +15";}}
         if(which==2){if(speedBonus<6){speedBonus=Math.min(6,speedBonus+1);skillCd=0;followUpWindow=0;notice="轻羽：移速增益 +8%，技能立即就绪";}else{loot=Math.min(99999,loot+15);notice="轻羽已满 · 本轮票券 +15";}}
-        shopOpen=false;tacticDraftOpen=false;roomCleared=true;mode=Mode.PLAY;signal("clear",x,y,0);
+        shopOpen=false;tacticDraftOpen=false;tacticChosen=false;Arrays.fill(tacticOffers,-1);roomCleared=true;mode=Mode.PLAY;signal("clear",x,y,0);
     }
     public void openShop(){if(mode==Mode.REWARD){tacticDraftOpen=false;shopOpen=true;}}
     public void closeShop(){shopOpen=false;}
