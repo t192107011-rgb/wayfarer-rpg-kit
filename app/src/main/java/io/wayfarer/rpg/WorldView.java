@@ -336,7 +336,9 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         text(c,"移动",117,519,12,muted,true);
         control(c,850,420,58,"攻击",0,input.attack);control(c,737,456,37,"闪避",game.rollCd,false);control(c,855,210,34,"职业技",game.skillCd,false);control(c,855,298,38,game.followUpWindow>0?"追击":"主动技",game.activeSkillCd,false);
         control(c,648,456,29,"药×"+game.potions,0,false);control(c,550,456,27,"爆×"+game.bombs,0,false);control(c,575,390,27,"缚×"+game.snares,0,false);control(c,648,390,27,"剂×"+game.tonics,game.battleTonicTime,false);
-        if(game.soulKind()>0){control(c,735,240,38,game.soulEnergy<40?"蓄能":"魂技",game.soulCd,false);ring(c,735,240,42,game.soulKind()==1?0xFFE8D493:0xFFBE8FDC,2);text(c,game.soulArtName(),735,287,11,game.soulKind()==1?gold:0xFFCAA9E2,true);}
+        if(game.soulKind()>0){control(c,735,240,38,game.soulEnergy<40?"蓄能":"魂技",game.soulCd,false);ring(c,735,240,42,game.soulKind()==1?0xFFE8D493:0xFFBE8FDC,2);text(c,game.soulArtName(),735,287,11,game.soulKind()==1?gold:0xFFCAA9E2,true);
+            control(c,690,370,27,"魂盾",game.soulEnergy<25?0:0,false);control(c,780,370,27,"调律",game.soulEnergy<30?0:0,false);control(c,870,370,27,"共鸣",game.soulEnergy<35?0:0,false);
+        }
     }
     private void shade(Canvas c){box(c,0,0,960,540,0xD50C1820);}
     private void rewards(Canvas c){
@@ -361,10 +363,19 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         button(c,365,450,230,42,"返回补给选择",true);
     }
     private void shop(Canvas c){
-        text(c,"前 线 补 给 站",480,116,30,cream,true);text(c,"使用本轮票券购买一次性战术道具 · 每种最多携带3件",480,151,15,muted,true);
-        String[] title={"爆裂瓶","捕缚钉","战斗兴奋剂"};String[] desc={"270范围爆炸，造成210%攻击伤害","300范围短暂定身，并造成25%伤害","10秒内伤害+30%，攻击速度+20%"};int[] count={game.bombs,game.snares,game.tonics};
-        for(int i=0;i<3;i++){int x=105+i*250;rounded(c,x,190,220,185,12,0xFF2D4545);text(c,title[i],x+110,235,23,gold,true);text(c,desc[i],x+110,280,13,cream,true);text(c,"持有 "+count[i]+" / 3",x+110,314,14,muted,true);button(c,x+25,333,170,34,"购买 · "+game.shopPrice(i),count[i]<3&&game.loot>=game.shopPrice(i));}
-        text(c,"购买消耗本轮票券；离开本层不会清空道具，远征结束后清空。",480,412,13,muted,true);button(c,365,450,230,42,"返回补给选择",true);
+        text(c,"前 线 补 给 站",480,94,28,cream,true);text(c,"消耗本轮票券补充战斗资源；即时补给在购买时生效",480,124,14,muted,true);
+        String[] title={"爆裂瓶","捕缚钉","战斗兴奋剂","急救补给","魂能结晶","战术改装"};
+        String[] desc={"270范围爆炸，造成210%攻击伤害","300范围定身并造成25%伤害","10秒伤害+30%，攻速+20%","恢复最大生命值的30%","恢复35点魂能","伤害+4；满级后转为冷却或移速"};
+        int[] count={game.bombs,game.snares,game.tonics,-1,-1,-1};
+        for(int i=0;i<6;i++){
+            int col=i%3,row=i/3,x=25+col*305,y=150+row*145;
+            rounded(c,x,y,290,128,10,0xFF2D4545);text(c,title[i],x+145,y+27,19,gold,true);
+            text(c,desc[i],x+145,y+57,12,cream,true);
+            if(count[i]>=0)text(c,"持有 "+count[i]+" / 3",x+145,y+81,12,muted,true);
+            boolean enabled=game.loot>=game.shopPrice(i)&&(i>=3||(count[i]<3))&&(i!=3||game.hp<game.maxHp()-.01f)&&(i!=4||(game.soulKind()>0&&game.soulEnergy<99.99f))&&(i!=5||game.damageBonus<40||game.careerCooldownRank<8||game.speedBonus<6);
+            button(c,x+55,y+88,180,30,"购买 · "+game.shopPrice(i),enabled);
+        }
+        text(c,"道具随远征结束清空；急救、魂能与战术改装立即生效。",480,455,12,muted,true);button(c,365,478,230,38,"返回补给选择",true);
     }
     private void pausePanel(Canvas c){shade(c);text(c,"灯火暂歇",480,125,30,cream,true);text(c,"暂停期间，战斗与冷却均停止",480,162,15,muted,true);
         if(game.soulKind()>0)text(c,SoulSystem.NAMES[game.soulKind()]+" · "+game.skillName()+" / "+game.soulArtName(),480,187,13,gold,true);
@@ -404,7 +415,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             else if(inside(x,y,40,480,100,42))host.slots();else if(inside(x,y,155,480,110,42))host.help();
             else if(inside(x,y,280,480,155,42))host.editCharacter();else if(inside(x,y,450,480,175,42)){showTalents=true;showTraining=false;resetInput();}
             else if(inside(x,y,650,480,270,42))host.souls();
-        }else if(game.mode==ActionGame.Mode.REWARD){if(game.tacticDraftOpen){for(int i=0;i<3;i++)if(inside(x,y,45+i*300,205,270,190)){game.chooseTactic(i);host.save();return;}if(inside(x,y,365,450,230,42)){game.closeTacticDraft();host.save();return;}}else if(game.shopOpen){for(int i=0;i<3;i++)if(inside(x,y,130+i*250,333,170,34)){game.buyShopItem(i);host.save();return;}if(inside(x,y,365,450,230,42)){game.closeShop();host.save();return;}}else if(inside(x,y,260,391,440,43)){host.story();return;}else if(inside(x,y,260,445,440,43)){game.openShop();host.save();return;}else if(inside(x,y,260,497,440,32)){game.openTacticDraft();host.save();return;}else for(int i=0;i<3;i++)if(inside(x,y,45+i*300,211,270,165)){game.chooseReward(i);host.save();break;}}
+        }else if(game.mode==ActionGame.Mode.REWARD){if(game.tacticDraftOpen){for(int i=0;i<3;i++)if(inside(x,y,45+i*300,205,270,190)){game.chooseTactic(i);host.save();return;}if(inside(x,y,365,450,230,42)){game.closeTacticDraft();host.save();return;}}else if(game.shopOpen){for(int i=0;i<6;i++){int col=i%3,row=i/3,x0=25+col*305,y0=150+row*145;if(inside(x,y,x0+55,y0+88,180,30)){game.buyShopItem(i);host.save();return;}}if(inside(x,y,365,478,230,38)){game.closeShop();host.save();return;}}else if(inside(x,y,260,391,440,43)){host.story();return;}else if(inside(x,y,260,445,440,43)){game.openShop();host.save();return;}else if(inside(x,y,260,497,440,32)){game.openTacticDraft();host.save();return;}else for(int i=0;i<3;i++)if(inside(x,y,45+i*300,211,270,165)){game.chooseReward(i);host.save();break;}}
         else if(game.mode==ActionGame.Mode.PAUSED){
             if(inside(x,y,330,205,300,53)){game.resume();resetInput();}
             else if(inside(x,y,330,272,140,50))host.slots();else if(inside(x,y,490,272,140,50))soundOn=!soundOn;
@@ -428,6 +439,9 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             else if(ActionGame.len(x-648,y-456)<35)game.potion();
             else if(ActionGame.len(x-550,y-456)<33)game.useBomb();
             else if(ActionGame.len(x-575,y-390)<33)game.useSnare();
+            else if(game.soulKind()>0&&ActionGame.len(x-690,y-370)<31)game.soulWardAction();
+            else if(game.soulKind()>0&&ActionGame.len(x-780,y-370)<31)game.soulTuneAction();
+            else if(game.soulKind()>0&&ActionGame.len(x-870,y-370)<31)game.soulResonanceAction();
             else if(ActionGame.len(x-648,y-390)<33)game.useTonic();
             else if(game.soulKind()>0&&ActionGame.len(x-735,y-240)<45)game.soulSkill();
         }else if(action==MotionEvent.ACTION_MOVE){
