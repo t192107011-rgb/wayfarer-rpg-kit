@@ -147,9 +147,9 @@ public final class ActionTests {
                 else if(job==CareerSystem.DETECTIVE)check(g.soulWard>=4&&g.shots.isEmpty(),"radiant detective gains ward and wider cleanse");
                 else check(g.hp>hpBefore&&g.soulWard>=2,"radiant reporter converts resonance into recovery");
             }else{
-                if(job==HUNTER)check(e.hex>=3,"forbidden hunter spreads the mark");
-                else if(job==ASSASSIN)check(g.corruption>=14&&g.shots.size()>=2,"forbidden assassin pays extra debt for bonus knives");
-                else if(job==DETECTIVE)check(e.hp<before,"forbidden detective detonates marked targets");
+                if(job==CareerSystem.HUNTER)check(e.hex>=3,"forbidden hunter spreads the mark");
+                else if(job==CareerSystem.ASSASSIN)check(g.corruption>=14&&g.shots.size()>=2,"forbidden assassin pays extra debt for bonus knives");
+                else if(job==CareerSystem.DETECTIVE)check(e.hp<before,"forbidden detective detonates marked targets");
                 else check(g.soulEnergy>10&&g.corruption>=13,"forbidden reporter converts overdrive into soul energy");
             }
         }
