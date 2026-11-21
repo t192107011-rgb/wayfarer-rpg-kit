@@ -304,7 +304,7 @@ public final class ActionGame {
     }
     public void activeSkill(){
         if(mode!=Mode.PLAY||rollTime>0||activeSkillCd>0||roomCleared)return;
-        int style=skillStyle(),kind=soulKind();float power=damage();aimAtNearest(650);activeSkillCd=activeSkillPeriod();followUpWindow=Math.max(3f,followUpDuration());
+        int style=skillStyle(),kind=soulKind();float power=damage();aimAtNearest(650);activeSkillCd=activeSkillPeriod();followUpWindow=followUpDuration();
         if(kind==2)payForbidden(.025f,10);
         if(style==0){
             float radius=kind==1?235:kind==2?210:190;
