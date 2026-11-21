@@ -188,7 +188,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         box(c,0,0,960,540,0xFF12282D);glow(c,480,270,370,0x224F8B76);
         text(c,game.heroName()+" · 局外成长",40,48,27,cream,false);
         text(c,"共享票券 "+game.bank+"  ·  四条独立路线，每条最多5级；不同角色分别培养",40,82,15,gold,false);
-        button(c,855,15,88,45,"返回",false);button(c,515,15,170,45,"天赋星图",showSpecialties);button(c,700,15,140,45,"专精星图",false);
+        button(c,855,15,88,45,"返回",false);button(c,515,15,170,45,"专精星图",false);button(c,700,15,140,45,"天赋星图",false);
         String[] names={"武器训练","生存训练","战术训练","灵魂研究"};
         String[] desc={"每级伤害 +2.5%，攻击间隔缩短 1.2%。","每级最大生命 +4。","每级闪避冷却 -0.045秒，技能冷却 -0.35秒。","每级初始魂能 +3，魂技冷却 -0.3秒。"};
         int[] ranks=game.training[game.buildId()];
