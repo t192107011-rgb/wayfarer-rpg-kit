@@ -140,6 +140,7 @@ public final class ActionGame {
     public float potionRatio(){return custom>=0&&profile().trait==0?.55f:.45f;}
     private float originHp(){return custom<0?0:profile().origin==0?18:profile().origin==1?-10:-8;}
     public int room=0,loot=0,kills=0,potions=2,damageBonus=0,healthBonus=0,speedBonus=0,careerCooldownRank=0,combo=0;
+    public int bombs=0,snares=0,tonics=0;public float battleTonicTime=0;public boolean shopOpen=false;
     public float x=560,y=620,hp=110,faceX=0,faceY=-1,time=0;
     public float attackCd=0,attackAnim=0,rollTime=0,rollCd=0,skillCd=0,activeSkillCd=0,activeSkillDelay=0,activeSkillX=560,activeSkillY=380,invulnerable=0,comboWindow=0;
     public float rollX=0,rollY=-1,hitStop=0;
@@ -188,9 +189,9 @@ public final class ActionGame {
     private float baseMaxHp(){return (hero==0?110:hero==1?85:90)+vitality*10+(heroLevel()-1)*3+rank(8)*(soulKind()==1?10:8)+originHp()-(custom>=0&&profile().trait==2?8:0)+(hasRelic(1)?12:0)+characterTrait(1)*4;}
     public float maxHp(){return Math.min(99999,baseMaxHp()+healthBonus);}
     public float baseDamage(){return (hero==0?22:hero==1?18:15)+power*2+damageBonus+(heroLevel()-1)+rank(0)*2+(custom>=0&&profile().origin==2?2:0)+characterTrait(2);}
-    public float damage(){return baseDamage()*(rank(3)>0&&hp<maxHp()*.4f?1.55f:1)*(soulBuff>0?1.25f:1)*(soulKind()==2?(ruptureTime>0?1.4f:corruption>=75?1.25f:corruption>=50?1.15f:1):1);}
+    public float damage(){return baseDamage()*(rank(3)>0&&hp<maxHp()*.4f?1.55f:1)*(soulBuff>0?1.25f:1)*(battleTonicTime>0?1.30f:1)*(soulKind()==2?(ruptureTime>0?1.4f:corruption>=75?1.25f:corruption>=50?1.15f:1):1);}
     public float speed(){return (hero==2?240:hero==1?215:205)*(1+speedBonus*.08f+rank(4)*.03f)*(custom<0?1:profile().origin==0?.95f:profile().origin==1?1.07f:1)*(background()==2?1.03f:1)*(background()==3&&hp<maxHp()*.35f?1.12f:1)*(job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0?1.45f:1);}
-    public float attackPeriod(){return (hero==0?.48f:hero==1?.4f:.12f)*(hero==0?1.1f:1)*(custom>=0&&profile().trait==0?1.06f:1)*(soulBuff>0?.8f:1)*(job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0?.62f:1)*(job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0?1.12f:1)*(job()==REPORTER&&careerSkillMode==4&&careerSkillTime>0?.62f:1);}
+    public float attackPeriod(){return (hero==0?.48f:hero==1?.4f:.12f)*(hero==0?1.1f:1)*(custom>=0&&profile().trait==0?1.06f:1)*(soulBuff>0?.8f:1)*(job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0?.62f:1)*(job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0?1.12f:1)*(job()==REPORTER&&careerSkillMode==4&&careerSkillTime>0?.62f:1)*(battleTonicTime>0?.8f:1);}
     public int upgradeCost(int rank){return 30+rank*25;}
     public int random(int bound){rngState^=rngState<<13;rngState^=rngState>>>7;rngState^=rngState<<17;return (int)Long.remainderUnsigned(rngState,bound);}
     public void signal(String kind,float x,float y,int amount){if(signals.size()<64)signals.add(new Signal(kind,x,y,amount));}
@@ -205,7 +206,7 @@ public final class ActionGame {
     public void startEndless(long seed){beginRun(seed,true);}
     private void beginRun(long seed,boolean infinite){
         if(mode!=Mode.CAMP)return;clearThreat();endless=infinite;endlessDepth=infinite?1:0;clearSoulRuntime();clearRelicRun();careerSkillTime=0;careerSkillDeathCd=0;careerSkillMode=0;careerCooldownRank=0;soulEnergy=soulKind()==0?0:40+(hasRelic(5)?(soulKind()==1?30:15):0);rngState=seed==0?1:seed;runs=Math.min(999999,runs+1);
-        loot=0;kills=0;nextId=1;room=1;potions=2;damageBonus=0;healthBonus=0;speedBonus=0;combo=0;time=0;won=false;hp=maxHp();shield=0;soulWard=0;careerWard=entryCareerWard();
+        loot=0;kills=0;nextId=1;room=1;potions=2;bombs=0;snares=0;tonics=0;battleTonicTime=0;shopOpen=false;damageBonus=0;healthBonus=0;speedBonus=0;combo=0;time=0;won=false;hp=maxHp();shield=0;soulWard=0;careerWard=entryCareerWard();
         generateRoom();
     }
     public void generateRoom(){
@@ -233,7 +234,30 @@ public final class ActionGame {
         if(which==0){if(damageBonus<40){damageBonus=Math.min(40,damageBonus+4);notice="锋芒：本轮伤害 +4";}else if(careerCooldownRank<8){careerCooldownRank++;notice="职业技能冷却速度 +10%（累计 "+(careerCooldownRank*10)+"%）";}else{loot=Math.min(99999,loot+12);notice="职业冷却已满 · 本轮票券 +12";}}
         if(which==1){if(maxHp()<99999){int cap=healthBonus<200?200:99999-(int)baseMaxHp();int gain=(int)Math.min(20,Math.min(cap-healthBonus,99999-maxHp()));healthBonus+=Math.max(0,gain);heal(35);notice=(healthBonus<=200?"生息":"生命上限")+ "：生命上限 +"+Math.max(0,gain)+"，"+(healthBonus<=200?"阶段上限200":"最高99999")+"，基础恢复35";}else{loot=Math.min(99999,loot+15);notice="生命上限已达99999 · 本轮票券 +15";}}
         if(which==2){if(speedBonus<6){speedBonus=Math.min(6,speedBonus+1);skillCd=0;followUpWindow=0;notice="轻羽：移速增益 +8%，技能立即就绪";}else{loot=Math.min(99999,loot+15);notice="轻羽已满 · 本轮票券 +15";}}
-        roomCleared=true;mode=Mode.PLAY;signal("clear",x,y,0);
+        shopOpen=false;roomCleared=true;mode=Mode.PLAY;signal("clear",x,y,0);
+    }
+    public void openShop(){if(mode==Mode.REWARD)shopOpen=true;}
+    public void closeShop(){shopOpen=false;}
+    public int shopPrice(int item){return item==0?24:item==1?28:item==2?32:-1;}
+    public boolean buyShopItem(int item){
+        if(mode!=Mode.REWARD||!shopOpen||item<0||item>2)return false;
+        int price=shopPrice(item);if(loot<price){notice="票券不足，还差 "+(price-loot)+"。";return false;}
+        if(item==0&&bombs>=3||item==1&&snares>=3||item==2&&tonics>=3){notice="该道具已达到携带上限（3）。";return false;}
+        loot-=price;if(item==0)bombs++;else if(item==1)snares++;else tonics++;
+        notice=item==0?"购入爆裂瓶":item==1?"购入捕缚钉":"购入战斗兴奋剂";return true;
+    }
+    public void useBomb(){
+        if(mode!=Mode.PLAY||bombs<=0)return;bombs--;int hitCount=0;
+        for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<270){hit(e,damage()*2.1f,false);hitCount++;}
+        signal("slam",x,y,270);notice="爆裂瓶 · 波及 "+hitCount+" 名敌人";
+    }
+    public void useSnare(){
+        if(mode!=Mode.PLAY||snares<=0)return;snares--;int caught=0;
+        for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<300){e.stun=Math.max(e.stun,2.4f);hit(e,damage()*.25f,false);caught++;}
+        signal("echo",x,y,300);notice="捕缚钉 · 控制 "+caught+" 名敌人";
+    }
+    public void useTonic(){
+        if(mode!=Mode.PLAY||tonics<=0)return;tonics--;battleTonicTime=Math.max(battleTonicTime,10f);notice="战斗兴奋剂 · 10秒内伤害 +30%，攻速 +20%";
     }
     public void pause(){if(mode==Mode.PLAY){mode=Mode.PAUSED;notice="已暂停";}}
     public void resume(){if(mode==Mode.PAUSED)mode=Mode.PLAY;}
@@ -406,7 +430,7 @@ public final class ActionGame {
         if(mode!=Mode.PLAY)return;
         if(!Float.isFinite(dt)||dt<=0)return;dt=Math.min(dt,.05f);
         if(hitStop>0){hitStop=Math.max(0,hitStop-dt);return;}
-        roomElapsed=Math.min(10000000,roomElapsed+dt);followUpWindow=dec(followUpWindow,dt);activeSkillCd=dec(activeSkillCd,dt*(1f+careerCooldownRank*.05f+(job()==REPORTER&&careerSkillTime>0?.5f:0)));if(activeSkillDelay>0){activeSkillDelay=dec(activeSkillDelay,dt);if(activeSkillDelay<=0)resolveThunderTrap();}careerSkillTime=dec(careerSkillTime,dt);careerSkillDeathCd=dec(careerSkillDeathCd,dt);if(careerSkillTime<=0)careerSkillMode=0;
+        roomElapsed=Math.min(10000000,roomElapsed+dt);battleTonicTime=dec(battleTonicTime,dt);followUpWindow=dec(followUpWindow,dt);activeSkillCd=dec(activeSkillCd,dt*(1f+careerCooldownRank*.05f+(job()==REPORTER&&careerSkillTime>0?.5f:0)));if(activeSkillDelay>0){activeSkillDelay=dec(activeSkillDelay,dt);if(activeSkillDelay<=0)resolveThunderTrap();}careerSkillTime=dec(careerSkillTime,dt);careerSkillDeathCd=dec(careerSkillDeathCd,dt);if(careerSkillTime<=0)careerSkillMode=0;
         if(careerSkillMode==1&&careerSkillTime>0&&careerSkillDeathCd<=0){float floor=maxHp()*.30f;if(hp>floor){float before=hp;hp=Math.max(floor,hp-maxHp()*.01f);signal("sacrifice",x,y,(int)Math.ceil(before-hp));}careerSkillDeathCd=1f;}
         updateSoul(dt);relicEcho=dec(relicEcho,dt);time+=dt;attackCd=dec(attackCd,dt);rollCd=dec(rollCd,dt);skillCd=dec(skillCd,dt*careerCooldownRate());invulnerable=dec(invulnerable,dt);comboWindow=dec(comboWindow,dt);dodgeCharge=dec(dodgeCharge,dt);
         float mx=Float.isFinite(in.mx)?in.mx:0,my=Float.isFinite(in.my)?in.my:0,mag=len(mx,my);
