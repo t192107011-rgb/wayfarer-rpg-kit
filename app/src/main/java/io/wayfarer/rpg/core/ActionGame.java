@@ -371,6 +371,7 @@ public final class ActionGame {
         if(job()==ASSASSIN){double a=Math.atan2(faceY,faceX);for(int n=-1;n<=1;n++)throwKnife((float)Math.cos(a+n*.24),(float)Math.sin(a+n*.24),power*.22f);}
         if(job()==DETECTIVE){for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<(style==0?190:520))e.hex=Math.max(e.hex,2.5f);}
         if(job()==REPORTER)activeSkillCd=Math.max(0,activeSkillCd-.8f);
+        if(tacticRanks[5]>0)shield=Math.min(talentShieldLimit(),shield+6*tacticRanks[5]);
         signal("activeSkill",x,y,style);notice=SkillSystem.name(style)+(kind==1?" · 光辉共鸣":kind==2?" · 禁忌共鸣":"");
     }
     public void soulSkill(){
