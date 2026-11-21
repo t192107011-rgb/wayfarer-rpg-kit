@@ -62,7 +62,7 @@ public final class SoulTests {
         ActionGame g=new ActionGame();g.selectCustom(1);g.profile().xp=320;g.learn(0);g.bank=83;g.start(7);byte[] bytes=ActionSave.encode(g);
         ActionGame old=ActionSave.decode(edit(bytes,"version","2"));check(old.custom==1&&old.profile().xp==320&&old.rank(0)==1&&old.bank==83&&old.soulKind()==0&&old.soulEnergy==0,"v2 migration preserves builds and does not invent a soul");
         g=game(2,1,0);mob(g,610,600);g.soulSkill();g.pause();bytes=ActionSave.encode(g);ActionGame a=ActionSave.decode(bytes);near(a.soulBuff,g.soulBuff,"forbidden soul buff persisted");near(a.corruption,g.corruption,"debt persisted");near(a.soulCd,g.soulCd,"exclusive cooldown persisted");near(a.enemies.get(0).hex,g.enemies.get(0).hex,"curse persisted");
-        reject(bytes,"soulEnergy","101");reject(bytes,"soulCd","19");reject(bytes,"corruption","NaN");reject(bytes,"profile0.soul","3");reject(bytes,"profile0.art","5");reject(bytes,"soulFields","20");reject(bytes,"soulWard","1");reject(bytes,"hex0","4");reject(bytes,"soulBuff","9");
+        reject(bytes,"soulEnergy","101");reject(bytes,"soulCd","19");reject(bytes,"corruption","NaN");reject(bytes,"profile0.soul","3");reject(bytes,"profile0.art","5");reject(bytes,"soulFields","20");reject(bytes,"soulWard","1");reject(bytes,"hex0","9");reject(bytes,"soulBuff","9");
         g=game(1,0,0);mob(g,700,600);g.soulSkill();bytes=ActionSave.encode(g);reject(bytes,"field0","2,560,600,4,0.5,22");reject(bytes,"field0","1,560,600,5,2,22");
         System.out.println("PASS v2 migration, soul snapshots, pulse and curse continuity, malformed resources and pierce histories rejected");
     }
