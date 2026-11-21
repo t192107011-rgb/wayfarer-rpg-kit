@@ -17,7 +17,10 @@ public final class CareerAbilityTests {
         check(g.activeSkillCd==0&&g.skillCd==11,"assassin kills refresh generic active skill, not career skill");
         g=arena(DETECTIVE);e=new ActionGame.Enemy(g.nextId++,0,720,600,1000);g.enemies.add(e);float x=e.x;g.skill();
         for(int i=0;i<20;i++){g.hitStop=0;g.update(1f/60f,new ActionGame.Input());}
-        check(g.careerSkillMode==3&&e.x<x&&e.hp<1000,"detective field attracts and damages");
+        check(g.careerSkillMode==3&&e.y<600&&e.hp<1000,"detective field attracts toward arena center and damages");
+        ActionGame.Enemy archer=new ActionGame.Enemy(g.nextId++,1,800,380,1000);g.enemies.add(archer);archer.state=1;archer.timer=.01f;
+        g.hitStop=0;g.update(.03f,new ActionGame.Input());
+        check(archer.state==2&&g.shots.size()>0,"detective attraction does not interrupt enemy attack AI");
         g=arena(REPORTER);g.skill();check(g.careerSkillMode==4&&g.healingFactor()<.21f,"reporter attack state and healing penalty");
         g.careerCooldownRank=4;ActionGame restored=ActionSave.decode(ActionSave.encode(g));
         check(restored.careerCooldownRank==4&&restored.careerSkillMode==4,"v13 saves career cooldown and active state");
