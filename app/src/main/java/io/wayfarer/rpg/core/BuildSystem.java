@@ -42,7 +42,8 @@ public final class BuildSystem {
         new Node("终结追击","追击伤害提高15%。",1,5,4),
         new Node("战术布置","主动技能伤害提高12%，范围提高10%。",1,5,4)
     };
-    public static boolean specialtyUltimate(int id){return id==2||id==3||id==6||id==7;}\n    public static int specialtyPrerequisite(int id){return id==2||id==3?2:1;}
+    public static boolean specialtyUltimate(int id){return id==2||id==3||id==6||id==7;}
+    public static int specialtyPrerequisite(int id){return id==2||id==3?2:1;}
     public static String specialtyLockReason(int[] ranks,int xp,int id){
         if(id<0||id>=SPECIALTIES.length)return "未知专精";
         Node n=SPECIALTIES[id];if(ranks[id]>=n.maxRank)return "已学满";
