@@ -42,19 +42,19 @@ public final class BuildSystem {
         new Node("终结追击","追击伤害提高15%。",1,5,4),
         new Node("战术布置","主动技能伤害提高12%，范围提高10%。",1,5,4)
     };
-    public static boolean specialtyUltimate(int id){return id==2||id==3||id==6||id==7;}
+    public static boolean specialtyUltimate(int id){return id==2||id==3||id==6||id==7;}\n    public static int specialtyPrerequisite(int id){return id==2||id==3?2:1;}
     public static String specialtyLockReason(int[] ranks,int xp,int id){
         if(id<0||id>=SPECIALTIES.length)return "未知专精";
         Node n=SPECIALTIES[id];if(ranks[id]>=n.maxRank)return "已学满";
         if(1+Math.min(19,xp/80)<n.minLevel)return "需要角色 Lv."+n.minLevel;
-        if(n.parent>=0&&ranks[n.parent]<(specialtyUltimate(id)?2:1))return "需要「"+SPECIALTIES[n.parent].name+"」"+(specialtyUltimate(id)?2:1)+"级";
+        if(n.parent>=0&&ranks[n.parent]<specialtyPrerequisite(id))return "需要「"+SPECIALTIES[n.parent].name+"」"+specialtyPrerequisite(id)+"级";
         if(specialtyUltimate(id)){int first=id<4?2:6;for(int i=first;i<first+2;i++)if(i!=id&&ranks[i]>0)return "该分支终阶二选一";}
         return "";
     }
     public static void validateSpecialties(int[] ranks,int xp,int talentSpent){
         if(ranks.length!=8)throw new IllegalArgumentException("专精结构无效");
         int spent=0;for(int i=0;i<8;i++){Node n=SPECIALTIES[i];if(ranks[i]<0||ranks[i]>n.maxRank)throw new IllegalArgumentException("专精等级无效");spent+=ranks[i];
-            if(ranks[i]>0){if(1+Math.min(19,xp/80)<n.minLevel||n.parent>=0&&ranks[n.parent]<(specialtyUltimate(i)?2:1))throw new IllegalArgumentException("缺少专精前置");}}
+            if(ranks[i]>0){if(1+Math.min(19,xp/80)<n.minLevel||n.parent>=0&&ranks[n.parent]<specialtyPrerequisite(i))throw new IllegalArgumentException("缺少专精前置");}}
         if(spent+talentSpent>points(xp))throw new IllegalArgumentException("天赋与专精点数超支");
         if(ranks[2]>0&&ranks[3]>0||ranks[6]>0&&ranks[7]>0)throw new IllegalArgumentException("专精终阶互斥");
     }
