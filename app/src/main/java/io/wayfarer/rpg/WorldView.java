@@ -105,7 +105,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         text(c,"共享票券  "+game.bank,820,51,19,gold,true);text(c,"远征 "+game.runs+"  ·  通关 "+game.wins,770,83,13,muted,false);
         button(c,40,126,130,32,"预设角色",!customRoster);button(c,185,126,130,32,"我的角色",customRoster);
         button(c,340,126,355,32,"职业与历练 · "+game.careerName(),false);
-        button(c,710,126,210,32,"圣遗物 · "+Integer.bitCount(game.relicOwned)+" / 8",false);
+        button(c,710,126,210,32,"圣遗物 · "+Integer.bitCount(game.relicOwned)+" / 12",false);
         String[] detail={"军刀三连斩 · 震地技能","卡宾枪射击 · 扇形散射","双匕首连击 · 环刃与无敌"};
         for(int i=0;i<3;i++){
             float bx=40+i*300;BuildSystem.Profile look=customRoster?game.profiles[i]:null;
