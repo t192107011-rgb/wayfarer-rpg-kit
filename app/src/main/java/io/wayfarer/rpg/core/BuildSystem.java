@@ -31,6 +31,34 @@ public final class BuildSystem {
         Node(String n,String d,int max,int parent,int level){name=n;description=d;maxRank=max;this.parent=parent;minLevel=level;}
     }
     public static final String[] BRANCHES={"锋刃 · 连击与风险","逐影 · 闪避与节奏","守火 · 技能与续航"};
+    public static final String[] SPECIALTY_BRANCHES={"灵契 · 魂能循环","猎场 · 战斗专精"};
+    public static final Node[] SPECIALTIES={
+        new Node("灵脉","每级远征开始时额外获得8点魂能。",2,-1,1),
+        new Node("深流","每级魂技冷却缩短0.8秒。",2,0,2),
+        new Node("魂盾","光辉灵魂施放专属技能时额外获得12点魂盾。",1,1,4),
+        new Node("回响汲取","魂能获取提高20%。",1,1,4),
+        new Node("猎意","每级所有攻击伤害提高5%。",2,-1,1),
+        new Node("猎场识别","对带诅咒标记的目标伤害提高10%。",1,4,2),
+        new Node("终结追击","追击伤害提高15%。",1,5,4),
+        new Node("战术布置","主动技能伤害提高12%，范围提高10%。",1,5,4)
+    };
+    public static boolean specialtyUltimate(int id){return id==2||id==3||id==6||id==7;}
+    public static String specialtyLockReason(int[] ranks,int xp,int id){
+        if(id<0||id>=SPECIALTIES.length)return "未知专精";
+        Node n=SPECIALTIES[id];if(ranks[id]>=n.maxRank)return "已学满";
+        if(1+Math.min(19,xp/80)<n.minLevel)return "需要角色 Lv."+n.minLevel;
+        if(n.parent>=0&&ranks[n.parent]<(specialtyUltimate(id)?2:1))return "需要「"+SPECIALTIES[n.parent].name+"」"+(specialtyUltimate(id)?2:1)+"级";
+        if(specialtyUltimate(id)){int first=id<4?2:6;for(int i=first;i<first+2;i++)if(i!=id&&ranks[i]>0)return "该分支终阶二选一";}
+        return "";
+    }
+    public static void validateSpecialties(int[] ranks,int xp,int talentSpent){
+        if(ranks.length!=8)throw new IllegalArgumentException("专精结构无效");
+        int spent=0;for(int i=0;i<8;i++){Node n=SPECIALTIES[i];if(ranks[i]<0||ranks[i]>n.maxRank)throw new IllegalArgumentException("专精等级无效");spent+=ranks[i];
+            if(ranks[i]>0){if(1+Math.min(19,xp/80)<n.minLevel||n.parent>=0&&ranks[n.parent]<(specialtyUltimate(i)?2:1))throw new IllegalArgumentException("缺少专精前置");}}
+        if(spent+talentSpent>points(xp))throw new IllegalArgumentException("天赋与专精点数超支");
+        if(ranks[2]>0&&ranks[3]>0||ranks[6]>0&&ranks[7]>0)throw new IllegalArgumentException("专精终阶互斥");
+    }
+
     public static final Node[] NODES={
         new Node("淬锋","每级所有攻击伤害 +2。",3,-1,1),
         new Node("三拍","每级第三次普攻的伤害倍率 +12%；卡宾枪也计连击。",2,0,2),
