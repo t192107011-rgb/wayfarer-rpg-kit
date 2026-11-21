@@ -85,5 +85,20 @@ public final class ActionTests {
         }
         System.out.println("PASS 54000 simulation steps with periodic save/restore");
     }
-    public static void main(String[] args)throws Exception{movement();combat();roomsAndRewards();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
+    private static void fiveActiveSkills()throws Exception{
+        for(int style=0;style<5;style++){
+            ActionGame g=new ActionGame();g.selectCustom(0);BuildSystem.Profile draft=g.profile().copy();draft.skill=style;g.customize(0,draft);g.start(44+style);g.blocks.clear();g.enemies.clear();g.x=500;g.y=500;g.faceX=1;g.faceY=0;
+            ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,620,500,1000);e.stun=1;g.enemies.add(e);
+            g.activeSkill();check(g.activeSkillCd>0&&g.followUpWindow>0,"active skill "+style+" starts independent cooldown and follow-up");
+            if(style==0||style==2||style==3)check(e.hp<1000,"active skill "+style+" resolves combat effect");
+            if(style==1)check(!g.shots.isEmpty(),"fan shot creates projectiles");
+            if(style==4){check(g.activeSkillDelay>0,"thunder trap has a warning delay");ActionGame a=ActionSave.decode(ActionSave.encode(g));for(int i=0;i<50;i++){g.update(1f/60f,new ActionGame.Input());a.update(1f/60f,new ActionGame.Input());}near(a.enemies.get(0).hp,g.enemies.get(0).hp,"trap persists through save restore");}
+            float careerCd=g.skillCd;g.skill();check(g.skillCd>careerCd&&g.activeSkillCd>0,"career overdrive and general active have independent cooldowns");
+            ActionGame saved=ActionSave.decode(ActionSave.encode(g));near(saved.activeSkillCd,g.activeSkillCd,"active cooldown persists");near(saved.followUpWindow,g.followUpWindow,"follow-up window persists");
+            if(g.followUpWindow>0){g.followUp();check(g.followUpWindow==0,"follow-up consumes its window");}
+        }
+        ActionGame g=new ActionGame();g.start(12);g.pause();float cd=g.activeSkillCd;for(int i=0;i<30;i++)g.update(1f/60f,new ActionGame.Input());near(g.activeSkillCd,cd,"pause freezes active cooldown");
+        System.out.println("PASS five active skills, independent career cooldown, follow-ups, trap persistence and pause");
+    }
+    public static void main(String[] args)throws Exception{movement();combat();fiveActiveSkills();roomsAndRewards();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
 }
