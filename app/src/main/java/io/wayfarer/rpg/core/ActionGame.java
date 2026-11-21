@@ -539,12 +539,12 @@ public final class ActionGame {
                     signal("slam",e.x,e.y,e.pattern);
                 }
             }
-        }else if(e.state==3){e.timer-=dt;if(e.timer<=0)e.state=0;}
+        }else if(e.state==3){e.timer-=dt;if(e.type==3){e.hp=Math.min(e.maxHp,e.hp+e.maxHp*(enraged?.012f:.006f)*dt);e.guard=Math.min(enraged?90:55,e.guard+(enraged?7.5f:4.5f)*dt);}if(e.timer<=0)e.state=0;}
         else {
             e.timer-=dt;
             if(e.type==2||e.type==4){float speed=enemySpeed(e.type==2?440:520);moveEnemy(e,e.aimX*speed*dt,e.aimY*speed*dt);if(!e.struck&&len(x-e.x,y-e.y)<e.radius()+PLAYER_RADIUS+7){e.struck=true;hurt(enemyPower(e,18+room*2));}}
             if((e.type==1||e.type==3&&e.pattern==1)&&!e.struck&&e.timer<(e.type==1?.5f:.4f)){e.struck=true;fan(e,e.type==1?1:2,.12f,e.type==1?330:370,e.type==1?12+room*2:20);}
-            if(e.type==3){e.hp=Math.min(e.maxHp,e.hp+e.maxHp*(enraged?.012f:.006f)*dt);e.guard=Math.min(enraged?90:55,e.guard+(enraged?7.5f:4.5f)*dt);}\n            if(e.timer<=0){if(e.type==2||e.type==4){e.state=3;e.timer=e.type==2?.65f:.5f;}else if(e.type==3){e.state=3;e.timer=.9f;e.pattern=(e.pattern+1)%3;}else e.state=0;}
+            if(e.timer<=0){if(e.type==2||e.type==4){e.state=3;e.timer=e.type==2?.65f:.5f;}else if(e.type==3){e.state=3;e.timer=.9f;e.pattern=(e.pattern+1)%3;}else e.state=0;}
         }
         for(Enemy other:enemies)if(other!=e&&other.hp>0){float sx=e.x-other.x,sy=e.y-other.y,d=len(sx,sy),min=e.radius()+other.radius();if(d>.1&&d<min)moveEnemy(e,sx/d*30*dt,sy/d*30*dt);}
     }
