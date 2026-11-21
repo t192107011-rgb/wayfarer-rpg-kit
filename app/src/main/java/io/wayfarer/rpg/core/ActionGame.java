@@ -369,7 +369,17 @@ public final class ActionGame {
         }
         if(soulKind()==2){payForbidden(.015f,8);for(Enemy e:enemies)if(e.hp>0&&e.hex>0&&len(e.x-x,e.y-y)<115)hit(e,damage()*.35f,false);}
         if(soulKind()==1){cleanse(x,y,125);if(connected)soulWard=Math.min(60,soulWard+7);}
-        if(connected){if(job()==HUNTER)careerSkillTime=Math.min(30,careerSkillTime+1.5f);if(job()==ASSASSIN)activeSkillCd=Math.max(0,activeSkillCd-2);if(job()==DETECTIVE)for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<160)e.stun=Math.max(e.stun,.25f);if(job()==REPORTER)activeSkillCd=Math.max(0,activeSkillCd-1);}
+        if(connected){
+            if(job()==HUNTER)careerSkillTime=Math.min(30,careerSkillTime+1.5f);
+            if(job()==ASSASSIN)activeSkillCd=Math.max(0,activeSkillCd-2);
+            if(job()==DETECTIVE)for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<160)e.stun=Math.max(e.stun,.25f);
+            if(job()==REPORTER)activeSkillCd=Math.max(0,activeSkillCd-1);
+            // A confirmed follow-up hit converts career identity into a distinct payoff.
+            if(job()==HUNTER){soulBuff=Math.max(soulBuff,1.25f);if(soulKind()==1)soulWard=Math.min(60,soulWard+4);}
+            else if(job()==ASSASSIN){double a=Math.atan2(faceY,faceX);throwKnife((float)Math.cos(a-.12),(float)Math.sin(a-.12),damage()*.20f);throwKnife((float)Math.cos(a+.12),(float)Math.sin(a+.12),damage()*.20f);}
+            else if(job()==DETECTIVE){for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<520){e.hex=Math.max(e.hex,3.5f);e.stun=Math.max(e.stun,.35f);}}
+            else {heal(maxHp()*.03f);gainSoul(4);}
+        }
         signal("followup",ox,oy,style);notice=SkillSystem.followup(style);
     }
     private void resolveThunderTrap(){
@@ -463,6 +473,11 @@ public final class ActionGame {
             float fx=Math.max(60,Math.min(WIDTH-60,x+faceX*110)),fy=Math.max(60,Math.min(HEIGHT-60,y+faceY*110));
             soulFields.add(new SoulField(2,fx,fy,power*1.2f));signal("forbidden",fx,fy,240);notice="深渊裂爆 · 领域吞噬";
         }
+        // Career identity also shapes the dedicated soul art, regardless of its variant.
+        if(job()==HUNTER){soulBuff=Math.max(soulBuff,1.5f);if(careerSkillMode==1)careerSkillTime=Math.min(30,careerSkillTime+1.5f);}
+        else if(job()==ASSASSIN){activeSkillCd=Math.max(0,activeSkillCd-1.2f);}
+        else if(job()==DETECTIVE){for(Enemy e:enemies)if(e.hp>0&&e.hex>0){e.hex=Math.min(8,e.hex+1.25f);e.stun=Math.max(e.stun,.2f);}}
+        else {heal(maxHp()*.02f);gainSoul(4);}
     }
     private void cleanse(float cx,float cy,float radius){shots.removeIf(p->!p.friendly&&len(p.x-cx,p.y-cy)<radius);}
     private void pull(Enemy e,float cx,float cy,float distance){
