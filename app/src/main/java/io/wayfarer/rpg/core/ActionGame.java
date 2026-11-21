@@ -387,10 +387,10 @@ public final class ActionGame {
     private void resolveFollowUpChain(int style,float power){
         int affected=0;
         if(style==0){
-            for(Enemy e:enemies)if(e.hp>0&&len(e.x-activeSkillX,e.y-activeSkillY)<145&&lineClear(activeSkillX,activeSkillY,e.x,e.y)){
+            for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<145&&lineClear(x,y,e.x,e.y)){
                 hit(e,power*.48f,false);e.stun=Math.max(e.stun,.28f);affected++;
             }
-            signal("chainEarth",activeSkillX,activeSkillY,145);
+            signal("chainEarth",x,y,145);
         }else if(style==1){
             double a=Math.atan2(faceY,faceX);
             for(int n=-1;n<=1;n+=2){
@@ -404,10 +404,10 @@ public final class ActionGame {
             for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<125){hit(e,power*.42f,false);affected++;}
             signal("chainRing",x,y,125);
         }else if(style==3){
-            for(Enemy e:enemies)if(e.hp>0&&len(e.x-activeSkillX,e.y-activeSkillY)<230){
+            for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<230){
                 e.hex=Math.max(e.hex,soulKind()==2?5:3);e.stun=Math.max(e.stun,.3f);affected++;
             }
-            signal("chainLink",activeSkillX,activeSkillY,230);
+            signal("chainLink",x,y,230);
         }else{
             float radius=210;
             for(Enemy e:enemies)if(e.hp>0&&len(e.x-activeSkillX,e.y-activeSkillY)<radius&&lineClear(activeSkillX,activeSkillY,e.x,e.y)){
