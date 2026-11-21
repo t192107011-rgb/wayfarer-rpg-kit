@@ -460,8 +460,10 @@ public final class ActionGame {
                 }
             }
         }
-        if(careerSkillMode==3&&careerSkillTime>0){for(Enemy e:enemies)if(e.hp>0){pull(e,x,y,55f*dt);hit(e,damage()*.12f*dt,false);}}
         for(Enemy e:enemies)if(e.hp>0)updateEnemy(e,dt);
+        // Detective field draws enemies toward the fixed arena center after their AI step,
+        // so attraction never interrupts windups, shots, or rush movement.
+        if(careerSkillMode==3&&careerSkillTime>0){for(Enemy e:enemies)if(e.hp>0){pull(e,WIDTH/2,HEIGHT/2,55f*dt);hit(e,damage()*.12f*dt,false);}}
         if(mode!=Mode.PLAY)return;
         updateHazards(dt);if(mode!=Mode.PLAY)return;updateShots(dt);if(mode!=Mode.PLAY)return;
         Iterator<Enemy> it=enemies.iterator();while(it.hasNext()){
