@@ -22,7 +22,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     private float accumulator=0,saveElapsed=0,visualTime=0,shake=0,soulMessageTime=0,eventMessageTime=0;
     private String eventMessage="";
     private boolean running=false;
-    public boolean soundOn=true,showTalents=false,customRoster=false;
+    public boolean soundOn=true,showTalents=false,customRoster=false,showTraining=false;
     private int bg=Color.rgb(13,24,29),cream=Color.rgb(232,228,202),muted=Color.rgb(155,180,171),gold=Color.rgb(222,186,111);
     private static final class Fx {String kind;float x,y,life,max,vx,vy;int value,color;Fx(String k,float x,float y,float life,int value,int color){kind=k;this.x=x;this.y=y;this.life=life;max=life;this.value=value;this.color=color;}}
     public WorldView(Context c,ActionGame game,Host host){super(c);this.game=game;this.host=host;customRoster=game.custom>=0;setFocusable(true);setFocusableInTouchMode(true);setContentDescription("灯下归途：横屏即时动作地牢。左侧摇杆移动，右侧攻击、闪避、技能和药水。暂停键位于右上角。");}
@@ -82,7 +82,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     @Override protected void onDraw(Canvas canvas){
         super.onDraw(canvas);canvas.drawColor(bg);scale=Math.min(getWidth()/960f,getHeight()/540f);offsetX=(getWidth()-960*scale)/2;offsetY=(getHeight()-540*scale)/2;
         canvas.save();canvas.translate(offsetX,offsetY);canvas.scale(scale,scale);canvas.clipRect(0,0,960,540);
-        if(game.mode==ActionGame.Mode.CAMP){if(showTalents)talentTree(canvas);else camp(canvas);}else{
+        if(game.mode==ActionGame.Mode.CAMP){if(showTalents){if(showTraining)trainingTree(canvas);else talentTree(canvas);}else camp(canvas);}else{
             dungeon(canvas);hud(canvas);
             if(game.mode==ActionGame.Mode.PLAY)controls(canvas);
             else if(game.mode==ActionGame.Mode.REWARD)rewards(canvas);
@@ -130,17 +130,17 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         button(c,660,448,260,27,"无尽远征 · 最深 "+game.bestDepth+"层",false);
         text(c,game.notice.length()>38?game.notice.substring(0,38):game.notice,40,465,12,muted,false);
         button(c,40,480,100,42,"存档",false);button(c,155,480,110,42,"操作说明",false);
-        button(c,280,480,155,42,"角色工坊",false);button(c,450,480,175,42,"技能树 · "+game.availablePoints(),true);
+        button(c,280,480,155,42,"角色工坊",false);button(c,450,480,175,42,"天赋与局外成长",true);
         button(c,650,480,270,42,"灵魂祭坛 · "+SoulSystem.NAMES[game.soulKind()],false);
     }
-    public boolean closeWorkshop(){if(showTalents){showTalents=false;invalidate();return true;}return false;}
+    public boolean closeWorkshop(){if(showTalents){showTalents=false;showTraining=false;invalidate();return true;}return false;}
     public void drawPortrait(Canvas c,float x,float y,float size,BuildSystem.Profile profile){sprite(c,x,y,profile.weapon,0,1,false,size,0,profile);}
     private float[] nodeRect(int id){float bx=50+(id/4)*305;int tier=id%4;return new float[]{bx+(tier==3?130:0),tier==0?135:tier==1?238:350,tier<2?250:120,tier<2?67:83};}
     private void talentTree(Canvas c){
         box(c,0,0,960,540,0xFF12282D);glow(c,480,270,370,0x223E8976);
         text(c,game.heroName()+" · 天赋星图",40,48,27,cream,false);
         text(c,"Lv."+game.heroLevel()+"  ·  经验 "+game.heroXp()+"  ·  可用 "+game.availablePoints()+" / 总点数 "+BuildSystem.points(game.heroXp()),40,80,15,gold,false);
-        button(c,855,15,88,45,"返回",false);
+        button(c,855,15,88,45,"返回",false);button(c,700,15,140,45,"局外训练",showTraining);
         text(c,SoulSystem.NAMES[game.soulKind()]+" · 共鸣见节点详情",600,79,13,game.soulKind()==2?0xFFCAA9E2:gold,false);
         for(int b=0;b<3;b++){
             float x=50+b*305;int tint=new int[]{0xFFE3B17D,0xFF99CEC8,0xFFC4B5DC}[b];
@@ -162,6 +162,21 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         text(c,"每个类别终阶二选一，可同时拥有三类终阶。",50,461,14,muted,false);
         text(c,"初始2点，每80经验+1点，最多18点。各角色独立成长。",50,501,13,gold,false);
         button(c,700,475,210,42,"免费重置天赋",false);
+    }
+    private void trainingTree(Canvas c){
+        box(c,0,0,960,540,0xFF12282D);glow(c,480,270,370,0x224F8B76);
+        text(c,game.heroName()+" · 局外成长",40,48,27,cream,false);
+        text(c,"共享票券 "+game.bank+"  ·  四条独立路线，每条最多5级；不同角色分别培养",40,82,15,gold,false);
+        button(c,855,15,88,45,"返回",false);button(c,700,15,140,45,"天赋星图",true);
+        String[] names={"武器训练","生存训练","战术训练","灵魂研究"};
+        String[] desc={"每级伤害 +2.5%，攻击间隔缩短 1.2%。","每级最大生命 +4。","每级闪避冷却 -0.045秒，技能冷却 -0.35秒。","每级初始魂能 +3，魂技冷却 -0.3秒。"};
+        int[] ranks=game.training[game.buildId()];
+        for(int i=0;i<4;i++){int x=55+(i%2)*430,y=135+(i/2)*165;
+            rounded(c,x,y,390,135,12,0xFF293F42);text(c,names[i],x+22,y+35,22,gold,false);
+            text(c,desc[i],x+22,y+67,14,cream,false);text(c,"等级 "+ranks[i]+" / 5",x+22,y+102,15,muted,false);
+            button(c,x+250,y+83,115,38,ranks[i]>=5?"已满级":"训练 · "+game.trainingCost(ranks[i]),ranks[i]<5&&game.bank>=game.trainingCost(ranks[i]));
+        }
+        text(c,"训练消耗营地共享票券；效果只作用于当前角色，永久保存。",55,493,14,muted,false);
     }
     private void dungeon(Canvas c){
         cameraX=Math.max(0,Math.min(ActionGame.WIDTH-960,game.x-480));cameraY=Math.max(0,Math.min(ActionGame.HEIGHT-540,game.y-275));
@@ -338,7 +353,9 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     private void uiTap(float x,float y){
         if(game.mode==ActionGame.Mode.CAMP){
             if(showTalents){
-                if(inside(x,y,855,15,88,45)){showTalents=false;return;}
+                if(inside(x,y,855,15,88,45)){showTalents=false;showTraining=false;return;}
+                if(inside(x,y,700,15,140,45)){showTraining=!showTraining;return;}
+                if(showTraining){for(int i=0;i<4;i++){int x0=55+(i%2)*430,y0=135+(i/2)*165;if(inside(x,y,x0+250,y0+83,115,38)){game.train(i);host.save();return;}}return;}
                 if(inside(x,y,700,475,210,42)){host.resetTalents();return;}
                 for(int i=0;i<12;i++){float[] a=nodeRect(i);if(inside(x,y,a[0],a[1],a[2],a[3])){host.talent(i);return;}}return;
             }
@@ -354,7 +371,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             else if(inside(x,y,340,365,280,57)){game.upgrade(true);host.save();}
             else if(inside(x,y,660,365,260,80)){game.start(System.nanoTime());resetInput();host.save();}
             else if(inside(x,y,40,480,100,42))host.slots();else if(inside(x,y,155,480,110,42))host.help();
-            else if(inside(x,y,280,480,155,42))host.editCharacter();else if(inside(x,y,450,480,175,42)){showTalents=true;resetInput();}
+            else if(inside(x,y,280,480,155,42))host.editCharacter();else if(inside(x,y,450,480,175,42)){showTalents=true;showTraining=false;resetInput();}
             else if(inside(x,y,650,480,270,42))host.souls();
         }else if(game.mode==ActionGame.Mode.REWARD){if(game.shopOpen){for(int i=0;i<3;i++)if(inside(x,y,130+i*250,333,170,34)){game.buyShopItem(i);host.save();return;}if(inside(x,y,365,450,230,42)){game.closeShop();host.save();return;}}else if(inside(x,y,260,391,440,43)){host.story();return;}else if(inside(x,y,260,445,440,43)){game.openShop();host.save();return;}else for(int i=0;i<3;i++)if(inside(x,y,45+i*300,211,270,165)){game.chooseReward(i);host.save();break;}}
         else if(game.mode==ActionGame.Mode.PAUSED){
