@@ -4,7 +4,7 @@ import java.util.*;
 
 public final class ActionTests {
     private static int count;
-    private static void check(boolean ok,String why){count++;if(!ok)throw new AssertionError(why);}
+    private static void check(boolean ok,String why){count++;if(!ok)throw new AssertionError(why);}\n    private static void near(float a,float b,String why){check(Math.abs(a-b)<.035f,why+": "+a+" != "+b);}
     private static ActionGame game(int hero){ActionGame g=new ActionGame();g.selectHero(hero);g.start(38471);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;g.invulnerable=0;return g;}
     private static ActionGame.Enemy mob(ActionGame g,int type,float x,float y,float hp){ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,type,x,y,hp);g.enemies.add(e);return e;}
     private static void ticks(ActionGame g,ActionGame.Input in,int n){for(int i=0;i<n;i++)g.update(1f/60f,in);}
