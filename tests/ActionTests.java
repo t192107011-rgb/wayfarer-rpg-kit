@@ -87,7 +87,7 @@ public final class ActionTests {
         byte[] bytes=ActionSave.encode(g);ActionGame a=ActionSave.decode(bytes);
         check(a.hero==g.hero&&a.hp==g.hp&&a.potions==g.potions&&a.shots.size()==g.shots.size()&&a.rngState==g.rngState,"save restores action snapshot");
         check(a.random(1000)==g.random(1000),"RNG continues from persisted state");
-        rejects(bytes,"version","99");rejects(bytes,"x","NaN");rejects(bytes,"hp","Infinity");rejects(bytes,"hero","3");rejects(bytes,"potions","-1");rejects(bytes,"enemies","500");rejects(bytes,"power","11");rejects(bytes,"bank","2147483647");rejects(bytes,"mode","BAD");rejects(bytes,"rng","0");rejects(bytes,"x","1");rejects(bytes,"room","0");rejects(bytes,"format","wayfarer-rpg");
+        rejects(bytes,"version","99");rejects(bytes,"x","NaN");rejects(bytes,"hp","Infinity");rejects(bytes,"hero","3");rejects(bytes,"potions","-1");rejects(bytes,"enemies","500");rejects(bytes,"power","21");rejects(bytes,"training0.0","11");rejects(bytes,"bank","2147483647");rejects(bytes,"mode","BAD");rejects(bytes,"rng","0");rejects(bytes,"x","1");rejects(bytes,"room","0");rejects(bytes,"format","wayfarer-rpg");
         boolean bad=false;try{ActionSave.decode(new byte[131073]);}catch(IOException e){bad=true;}check(bad,"oversize saves rejected");
         g=game(0);ActionGame.Enemy e=mob(g,0,610,600,200);e.stun=1;ActionGame.Input in=new ActionGame.Input();in.attack=true;ticks(g,in,8);float enemyHp=e.hp;
         a=ActionSave.decode(ActionSave.encode(g));in.attack=false;ticks(a,in,8);check(a.enemies.get(0).hp==enemyHp,"restore cannot replay a partially resolved swing");
