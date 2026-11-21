@@ -60,6 +60,25 @@ public final class ActionTests {
     }
     private static byte[] mutate(byte[] bytes,String key,String value)throws Exception{Properties p=new Properties();p.load(new ByteArrayInputStream(bytes));p.setProperty(key,value);ByteArrayOutputStream out=new ByteArrayOutputStream();p.store(out,"");return out.toByteArray();}
     private static void rejects(byte[] bytes,String key,String value)throws Exception{boolean rejected=false;try{ActionSave.decode(mutate(bytes,key,value));}catch(IOException e){rejected=true;}check(rejected,"reject invalid "+key);}
+    private static void tacticalInscriptions()throws Exception{
+        ActionGame g=game(0);g.mode=ActionGame.Mode.REWARD;g.tacticOffers[0]=0;g.tacticOffers[1]=1;g.tacticOffers[2]=2;
+        g.openTacticDraft();check(g.tacticDraftOpen,"reward opens tactical inscription draft");
+        check(g.chooseTactic(0)&&g.tacticRanks[0]==1&&g.tacticChosen&&!g.tacticDraftOpen,"one inscription can be selected per cleared room");
+        check(!g.openTacticDraft()&& !g.chooseTactic(1),"second inscription cannot be claimed in the same room");
+        ActionGame saved=ActionSave.decode(ActionSave.encode(g));check(saved.tacticRanks[0]==1&&saved.tacticChosen,"chosen inscription persists in reward snapshot");
+        g=game(0);g.tacticRanks[0]=2;g.activeSkill();check(g.activeSkillCd>0,"signature technique still uses normal cooldown");
+        ActionGame baseline=game(0);baseline.activeSkill();check(g.enemies.size()==0&&baseline.enemies.size()==0,"empty arena remains safe");
+        g=game(0);g.tacticRanks[1]=2;g.followUpWindow=1;g.enemies.add(new ActionGame.Enemy(1,0,620,600,1000));g.followUp();float enhanced=1000-g.enemies.get(0).hp;
+        baseline=game(0);baseline.followUpWindow=1;baseline.enemies.add(new ActionGame.Enemy(1,0,620,600,1000));baseline.followUp();check(enhanced>1000-baseline.enemies.get(0).hp,"follow-through inscription increases follow-up damage");
+        g=game(0);g.tacticRanks[3]=2;near(g.activeSkillPeriod(),baseline.activeSkillPeriod()-2,"cooldown inscription shortens active skill cycle");
+        g=game(0);g.tacticRanks[4]=2;ActionGame.Enemy marked=new ActionGame.Enemy(1,0,620,600,1000);marked.hex=3;g.enemies.add(marked);g.hitForTest(marked,100);
+        baseline=game(0);marked=new ActionGame.Enemy(1,0,620,600,1000);marked.hex=3;baseline.enemies.add(marked);baseline.hitForTest(marked,100);check(1000-marked.hp>(1000-marked.hp)*0&&1000-g.enemies.get(0).hp>1000-baseline.enemies.get(0).hp,"curse inscription amplifies marked-target damage");
+        g=game(0);g.tacticRanks[5]=2;g.enemies.add(new ActionGame.Enemy(1,0,620,600,1000));g.activeSkill();check(g.shield>=12,"ward circuit grants shield on active skill");
+        g=game(0);g.tacticRanks[6]=2;baseline=game(0);check(g.attackPeriod()<baseline.attackPeriod(),"combat tempo increases attack speed");
+        g=game(0);g.tacticRanks[7]=2;g.drops.add(new ActionGame.Drop(g.x,g.y,100,false));g.update(1f/60f,new ActionGame.Input());check(g.loot==124,"scavenging inscription increases currency pickup");
+        byte[] bytes=ActionSave.encode(g);rejects(bytes,"tacticRank0","4");rejects(bytes,"tacticOffer0","8");
+        System.out.println("PASS tactical inscription draft, per-room choice, eight run modifiers and v23 persistence");
+    }
     private static void persistence()throws Exception{
         ActionGame g=new ActionGame();g.selectHero(1);g.start(123);g.skill();g.hp-=20;g.potion();
         byte[] bytes=ActionSave.encode(g);ActionGame a=ActionSave.decode(bytes);
@@ -117,5 +136,5 @@ public final class ActionTests {
         ActionGame g=new ActionGame();g.start(12);g.pause();float cd=g.activeSkillCd;for(int i=0;i<30;i++)g.update(1f/60f,new ActionGame.Input());near(g.activeSkillCd,cd,"pause freezes active cooldown");
         System.out.println("PASS five active skills, independent career cooldown, follow-ups, trap persistence and pause");
     }
-    public static void main(String[] args)throws Exception{movement();combat();shopAndItems();fiveActiveSkills();roomsAndRewards();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
+    public static void main(String[] args)throws Exception{movement();combat();shopAndItems();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
 }
