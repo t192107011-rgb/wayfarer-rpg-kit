@@ -300,9 +300,9 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     private void controls(Canvas c){
         circle(c,117,423,69,0x8814252D);ring(c,117,423,69,0x7789A39A,2);circle(c,117+joyX*48,423+joyY*48,27,0xAA79968A);
         text(c,"移动",117,519,12,muted,true);
-        control(c,850,420,58,"攻击",0,input.attack);control(c,737,456,37,"闪避",game.rollCd,false);control(c,855,298,38,"职业技",game.skillCd,false);
+        control(c,850,420,58,"攻击",0,input.attack);control(c,737,456,37,"闪避",game.rollCd,false);control(c,855,210,34,"职业技",game.skillCd,false);control(c,855,298,38,"主动技",game.activeSkillCd,false);control(c,735,332,34,"追击",game.followUpWindow>0?0:1,false);
         control(c,648,456,29,"药×"+game.potions,0,false);
-        if(game.soulKind()>0){control(c,735,332,40,game.soulEnergy<40?"蓄能":"魂技",game.soulCd,false);ring(c,735,332,43,game.soulKind()==1?0xFFE8D493:0xFFBE8FDC,2);text(c,game.soulArtName(),735,389,12,game.soulKind()==1?gold:0xFFCAA9E2,true);}
+        if(game.soulKind()>0){control(c,735,240,38,game.soulEnergy<40?"蓄能":"魂技",game.soulCd,false);ring(c,735,240,42,game.soulKind()==1?0xFFE8D493:0xFFBE8FDC,2);text(c,game.soulArtName(),735,287,11,game.soulKind()==1?gold:0xFFCAA9E2,true);}
     }
     private void shade(Canvas c){box(c,0,0,960,540,0xD50C1820);}
     private void rewards(Canvas c){
@@ -368,9 +368,11 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             if(x<300&&y>300&&movePointer<0){movePointer=id;joystick(x,y);}
             else if(ActionGame.len(x-850,y-420)<67){attackPointer=id;input.attack=true;}
             else if(ActionGame.len(x-737,y-456)<45)game.dodge(input.mx,input.my);
-            else if(ActionGame.len(x-855,y-298)<46)game.skill();
+            else if(ActionGame.len(x-855,y-210)<42)game.skill();
+            else if(ActionGame.len(x-855,y-298)<46)game.activeSkill();
+            else if(ActionGame.len(x-735,y-332)<42)game.followUp();
             else if(ActionGame.len(x-648,y-456)<35)game.potion();
-            else if(game.soulKind()>0&&ActionGame.len(x-735,y-332)<47)game.soulSkill();
+            else if(game.soulKind()>0&&ActionGame.len(x-735,y-240)<45)game.soulSkill();
         }else if(action==MotionEvent.ACTION_MOVE){
             int mi=event.findPointerIndex(movePointer);if(mi>=0)joystick((event.getX(mi)-offsetX)/scale,(event.getY(mi)-offsetY)/scale);
             int ai=event.findPointerIndex(attackPointer);if(ai>=0)input.attack=ActionGame.len((event.getX(ai)-offsetX)/scale-850,(event.getY(ai)-offsetY)/scale-420)<95;
