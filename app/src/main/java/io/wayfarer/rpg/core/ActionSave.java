@@ -76,7 +76,7 @@ public final class ActionSave {
                 g.soulEnergy=f(p,"soulEnergy",0,100);g.soulCd=f(p,"soulCd",0,SoulSystem.COOLDOWNS[g.soulKind()][g.soulArt()]);g.soulWard=f(p,"soulWard",0,99999);g.corruption=f(p,"corruption",0,100);g.soulQuiet=f(p,"soulQuiet",0,version>=9?8:3);g.soulBuff=f(p,"soulBuff",0,6);
                 int fields=n(p,"soulFields",0,1);for(int j=0;j<fields;j++){float[] a=array(p,"field"+j,6);int type=integer(a[0],1,2);ActionGame.SoulField f=new ActionGame.SoulField(type,range(a[1],48,1072),range(a[2],48,712),range(a[5],1,300));f.life=range(a[3],0,type==1?5:4);f.tick=range(a[4],0,type==1?1:.5f);
                     if(type!=g.soulKind()||(type==1&&g.soulArt()!=0)||(type==2&&g.soulArt()!=0&&g.soulArt()!=4)||f.life<=0)throw new IllegalArgumentException("领域与灵魂配置不符");g.soulFields.add(f);}
-                if(g.soulKind()!=1&&g.soulWard>0||g.soulKind()!=2&&(g.corruption>0||g.soulQuiet>0||g.soulBuff>0)||g.soulKind()==0&&g.soulEnergy>0)throw new IllegalArgumentException("灵魂状态无效");
+                if(g.soulKind()!=1&&g.soulWard>0||g.soulKind()!=2&&(g.corruption>0||g.soulQuiet>0)||g.soulKind()==0&&g.soulEnergy>0)throw new IllegalArgumentException("灵魂状态无效");
                 if(g.mode==ActionGame.Mode.CAMP&&(g.soulEnergy>0||g.soulCd>0||g.soulWard>0||g.corruption>0||g.soulQuiet>0||g.soulBuff>0||fields>0))throw new IllegalArgumentException("营地灵魂状态无效");
             }
             // Older saves receive starter collection but empty loadouts: no retroactive combat bonuses.
