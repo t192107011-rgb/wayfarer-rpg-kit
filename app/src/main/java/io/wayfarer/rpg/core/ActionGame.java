@@ -105,7 +105,7 @@ public final class ActionGame {
         clearSoulRuntime();hp=maxHp();notice="已缔结："+SoulSystem.NAMES[kind];return true;
     }
     private void clearSoulRuntime(){soulEnergy=0;soulCd=0;soulWard=0;corruption=0;soulQuiet=0;soulBuff=0;ruptureTime=0;ruptureTick=0;ruptureLatched=false;soulFields.clear();}
-    private void gainSoul(float value){if(soulKind()!=0&&mode==Mode.PLAY)soulEnergy=Math.min(100,soulEnergy+value);}
+    private void gainSoul(float value){if(soulKind()!=0&&mode==Mode.PLAY)soulEnergy=Math.min(100,soulEnergy+value*(hasRelic(12)?1.1f:1));}
     public float healingFactor(){return ordinaryHealingFactor();}
     private float ordinaryHealingFactor(){return (job()==REPORTER&&careerSkillMode==4&&careerSkillTime>0?.2f:1)*(soulKind()==1?1.15f:soulKind()==2?1-corruption*.003f:1)*(hasRelic(4)?1.1f:1);}
     private void heal(float amount){float restored=Math.min(maxHp()-hp,Math.max(0,amount)*healingFactor());hp+=restored;if(restored>.01f)signal("heal",x,y,(int)restored);}
@@ -137,7 +137,7 @@ public final class ActionGame {
     public float skillPeriod(){return Math.max(8f,24f-rank(9)*.4f-training[buildId()][2]*.35f-(custom>=0&&profile().trait==2?.8f:0)+(soulKind()==1?.5f:soulKind()==2?-.6f:0));}
     public float activeSkillPeriod(){return Math.max(6f,18f-rank(9)*.35f-training[buildId()][2]*.35f-(custom>=0&&profile().trait==2?.7f:0)+(soulKind()==1?-.5f:soulKind()==2?.4f:0));}
     public float careerCooldownRate(){return 1f+careerCooldownRank*.1f+((careerSkillTime>0&&(careerSkillMode==3||careerSkillMode==4))?1f:0);}
-    public float dodgePeriod(){return Math.max(.45f,1.15f-rank(4)*.07f-training[buildId()][2]*.045f-(custom>=0&&profile().trait==1?.12f:0)-(hasRelic(2)?.15f:0));}
+    public float dodgePeriod(){return Math.max(.45f,1.15f-rank(4)*.07f-training[buildId()][2]*.045f-(custom>=0&&profile().trait==1?.12f:0)-(hasRelic(2)?.15f:0)-(hasRelic(11)?.12f:0)-(hasRelic(2)&&hasRelic(11)?.08f:0));}
     public float potionRatio(){return custom>=0&&profile().trait==0?.55f:.45f;}
     private float originHp(){return custom<0?0:profile().origin==0?18:profile().origin==1?-10:-8;}
     public int room=0,loot=0,kills=0,potions=2,damageBonus=0,healthBonus=0,speedBonus=0,careerCooldownRank=0,combo=0;
@@ -187,11 +187,11 @@ public final class ActionGame {
         public Signal(String kind,float x,float y,int value){this.kind=kind;this.x=x;this.y=y;this.value=value;}
     }
     public int heroLevel(){return 1+Math.min(19,heroXp()/80);}
-    private float baseMaxHp(){return (hero==0?110:hero==1?85:90)+vitality*10+(heroLevel()-1)*3+rank(8)*(soulKind()==1?10:8)+originHp()-(custom>=0&&profile().trait==2?8:0)+(hasRelic(1)?12:0)+characterTrait(1)*4;}
+    private float baseMaxHp(){return (hero==0?110:hero==1?85:90)+vitality*10+(heroLevel()-1)*3+rank(8)*(soulKind()==1?10:8)+originHp()-(custom>=0&&profile().trait==2?8:0)+(hasRelic(1)?12:0)+(hasRelic(9)?18:0)+(hasRelic(1)&&hasRelic(9)?6:0)+characterTrait(1)*4;}
     public float maxHp(){return Math.min(99999,baseMaxHp()+healthBonus+training[buildId()][1]*4);}
     public float baseDamage(){return (hero==0?22:hero==1?18:15)+power*2+damageBonus+(heroLevel()-1)+rank(0)*2+(custom>=0&&profile().origin==2?2:0)+characterTrait(2);}
-    public float damage(){return baseDamage()*(1+training[buildId()][0]*.025f)*(rank(3)>0&&hp<maxHp()*.4f?1.55f:1)*(soulBuff>0?1.25f:1)*(battleTonicTime>0?1.30f:1)*(soulKind()==2?(ruptureTime>0?1.4f:corruption>=75?1.25f:corruption>=50?1.15f:1):1);}
-    public float speed(){return (hero==2?240:hero==1?215:205)*(1+speedBonus*.08f+rank(4)*.03f)*(custom<0?1:profile().origin==0?.95f:profile().origin==1?1.07f:1)*(background()==2?1.03f:1)*(background()==3&&hp<maxHp()*.35f?1.12f:1)*(job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0?1.45f:1);}
+    public float damage(){return baseDamage()*(hasRelic(10)?1.05f:1)*(hasRelic(3)&&hasRelic(10)?1.04f:1)*(1+training[buildId()][0]*.025f)*(rank(3)>0&&hp<maxHp()*.4f?1.55f:1)*(soulBuff>0?1.25f:1)*(battleTonicTime>0?1.30f:1)*(soulKind()==2?(ruptureTime>0?1.4f:corruption>=75?1.25f:corruption>=50?1.15f:1):1);}
+    public float speed(){return (hero==2?240:hero==1?215:205)*(1+speedBonus*.08f+rank(4)*.03f)*(custom<0?1:profile().origin==0?.95f:profile().origin==1?1.07f:1)*(hasRelic(11)?1.03f:1)*(background()==2?1.03f:1)*(background()==3&&hp<maxHp()*.35f?1.12f:1)*(job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0?1.45f:1);}
     public float attackPeriod(){return (hero==0?.48f:hero==1?.4f:.12f)*(hero==0?1.1f:1)*(custom>=0&&profile().trait==0?1.06f:1)*(soulBuff>0?.8f:1)*(job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0?.62f:1)*(job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0?1.12f:1)*(job()==REPORTER&&careerSkillMode==4&&careerSkillTime>0?.62f:1)*(1-training[buildId()][0]*.012f)*(battleTonicTime>0?.8f:1);}
     public int upgradeCost(int rank){return 30+rank*25;}
     public int trainingCost(int rank){return 45+rank*35;}
@@ -208,7 +208,7 @@ public final class ActionGame {
     public void start(long seed){beginRun(seed,false);}
     public void startEndless(long seed){beginRun(seed,true);}
     private void beginRun(long seed,boolean infinite){
-        if(mode!=Mode.CAMP)return;clearThreat();endless=infinite;endlessDepth=infinite?1:0;clearSoulRuntime();clearRelicRun();careerSkillTime=0;careerSkillDeathCd=0;careerSkillMode=0;careerCooldownRank=0;soulEnergy=soulKind()==0?0:Math.min(100,40+(hasRelic(5)?(soulKind()==1?30:15):0)+training[buildId()][3]*3);rngState=seed==0?1:seed;runs=Math.min(999999,runs+1);
+        if(mode!=Mode.CAMP)return;clearThreat();endless=infinite;endlessDepth=infinite?1:0;clearSoulRuntime();clearRelicRun();careerSkillTime=0;careerSkillDeathCd=0;careerSkillMode=0;careerCooldownRank=0;soulEnergy=soulKind()==0?0:Math.min(100,40+(hasRelic(5)?(soulKind()==1?30:15):0)+training[buildId()][3]*3+(hasRelic(12)?12:0)+(hasRelic(5)&&hasRelic(12)?10:0));rngState=seed==0?1:seed;runs=Math.min(999999,runs+1);
         loot=0;kills=0;nextId=1;room=1;potions=2;bombs=0;snares=0;tonics=0;battleTonicTime=0;shopOpen=false;damageBonus=0;healthBonus=0;speedBonus=0;combo=0;time=0;won=false;hp=maxHp();shield=0;soulWard=0;careerWard=entryCareerWard();
         generateRoom();
     }
