@@ -53,9 +53,17 @@ public final class WorldView extends View implements Choreographer.FrameCallback
                 Fx f=new Fx("number",s.x,s.y-30,.7f,s.value,s.kind.equals("hurt")?0xFFFF917E:s.kind.equals("heal")?0xFFB4E9BA:cream);f.vy=-35;effects.add(f);
                 if(s.kind.equals("hurt"))shake=5;
                 for(int i=0;i<6;i++){Fx spark=new Fx("spark",s.x,s.y,.2f+cosmetic.nextFloat()*.2f,0,s.kind.equals("hurt")?0xFFCE705C:gold);spark.vx=(cosmetic.nextFloat()-.5f)*180;spark.vy=(cosmetic.nextFloat()-.5f)*180;effects.add(spark);}
-            }else if(s.kind.equals("skill")||s.kind.equals("careerSkill")||s.kind.equals("slam")||s.kind.equals("clear")||s.kind.equals("echo")||s.kind.equals("shield"))effects.add(new Fx("ring",s.x,s.y,.55f,s.kind.equals("careerSkill")?(s.value==1?430:180):s.kind.equals("slam")?185:s.kind.equals("echo")?s.value:s.kind.equals("shield")?45:s.kind.equals("skill")?(int)game.activeRadius():140,s.kind.equals("careerSkill")?(s.value==1?0xFFE5A56F:s.value==2?0xFFC4A0D7:s.value==3?0xFF8BC9C0:0xFFE3C68A):s.kind.equals("slam")?0xFFDC7053:0xFFBCE8C5));
+            }else if(s.kind.equals("skill")||s.kind.equals("activeSkill")||s.kind.equals("careerSkill")||s.kind.equals("slam")||s.kind.equals("clear")||s.kind.equals("echo")||s.kind.equals("shield")){
+                int tint=s.kind.equals("careerSkill")?(s.value==1?0xFFE5A56F:s.value==2?0xFFC4A0D7:s.value==3?0xFF8BC9C0:0xFFE3C68A):s.kind.equals("slam")?0xFFDC7053:s.kind.equals("shield")?0xFF8ACFE0:0xFFBCE8C5;
+                int radius=s.kind.equals("careerSkill")?(s.value==1?430:180):s.kind.equals("slam")?185:s.kind.equals("echo")?s.value:s.kind.equals("shield")?65:s.kind.equals("skill")||s.kind.equals("activeSkill")?(int)game.activeRadius():140;
+                effects.add(new Fx("ring",s.x,s.y,.62f,radius,tint));addBurst(s.x,s.y,tint,s.kind.equals("careerSkill")?22:14,s.kind.equals("careerSkill")?240:170);if(s.kind.equals("slam")||s.kind.equals("careerSkill"))shake=Math.max(shake,4.5f);
+            }
             else if(s.kind.equals("radiant")||s.kind.equals("forbidden"))effects.add(new Fx("ring",s.x,s.y,.55f,s.value>3?s.value:(int)game.activeRadius(),s.kind.equals("radiant")?0xFFF2DD9B:0xFFB991DF));
-            else if(s.kind.equals("lance"))effects.add(new Fx("lance",s.x,s.y,.35f,s.value,0xFFFFE8AD));
+            else if(s.kind.equals("lance")){effects.add(new Fx("lance",s.x,s.y,.42f,s.value,0xFFFFE8AD));addBurst(s.x,s.y,0xFFFFE8AD,12,210);}
+            else if(s.kind.equals("daggerDash")){effects.add(new Fx("ring",s.x,s.y,.32f,105,0xFFB8DCD5));addBurst(s.x,s.y,0xFFB8DCD5,12,190);}
+            else if(s.kind.equals("thunder")||s.kind.equals("thunderWarning")){effects.add(new Fx("ring",s.x,s.y,.55f,s.kind.equals("thunder")?125:75,0xFF9CDDF2));addBurst(s.x,s.y,0xFFB8E9FF,s.kind.equals("thunder")?20:8,230);if(s.kind.equals("thunder"))shake=Math.max(shake,3.5f);}
+            else if(s.kind.equals("defeat")){effects.add(new Fx("ring",s.x,s.y,.45f,55,0xFFE8C18A));addBurst(s.x,s.y,0xFFE8C18A,10,135);}
+            else if(s.kind.equals("enemySwing")){effects.add(new Fx("ring",s.x,s.y,.25f,35,0xFFE58D79));}
             else if(s.kind.equals("sentence")||s.kind.equals("fracture")||s.kind.equals("obituary")){effects.add(new Fx("ring",s.x,s.y,.4f,55,0xFFE6A5A1));}
             else if(s.kind.equals("grind")||s.kind.equals("bury")||s.kind.equals("drain")){for(int i=0;i<4;i++){Fx f=new Fx("spark",s.x,s.y,.3f,0,0xFFB95F68);f.vx=(cosmetic.nextFloat()-.5f)*80;f.vy=-40-cosmetic.nextFloat()*50;effects.add(f);}}
             else if(s.kind.equals("rupture")){eventMessage="侵蚀100 · 失控：伤害暴涨，生命持续流失";eventMessageTime=4;effects.add(new Fx("ring",s.x,s.y,1,260,0xFFE66D87));if(soundOn)host.sound("forbidden");}
@@ -70,6 +78,9 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             else if(s.kind.equals("coin"))effects.add(new Fx("spark",s.x,s.y,.25f,0,gold));
         }
         game.signals.clear();while(effects.size()>140)effects.remove(0);
+    }
+    private void addBurst(float x,float y,int tint,int count,float speed){
+        for(int i=0;i<count;i++){double angle=Math.PI*2*i/count+cosmetic.nextFloat()*.22;float velocity=speed*(.55f+cosmetic.nextFloat()*.65f);Fx f=new Fx("shard",x,y,.22f+cosmetic.nextFloat()*.22f,0,tint);f.vx=(float)Math.cos(angle)*velocity;f.vy=(float)Math.sin(angle)*velocity;effects.add(f);}
     }
     private void color(int v){p.setColor(v);p.setShader(null);p.setStyle(Paint.Style.FILL);}
     private void box(Canvas c,float x,float y,float w,float h,int color){color(color);c.drawRect(x,y,x+w,y+h,p);}
@@ -222,7 +233,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         ArrayList<ActionGame.Enemy> sorted=new ArrayList<>(game.enemies);sorted.sort(Comparator.comparingDouble(a->a.y));boolean drawn=false;
         for(ActionGame.Enemy e:sorted){if(!drawn&&e.y>game.y){player(c);drawn=true;}enemy(c,e);}if(!drawn)player(c);
         for(ActionGame.Shot s:game.shots){line(c,s.x-s.vx*.025f,s.y-s.vy*.025f,s.x,s.y,s.effect==2?0xFFC48DE5:s.friendly?0xFFF3DDA5:0xFFDB8273,s.friendly?3:5);circle(c,s.x,s.y,s.radius,s.effect==2?0xFFE4B9FF:s.friendly?0xFFFFEBC3:0xFFF5BA8B);}
-        for(Fx f:effects){color(f.color);p.setAlpha((int)(255*f.life/f.max));if(f.kind.equals("number")){p.setTextSize(18);p.setTextAlign(Paint.Align.CENTER);c.drawText(Integer.toString(f.value),f.x,f.y,p);}else if(f.kind.equals("lance")){p.setStrokeWidth(12*f.life/f.max);double a=Math.toRadians(f.value);c.drawLine(f.x,f.y,f.x+(float)Math.cos(a)*520,f.y+(float)Math.sin(a)*520,p);}else if(f.kind.equals("ring")){p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(3);c.drawCircle(f.x,f.y,f.value*(1-f.life/f.max),p);p.setStyle(Paint.Style.FILL);}else c.drawRect(f.x-2,f.y-2,f.x+2,f.y+2,p);}
+        for(Fx f:effects){color(f.color);p.setAlpha((int)(255*f.life/f.max));if(f.kind.equals("number")){p.setTextSize(18);p.setTextAlign(Paint.Align.CENTER);c.drawText(Integer.toString(f.value),f.x,f.y,p);}else if(f.kind.equals("lance")){p.setStrokeWidth(12*f.life/f.max);double a=Math.toRadians(f.value);c.drawLine(f.x,f.y,f.x+(float)Math.cos(a)*520,f.y+(float)Math.sin(a)*520,p);}else if(f.kind.equals("ring")){p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(3);c.drawCircle(f.x,f.y,f.value*(1-f.life/f.max),p);p.setStyle(Paint.Style.FILL);}else if(f.kind.equals("shard")){p.setStrokeWidth(2.2f*f.life/f.max);c.drawLine(f.x-f.vx*.018f,f.y-f.vy*.018f,f.x,f.y,p);}else c.drawRect(f.x-2,f.y-2,f.x+2,f.y+2,p);}
         p.setAlpha(255);c.restore();
         // Restrained vignette keeps combat silhouettes and warnings readable.
         p.setShader(new RadialGradient(480,270,570,new int[]{0x000B1720,0x000B1720,0xBB0B1720},new float[]{0,.58f,1},Shader.TileMode.CLAMP));c.drawRect(0,0,960,540,p);p.setShader(null);
