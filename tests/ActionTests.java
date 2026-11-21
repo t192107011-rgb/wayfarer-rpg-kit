@@ -86,6 +86,22 @@ public final class ActionTests {
         }
         System.out.println("PASS 54000 simulation steps with periodic save/restore");
     }
+    private static void shopAndItems()throws Exception{
+        ActionGame g=game(0);g.mode=ActionGame.Mode.REWARD;g.loot=100;g.openShop();
+        check(g.buyShopItem(0)&&g.bombs==1&&g.loot==76,"shop purchases bomb with run currency");
+        check(g.buyShopItem(1)&&g.snares==1&&g.loot==48,"shop purchases control item");
+        check(g.buyShopItem(2)&&g.tonics==1&&g.loot==16,"shop purchases tonic");
+        check(!g.buyShopItem(0),"shop rejects insufficient currency");
+        ActionGame a=ActionSave.decode(ActionSave.encode(g));check(a.bombs==1&&a.snares==1&&a.tonics==1&&a.shopOpen,"shop and inventory persist");
+        a.closeShop();a.mode=ActionGame.Mode.PLAY;a.enemies.clear();ActionGame.Enemy e=new ActionGame.Enemy(a.nextId++,0,a.x+100,a.y,1000);a.enemies.add(e);
+        a.useBomb();check(a.bombs==0&&e.hp<1000,"bomb deals area damage");
+        a.snares=1;a.useSnare();check(a.snares==0&&e.stun>=2.4f,"snare controls nearby enemy");
+        a.tonics=1;a.useTonic();check(a.tonics==0&&a.battleTonicTime==10,"tonic starts timed combat buff");
+        float boosted=a.damage();a.update(1,new ActionGame.Input());check(a.battleTonicTime<10&&a.damage()<boosted,"tonic timer and bonus expire during play");
+        a=ActionSave.decode(ActionSave.encode(a));check(a.battleTonicTime>0,"active tonic duration persists through save");
+        a.mode=ActionGame.Mode.RESULT;a.returnCamp();check(a.bombs==0&&a.snares==0&&a.tonics==0&&a.battleTonicTime==0,"run items clear after settlement");
+        System.out.println("PASS in-run shop, currency validation, inventory, consumables and timed buff persistence");
+    }
     private static void fiveActiveSkills()throws Exception{
         for(int style=0;style<5;style++){
             ActionGame g=new ActionGame();g.selectCustom(0);BuildSystem.Profile draft=g.profile().copy();draft.skill=style;g.customize(0,draft);g.start(44+style);g.blocks.clear();g.enemies.clear();g.x=500;g.y=500;g.faceX=1;g.faceY=0;
@@ -101,5 +117,5 @@ public final class ActionTests {
         ActionGame g=new ActionGame();g.start(12);g.pause();float cd=g.activeSkillCd;for(int i=0;i<30;i++)g.update(1f/60f,new ActionGame.Input());near(g.activeSkillCd,cd,"pause freezes active cooldown");
         System.out.println("PASS five active skills, independent career cooldown, follow-ups, trap persistence and pause");
     }
-    public static void main(String[] args)throws Exception{movement();combat();fiveActiveSkills();roomsAndRewards();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
+    public static void main(String[] args)throws Exception{movement();combat();shopAndItems();fiveActiveSkills();roomsAndRewards();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
 }
