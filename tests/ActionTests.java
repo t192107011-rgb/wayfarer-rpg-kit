@@ -155,6 +155,32 @@ public final class ActionTests {
         }
         System.out.println("PASS eight career-specific radiant/forbidden active-skill resonances");
     }
+    private static void careerFollowUpAndSoulSynergy(){
+        int[] jobs={CareerSystem.HUNTER,CareerSystem.ASSASSIN,CareerSystem.DETECTIVE,CareerSystem.REPORTER};
+        for(int kind=1;kind<=2;kind++)for(int job:jobs){
+            ActionGame f=new ActionGame();f.careers[f.buildId()][0]=job;f.bindSoul(kind,0);f.start(1200+kind*10+job);
+            f.blocks.clear();f.enemies.clear();f.x=500;f.y=500;f.faceX=1;f.faceY=0;f.followUpWindow=2;
+            ActionGame.Enemy target=new ActionGame.Enemy(f.nextId++,0,700,500,1500);target.stun=1;f.enemies.add(target);
+            float hpBefore=f.hp,energyBefore=f.soulEnergy;f.followUp();
+            check(f.followUpWindow==0&&target.hp<1500,"career follow-up connects "+kind+"/"+job);
+            if(job==CareerSystem.HUNTER)check(f.soulBuff>=1.25f,"hunter follow-up primes a short damage window");
+            else if(job==CareerSystem.ASSASSIN)check(f.shots.size()>=2,"assassin follow-up emits twin knives");
+            else if(job==CareerSystem.DETECTIVE)check(target.hex>=3.5f&&target.stun>=.35f,"detective follow-up marks and controls");
+            else check(f.hp>hpBefore-(kind==2?f.maxHp()*.016f:0)&&f.soulEnergy>energyBefore,"reporter follow-up restores health and soul energy");
+
+            ActionGame a=new ActionGame();a.careers[a.buildId()][0]=job;a.bindSoul(kind,0);a.start(1300+kind*10+job);
+            a.blocks.clear();a.enemies.clear();a.x=500;a.y=500;a.faceX=1;a.faceY=0;
+            ActionGame.Enemy marked=new ActionGame.Enemy(a.nextId++,0,650,500,1500);marked.hex=1;marked.stun=1;a.enemies.add(marked);
+            a.hp=a.maxHp()-10;a.activeSkillCd=10;float beforeHp=a.hp,cd=a.activeSkillCd,energy=a.soulEnergy;
+            a.soulSkill();
+            check(a.soulCd>0&&a.soulEnergy==energy-40,"career soul art still pays its normal resource cost");
+            if(job==CareerSystem.HUNTER)check(a.soulBuff>=1.5f,"hunter soul art primes damage and attack speed");
+            else if(job==CareerSystem.ASSASSIN)check(a.activeSkillCd<cd,"assassin soul art accelerates active skill recovery");
+            else if(job==CareerSystem.DETECTIVE)check(marked.hex>=2.25f&&marked.stun>=.2f,"detective soul art extends curse and control");
+            else check(a.hp>beforeHp-(kind==2?a.maxHp()*.08f:0)&&a.soulEnergy>energy,"reporter soul art refunds health and soul energy");
+        }
+        System.out.println("PASS eight career/soul combinations across follow-up and dedicated soul arts");
+    }
     private static void expandedEconomy(){
         ActionGame g=new ActionGame();g.bindSoul(1,0);g.start(71);g.mode=ActionGame.Mode.REWARD;g.loot=250;g.openShop();g.hp-=30;
         float hp=g.hp;check(g.buyShopItem(3)&&g.hp>hp&&g.loot==212,"medical supply spends tickets and heals immediately");
@@ -202,5 +228,5 @@ public final class ActionTests {
         ActionGame g=new ActionGame();g.start(12);g.pause();float cd=g.activeSkillCd;for(int i=0;i<30;i++)g.update(1f/60f,new ActionGame.Input());near(g.activeSkillCd,cd,"pause freezes active cooldown");
         System.out.println("PASS five active skills, independent career cooldown, follow-ups, trap persistence and pause");
     }
-    public static void main(String[] args)throws Exception{movement();combat();shopAndItems();expandedEconomy();careerSoulResonance();careerActiveSoulResonance();permanentEconomy();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
+    public static void main(String[] args)throws Exception{movement();combat();shopAndItems();expandedEconomy();careerSoulResonance();careerActiveSoulResonance();careerFollowUpAndSoulSynergy();permanentEconomy();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
 }
