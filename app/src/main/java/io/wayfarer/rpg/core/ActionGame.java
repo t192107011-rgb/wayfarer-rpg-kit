@@ -227,7 +227,7 @@ public final class ActionGame {
             int type=group[i];float ex=560,ey=150;int tries=0;
             do{ex=120+random(880);ey=130+random(300);tries++;}while((!free(ex,ey,type==3?32:24)||len(ex-x,ey-y)<230)&&tries<100);
             if(!free(ex,ey,type==3?32:24)){ex=560;ey=130+i*40;}
-            float life=type==3?(room==2?520:room==4?760:1100):55+room*12+(type==1?10:type==2?24:type==5?15:type==6?25:0);
+            float life=type==3?(room==2?900:room==4?1500:2200):55+room*12+(type==1?10:type==2?24:type==5?15:type==6?25:0);
             enemies.add(new Enemy(nextId++,type,ex,ey,Math.max(life*threat,encounterHpFloor)));
         }
         notice=ROOM_NAMES[room-1]+" · 清除敌人开启出口";signal("enter",x,y,room);
@@ -532,7 +532,7 @@ public final class ActionGame {
                 else if(e.type==5){e.timer=1.5f;addHazard(0,e.targetX,e.targetY,100,1.05f,2.3f,enemyPower(e,12+room*2));addHazard(0,e.targetX-e.aimY*135,e.targetY+e.aimX*135,85,1.4f,1.8f,enemyPower(e,10+room*2));}
                 else if(e.type==6){e.timer=2;for(Enemy other:enemies)if(other!=e&&other.hp>0&&len(other.x-e.x,other.y-e.y)<260&&lineClear(e.x,e.y,other.x,other.y))other.guard=Math.min(40,other.guard+24);fan(e,2,.3f,240,12);signal("enemyWard",e.x,e.y,260);}
                 else {
-                    e.timer=enraged?.85f:1.25f;
+                    e.timer=enraged?.62f:room>=4?.88f:1.08f;
                     if(e.pattern==0){float radius=room>=4?250:220;addHazard(1,e.x,e.y,radius,.3f,.1f,enemyPower(e,room>=4?34:28));int count=enraged?(room>=4?20:16):(room>=4?16:12);for(int i=0;i<count;i++){double a=i*Math.PI*2/count+time*.1;enemyShot(e,(float)Math.cos(a),(float)Math.sin(a),enraged?300:room>=4?255:220,room>=4?22:18);}}
                     else if(e.pattern==1)fan(e,enraged?(room>=4?4:3):(room>=4?3:2),.19f,room>=4?410:350,room>=4?24:20);
                     else {addHazard(1,e.targetX,e.targetY,room>=4?145:120,.8f,.1f,enemyPower(e,room>=4?36:30));addHazard(1,e.targetX-145,e.targetY+75,room>=4?125:110,1.15f,.1f,enemyPower(e,room>=4?29:24));addHazard(1,e.targetX+145,e.targetY-75,room>=4?125:110,1.5f,.1f,enemyPower(e,room>=4?29:24));}
@@ -544,11 +544,11 @@ public final class ActionGame {
             e.timer-=dt;
             if(e.type==2||e.type==4){float speed=enemySpeed(e.type==2?440:520);moveEnemy(e,e.aimX*speed*dt,e.aimY*speed*dt);if(!e.struck&&len(x-e.x,y-e.y)<e.radius()+PLAYER_RADIUS+7){e.struck=true;hurt(enemyPower(e,18+room*2));}}
             if((e.type==1||e.type==3&&e.pattern==1)&&!e.struck&&e.timer<(e.type==1?.5f:.4f)){e.struck=true;fan(e,e.type==1?1:2,.12f,e.type==1?330:370,e.type==1?12+room*2:20);}
-            if(e.timer<=0){if(e.type==2||e.type==4){e.state=3;e.timer=e.type==2?.65f:.5f;}else{e.state=0;if(e.type==3)e.pattern=(e.pattern+1)%3;}}
+            if(e.type==3){e.hp=Math.min(e.maxHp,e.hp+e.maxHp*(enraged?.012f:.006f)*dt);e.guard=Math.min(enraged?90:55,e.guard+(enraged?7.5f:4.5f)*dt);}\n            if(e.timer<=0){if(e.type==2||e.type==4){e.state=3;e.timer=e.type==2?.65f:.5f;}else if(e.type==3){e.state=3;e.timer=.9f;e.pattern=(e.pattern+1)%3;}else e.state=0;}
         }
         for(Enemy other:enemies)if(other!=e&&other.hp>0){float sx=e.x-other.x,sy=e.y-other.y,d=len(sx,sy),min=e.radius()+other.radius();if(d>.1&&d<min)moveEnemy(e,sx/d*30*dt,sy/d*30*dt);}
     }
-    private float enemyForce(Enemy e){return e.type==3?(room==2?1.12f:room==4?1.28f:room>=5?1.42f:1f):1f;}
+    private float enemyForce(Enemy e){return e.type==3?(room==2?1.22f:room==4?1.42f:room>=5?1.62f:1f):1f;}
     private void enemyShot(Enemy e,float dx,float dy,float speed,float damage){if(shots.size()<160)shots.add(new Shot(e.x+dx*24,e.y+dy*24,dx*enemySpeed(speed),dy*enemySpeed(speed),enemyPower(e,damage),false));}
     private void updateShots(float dt){
         Iterator<Shot> it=shots.iterator();while(it.hasNext()){
