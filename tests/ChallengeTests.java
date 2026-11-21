@@ -65,7 +65,7 @@ public final class ChallengeTests {
         check(g.specialtyRank(6)==1&&!g.learnSpecialty(7),"hunting capstones are mutually exclusive");
         float ordinary=g.damage();ActionGame baseline=new ActionGame();baseline.start(1);ActionGame.Enemy baseMarked=new ActionGame.Enemy(1,0,700,600,1000);baseline.enemies.add(baseMarked);baseMarked.hex=3;baseline.hitForTest(baseMarked,100);ActionGame.Enemy e=new ActionGame.Enemy(2,0,700,600,1000);g.enemies.add(e);e.hex=3;g.hitForTest(e,100);
         near((baseMarked.maxHp-baseMarked.hp)*1.10f,e.maxHp-e.hp,"marked target takes ten percent more damage than the same cursed target without the specialization");
-        check(g.damage()>ordinary,"hunting instinct changes baseline combat damage");
+        check(g.damage()>baseline.damage()&&ordinary==g.damage(),"hunting instinct changes baseline combat damage");
         ActionGame other=new ActionGame();other.selectHero(1);check(other.specialtyRank(4)==0,"specialty progress is independent per character");
         System.out.println("PASS pact and hunting specialization prerequisites, shared points, combat effects, character isolation and save migration");
     }
