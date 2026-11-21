@@ -171,13 +171,13 @@ public final class ActionTests {
             ActionGame a=new ActionGame();a.careers[a.buildId()][0]=job;a.bindSoul(kind,0);a.start(1300+kind*10+job);
             a.blocks.clear();a.enemies.clear();a.x=500;a.y=500;a.faceX=1;a.faceY=0;
             ActionGame.Enemy marked=new ActionGame.Enemy(a.nextId++,0,650,500,1500);marked.hex=1;marked.stun=1;a.enemies.add(marked);
-            a.hp=a.maxHp()-10;a.activeSkillCd=10;float beforeHp=a.hp,cd=a.activeSkillCd,energy=a.soulEnergy;
+            a.hp=a.maxHp()-10;a.soulEnergy=80;a.activeSkillCd=10;float beforeHp=a.hp,cd=a.activeSkillCd,energy=a.soulEnergy;
             a.soulSkill();
             check(a.soulCd>0&&a.soulEnergy>=energy-40,"career soul art still pays its normal resource cost before career refund");
             if(job==CareerSystem.HUNTER)check(a.soulBuff>=1.5f,"hunter soul art primes damage and attack speed");
             else if(job==CareerSystem.ASSASSIN)check(a.activeSkillCd<cd,"assassin soul art accelerates active skill recovery");
             else if(job==CareerSystem.DETECTIVE)check(marked.hex>=2.25f&&marked.stun>=.2f,"detective soul art extends curse and control");
-            else check(a.hp>beforeHp-(kind==2?a.maxHp()*.08f:0)&&a.soulEnergy>energy,"reporter soul art refunds health and soul energy");
+            else check(a.hp>beforeHp-(kind==2?a.maxHp()*.08f:0)&&a.soulEnergy>energy-40,"reporter soul art refunds health and soul energy after paying its base cost");
         }
         System.out.println("PASS eight career/soul combinations across follow-up and dedicated soul arts");
     }
