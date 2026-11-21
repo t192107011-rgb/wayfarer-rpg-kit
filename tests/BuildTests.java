@@ -23,7 +23,8 @@ public final class BuildTests {
         for(String name:new String[]{""," ","abcdefghijkl","a\nb","a\u202Eb","\uD800"}){boolean bad=false;try{BuildSystem.cleanName(name);}catch(IllegalArgumentException e){bad=true;}check(bad,"reject invalid name");}
         check(BuildSystem.cleanName("  星灯  ").equals("星灯"),"trim name");
         // Every weapon / all five active skills / origin / trait combination is valid and persists mid-skill.
-        check(BuildSystem.SKILLS.length==5&&SkillSystem.COUNT==5,"five general skills registered");\n        for(int w=0;w<3;w++)for(int s=0;s<5;s++)for(int o=0;o<3;o++)for(int t=0;t<3;t++){
+        check(BuildSystem.SKILLS.length==5&&SkillSystem.COUNT==5,"five general skills registered");
+        for(int w=0;w<3;w++)for(int s=0;s<5;s++)for(int o=0;o<3;o++)for(int t=0;t<3;t++){
             g=new ActionGame();draft=g.profiles[0].copy();draft.weapon=w;draft.skill=s;draft.origin=o;draft.trait=t;g.customize(0,draft);float max=g.maxHp();arena(g);mob(g,600,600);g.skill();
             check(g.hero==w&&g.skillStyle()==s&&g.hp==max&&g.careerSkillMode==1,"135 custom weapon and five-skill combinations keep the hunter career active");
             restored=ActionSave.decode(ActionSave.encode(g));near(restored.skillCd,g.skillCd,"custom cooldown persisted");check(restored.careerSkillMode==1,"career skill mode persisted");
