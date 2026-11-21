@@ -131,6 +131,30 @@ public final class ActionTests {
         check(forbidden.corruption==8&&target.hex>=3,"forbidden career skill builds corruption and marks nearby enemies");
         System.out.println("PASS radiant and forbidden soul resonance with career overdrive");
     }
+    private static void careerActiveSoulResonance(){
+        int[] jobs={HUNTER,ASSASSIN,DETECTIVE,REPORTER};
+        for(int kind=1;kind<=2;kind++)for(int job:jobs){
+            ActionGame g=new ActionGame();g.bindSoul(kind,0);g.careers[g.buildId()][0]=job;g.start(910+kind*10+job);
+            g.blocks.clear();g.enemies.clear();g.x=500;g.y=500;g.faceX=1;g.faceY=0;g.invulnerable=0;
+            ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,620,500,1200);e.stun=1;g.enemies.add(e);
+            if(kind==1){g.soulWard=0;g.hp=g.maxHp()-12;g.shots.add(new ActionGame.Shot(550,500,0,0,5,false));}
+            else {g.soulEnergy=10;g.corruption=0;}
+            float before=e.hp;g.activeSkill();
+            check(g.activeSkillCd>0&&g.followUpWindow>0,"career active soul resonance consumes active skill "+kind+"/"+job);
+            if(kind==1){
+                if(job==HUNTER)check(g.soulWard>=6&&g.shots.isEmpty(),"radiant hunter converts active skill into ward and cleanse");
+                else if(job==ASSASSIN)check(g.soulWard>=3&&g.invulnerable>=.35f,"radiant assassin gains ward and brief protection");
+                else if(job==DETECTIVE)check(g.soulWard>=4&&g.shots.isEmpty(),"radiant detective gains ward and wider cleanse");
+                else check(g.hp>before&&g.soulWard>=2,"radiant reporter converts resonance into recovery");
+            }else{
+                if(job==HUNTER)check(e.hex>=3,"forbidden hunter spreads the mark");
+                else if(job==ASSASSIN)check(g.corruption>=14&&g.shots.size()>=2,"forbidden assassin pays extra debt for bonus knives");
+                else if(job==DETECTIVE)check(e.hp<before,"forbidden detective detonates marked targets");
+                else check(g.soulEnergy>10&&g.corruption>=13,"forbidden reporter converts overdrive into soul energy");
+            }
+        }
+        System.out.println("PASS eight career-specific radiant/forbidden active-skill resonances");
+    }
     private static void expandedEconomy(){
         ActionGame g=new ActionGame();g.bindSoul(1,0);g.start(71);g.mode=ActionGame.Mode.REWARD;g.loot=250;g.openShop();g.hp-=30;
         float hp=g.hp;check(g.buyShopItem(3)&&g.hp>hp&&g.loot==212,"medical supply spends tickets and heals immediately");
@@ -178,5 +202,5 @@ public final class ActionTests {
         ActionGame g=new ActionGame();g.start(12);g.pause();float cd=g.activeSkillCd;for(int i=0;i<30;i++)g.update(1f/60f,new ActionGame.Input());near(g.activeSkillCd,cd,"pause freezes active cooldown");
         System.out.println("PASS five active skills, independent career cooldown, follow-ups, trap persistence and pause");
     }
-    public static void main(String[] args)throws Exception{movement();combat();shopAndItems();expandedEconomy();careerSoulResonance();permanentEconomy();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
+    public static void main(String[] args)throws Exception{movement();combat();shopAndItems();expandedEconomy();careerSoulResonance();careerActiveSoulResonance();permanentEconomy();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
 }
