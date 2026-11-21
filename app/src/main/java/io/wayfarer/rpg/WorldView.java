@@ -134,9 +134,9 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             text(c,CareerSystem.name(career[0],career[1])+" / "+CareerSystem.BACKGROUNDS[career[2]],bx+20,327,10,muted,false);
         }
         text(c,"携行："+game.relicLoadout(),40,354,13,gold,false);
-        button(c,40,365,280,57,"磨刃 +2  ·  "+(game.power>=10?"MAX":game.upgradeCost(game.power)+" 票券"),false);
-        button(c,340,365,280,57,"护火 +10 HP  ·  "+(game.vitality>=10?"MAX":game.upgradeCost(game.vitality)+" 票券"),false);
-        text(c,"永久攻击 "+game.power+"/10     永久生命 "+game.vitality+"/10",40,445,13,muted,false);
+        button(c,40,365,280,57,"磨刃 +2  ·  "+(game.power>=20?"MAX":game.upgradeCost(game.power)+" 票券"),false);
+        button(c,340,365,280,57,"护火 +10 HP  ·  "+(game.vitality>=20?"MAX":game.upgradeCost(game.vitality)+" 票券"),false);
+        text(c,"永久攻击 "+game.power+"/20     永久生命 "+game.vitality+"/20",40,445,13,muted,false);
         button(c,660,365,260,80,"剧情远征  →",true);
         button(c,660,448,260,27,"无尽远征 · 最深 "+game.bestDepth+"层",false);
         text(c,game.notice.length()>38?game.notice.substring(0,38):game.notice,40,465,12,muted,false);
@@ -187,15 +187,15 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     private void trainingTree(Canvas c){
         box(c,0,0,960,540,0xFF12282D);glow(c,480,270,370,0x224F8B76);
         text(c,game.heroName()+" · 局外成长",40,48,27,cream,false);
-        text(c,"共享票券 "+game.bank+"  ·  四条独立路线，每条最多5级；不同角色分别培养",40,82,15,gold,false);
+        text(c,"共享票券 "+game.bank+"  ·  四条独立路线，每条最多10级；不同角色分别培养",40,82,15,gold,false);
         button(c,855,15,88,45,"返回",false);button(c,515,15,170,45,"专精星图",false);button(c,700,15,140,45,"天赋星图",false);
         String[] names={"武器训练","生存训练","战术训练","灵魂研究"};
         String[] desc={"每级伤害 +2.5%，攻击间隔缩短 1.2%。","每级最大生命 +4。","每级闪避冷却 -0.045秒，技能冷却 -0.35秒。","每级初始魂能 +3，魂技冷却 -0.3秒。"};
         int[] ranks=game.training[game.buildId()];
         for(int i=0;i<4;i++){int x=55+(i%2)*430,y=135+(i/2)*165;
             rounded(c,x,y,390,135,12,0xFF293F42);text(c,names[i],x+22,y+35,22,gold,false);
-            text(c,desc[i],x+22,y+67,14,cream,false);text(c,"等级 "+ranks[i]+" / 5",x+22,y+102,15,muted,false);
-            button(c,x+250,y+83,115,38,ranks[i]>=5?"已满级":"训练 · "+game.trainingCost(ranks[i]),ranks[i]<5&&game.bank>=game.trainingCost(ranks[i]));
+            text(c,desc[i],x+22,y+67,14,cream,false);text(c,"等级 "+ranks[i]+" / 10",x+22,y+102,15,muted,false);
+            button(c,x+250,y+83,115,38,ranks[i]>=10?"已满级":"训练 · "+game.trainingCost(ranks[i]),ranks[i]<10&&game.bank>=game.trainingCost(ranks[i]));
         }
         text(c,"训练消耗营地共享票券；效果只作用于当前角色，永久保存。",55,493,14,muted,false);
     }
