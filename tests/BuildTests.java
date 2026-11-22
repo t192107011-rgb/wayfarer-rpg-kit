@@ -73,7 +73,7 @@ public final class BuildTests {
         Properties p=new Properties();p.load(new ByteArrayInputStream(ActionSave.encode(g)));p.setProperty("version","1");p.keySet().removeIf(k->k.toString().startsWith("profile")||k.toString().startsWith("talent")||k.equals("custom")||k.equals("shield")||k.equals("dodgeCharge"));ByteArrayOutputStream out=new ByteArrayOutputStream();p.store(out,"v1 layout");
         ActionGame a=ActionSave.decode(out.toByteArray());check(a.hero==1&&a.bank==170&&a.heroXp()==320&&a.hp==g.hp&&a.power==2&&a.rngState==g.rngState,"v1 migration keeps old run and progression");check(a.custom==-1&&a.availablePoints()==6,"v1 migration grants earned unspent points");ActionSave.decode(ActionSave.encode(a));
         g=ultimate(11);byte[] data=ActionSave.encode(g);reject(data,"custom","5");reject(data,"profile0.name","bad\nname");reject(data,"profile0.data","0,0,0,0,99,0,0,0");reject(data,"talent0.0","9");reject(data,"talent0.2","1");reject(data,"talent0.8","0");reject(data,"shield","NaN");reject(data,"dodgeCharge","2");
-        g=new ActionGame();data=ActionSave.encode(g);reject(data,"talent0.0","3");reject(data,"shield","111");g.selectCustom(0);data=ActionSave.encode(g);reject(data,"hero","2");
+        g=new ActionGame();data=ActionSave.encode(g);reject(data,"talent0.0","3");reject(data,"shield","100000");g.selectCustom(0);data=ActionSave.encode(g);reject(data,"hero","2");
         // Armed dodge charge survives restart but a partially executed attack cannot re-arm it.
         g=new ActionGame();points(g);learn(g,4,1);learn(g,5,1);arena(g);mob(g,610,600);g.dodge(0,-1);a=ActionSave.decode(ActionSave.encode(g));near(a.dodgeCharge,3,"armed charge preserved");g.rollTime=0;tick(g,true,1);a=ActionSave.decode(ActionSave.encode(g));check(a.dodgeCharge==0&&a.attackAnim==0,"restoring cannot refund consumed charge or replay swing");
         System.out.println("PASS v1-to-v2 migration, new snapshots, corrupt-tree rejection and no duplicate charge on restore");
@@ -94,5 +94,23 @@ public final class BuildTests {
         }
         System.out.println("PASS 18000 simulation steps with six maxed custom builds and periodic save/restore");
     }
-    public static void main(String[] args)throws Exception{trainingRoutes();profiles();treeRules();effects();persistence();stress();System.out.println("BUILD CHECKS PASSED: "+count);}
+    private static void fiveBranchProgression()throws Exception{
+        ActionGame g=new ActionGame();points(g);
+        check(g.availableCorePoints()==17,"five-branch tree has independent XP point budget");
+        check(g.learnCoreTalent(0)&&g.learnCoreTalent(1),"basic attack branch learns in order");
+        check(!g.learnCoreTalent(2),"attack capstone requires two ranks in its parent");
+        check(g.learnCoreTalent(1)&&g.learnCoreTalent(2),"attack capstone unlocks at parent rank two");
+        float before=g.damage();check(before>0,"core attack bonuses contribute to damage");
+        g.resetTalents();check(g.availableCorePoints()==17,"legacy respec remains separate from five-branch tree");
+        g.bank=1000;check(g.buyFieldPermit(0)&&g.buyFieldPermit(1)&&g.bank==800,"outside currency buys persistent expedition permits");
+        g.start(987);check(g.shield>=40&&g.potions==3,"shield and supply permits affect expedition start");
+        ActionGame restored=ActionSave.decode(ActionSave.encode(g));
+        check(restored.fieldPermits[0][0]==1&&restored.fieldPermits[0][1]==1,"field permits persist through save");
+        restored.abandon();restored.returnCamp();restored.experience[0]=1200;
+        check(restored.learnCareerTalent(0)&&restored.learnCareerTalent(1)&&restored.learnCareerTalent(2),"career skill talent tree learns with independent points");
+        ActionGame roundtrip=ActionSave.decode(ActionSave.encode(restored));
+        check(roundtrip.careerTalents[0][0]==1&&roundtrip.careerTalents[0][1]==1&&roundtrip.careerTalents[0][2]==1,"career talents persist independently");
+        System.out.println("PASS five talent branches, career skill upgrades, expedition permits and save v26");
+    }
+    public static void main(String[] args)throws Exception{trainingRoutes();profiles();treeRules();effects();persistence();fiveBranchProgression();stress();System.out.println("BUILD CHECKS PASSED: "+count);}
 }
