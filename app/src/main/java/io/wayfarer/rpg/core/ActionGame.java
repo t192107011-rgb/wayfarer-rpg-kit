@@ -21,7 +21,7 @@ public final class ActionGame {
     public float activeRadius(){int k=soulKind();return (skillStyle()==0?(k==1?235:k==2?260:200):(k==1?180:k==2?190:160))*reachFactor()*(specialtyRank(7)>0?1.10f:1); }
     public float followUpDuration(){return rank(7)>0?3:2;}
     /** Persistent talent shield has only a safety cap; it does not decay by time or room. */
-    public float talentShieldLimit(){return maxHp();}
+    public float talentShieldLimit(){return 99999f;}
     public String threatLabel(){return String.format(java.util.Locale.ROOT,"敌势 ×%.2f",threat);}
     private void clearThreat(){threat=1;pressure=0;encounterHpFloor=0;encounterDamageFloor=0;roomDamage=0;roomElapsed=0;endless=false;endlessDepth=0;}
     private boolean collectDrop(Drop d){if(d.potion){if(potions>=MAX_POTIONS)return false;potions++;signal("potion",d.x,d.y,potions);notice="拾取药瓶 · "+potions+" / "+MAX_POTIONS;}else if(d.heal)heal(d.amount);else{int gain=Math.round(d.amount*(1+.12f*tacticRanks[7]));loot=Math.min(99999,loot+gain);signal("coin",d.x,d.y,gain);}return true;}
@@ -108,7 +108,7 @@ public final class ActionGame {
     private void clearSoulRuntime(){soulEnergy=0;soulCd=0;soulWard=0;corruption=0;soulQuiet=0;soulBuff=0;ruptureTime=0;ruptureTick=0;ruptureLatched=false;soulFields.clear();}
     private void gainSoul(float value){if(soulKind()!=0&&mode==Mode.PLAY)soulEnergy=Math.min(100,soulEnergy+value*(hasRelic(12)?1.1f:1)*(specialtyRank(3)>0?1.2f:1)*(1+.15f*tacticRanks[2]));}
     public float healingFactor(){return ordinaryHealingFactor();}
-    private float ordinaryHealingFactor(){return (job()==REPORTER&&careerSkillMode==4&&careerSkillTime>0?.2f:1)*(soulKind()==1?1.15f:soulKind()==2?1-corruption*.003f:1)*(hasRelic(4)?1.1f:1);}
+    private float ordinaryHealingFactor(){return (soulKind()==1?1.15f:soulKind()==2?1-corruption*.003f:1)*(hasRelic(4)?1.1f:1);}
     private void heal(float amount){float restored=Math.min(maxHp()-hp,Math.max(0,amount)*healingFactor());hp+=restored;if(restored>.01f)signal("heal",x,y,(int)restored);}
     private void payForbidden(float ratio,float debt){if(hasRelic(6))ratio*=.75f;float before=hp;hp=Math.max(Math.min(1,hp),hp-maxHp()*ratio);corruption=Math.min(100,corruption+debt);triggerRupture();signal("sacrifice",x,y,(int)(before-hp));}
     public float followUpWindow=0,ruptureTime=0,ruptureTick=0;
@@ -345,11 +345,17 @@ public final class ActionGame {
             signal("careerSkill",x,y,2);
             notice="刺客：刀尖之舞";
         }else if(j==DETECTIVE){
+            careerSkillTime=0;careerSkillMode=0;
+            int affected=0;for(Enemy e:enemies)if(e.hp>0){pull(e,x,y,360f);hit(e,damage()*2.4f,false);e.stun=Math.max(e.stun,.45f);affected++;}
             signal("careerSkill",x,y,3);
-            notice="侦探：灯中之影";
+            notice="侦探：全场强制归拢 · 命中 "+affected+" 名敌人";
         }else{
+            careerSkillTime=0;careerSkillMode=0;
+            List<Enemy> targets=new ArrayList<>();for(Enemy e:enemies)if(e.hp>0)targets.add(e);
+            float pulse=damage();if(targets.size()==1)hit(targets.get(0),pulse*1.3f,false);
+            else if(!targets.isEmpty()){for(int i=0;i<targets.size();i++){Enemy target=targets.get(i);if(target.hp>0)hit(target,pulse,false);Enemy next=targets.get((i+1)%targets.size());if(next.hp>0)hit(next,pulse*.3f,false);}}
             signal("careerSkill",x,y,4);
-            notice="记者：静默之声";
+            notice=targets.size()==1?"记者：单体集中 · 伤害 +30%":"记者：全场报道 · 伤害传导 +30%";
         }
     }
     public void followUp(){
@@ -592,9 +598,6 @@ public final class ActionGame {
             }
         }
         for(Enemy e:enemies)if(e.hp>0)updateEnemy(e,dt);
-        // Detective field draws enemies toward the fixed arena center after their AI step,
-        // so attraction never interrupts windups, shots, or rush movement.
-        if(careerSkillMode==3&&careerSkillTime>0){for(Enemy e:enemies)if(e.hp>0){pull(e,WIDTH/2,HEIGHT/2,55f*dt);hit(e,damage()*.12f*dt,false);}}
         if(mode!=Mode.PLAY)return;
         updateHazards(dt);if(mode!=Mode.PLAY)return;updateShots(dt);if(mode!=Mode.PLAY)return;
         Iterator<Enemy> it=enemies.iterator();while(it.hasNext()){
