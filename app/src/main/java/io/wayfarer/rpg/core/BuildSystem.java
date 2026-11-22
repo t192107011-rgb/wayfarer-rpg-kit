@@ -74,6 +74,22 @@ public final class BuildSystem {
         new Node("长明","每次施放主动技能恢复8%最大生命；追击实际命中再恢复3%，孤焰低血时改为6%；与回环组合时命中追击再减0.8秒技能冷却。",1,9,4),
         new Node("镜火","技能额外获得12点护盾；护盾受击时向150范围反震吸收量的65%；追击实际命中补6天赋护盾。",1,9,4)
     };
+    public static final String[] CORE_BRANCHES={"普攻 · 连击与暴击","闪避 · 机动与反击","技能 · 冷却与爆发","生存 · 生命与护盾","财富 · 搜刮与收益"};
+    public static final Node[] CORE_NODES={
+        new Node("磨刃","每级普攻伤害提高4%。",3,-1,1),new Node("连击校准","每级普攻攻速提高3%。",2,0,2),new Node("破绽追击","普攻对硬直敌人额外造成12%伤害。",1,1,4),
+        new Node("轻身","每级闪避冷却缩短0.08秒。",3,-1,1),new Node("回避储能","每级有效闪避获得额外8点护盾。",2,3,2),new Node("残影反制","闪避后反击范围扩大，伤害提高25%。",1,4,4),
+        new Node("技能熟练","每级通用主动技能冷却缩短0.7秒。",2,-1,1),new Node("战技护盾","每级施放通用主动技能获得10点护盾。",2,6,2),new Node("过载释放","主动技能伤害提高20%。",1,7,4),
+        new Node("强韧","每级生命上限提高12点。",3,-1,1),new Node("护盾回流","每级护盾获取效率提高15%。",2,9,2),new Node("破盾爆发","护盾被击破时对周围敌人造成吸收量的35%伤害。",1,10,4),
+        new Node("拾荒者","每级远征票券拾取量提高8%。",3,-1,1),new Node("风险投资","每级结算带回的远征票券提高5%。",2,12,2),new Node("战利品契约","每次进入远征获得20点初始远征票券。",1,13,4)
+    };
+    public static final String[] CAREER_TALENT_NAMES={"猎杀校准","迅捷装填","猎场护盾","致命步法","影袭增幅","暗影回流","全场推演","强制归拢","调查护盾","传导增幅","现场急救","报道回响"};
+    public static final String[] CAREER_TALENT_DESCRIPTIONS={"职业技能伤害提高15% / 级。","职业技能冷却缩短5% / 级。","施放职业技能额外获得20点护盾 / 级。","刺客职业技能持续时间延长4秒 / 级。","刺客职业技能伤害提高10% / 级。","刺客技能命中获得8点护盾。","侦探全场吸引范围与力度提高。","侦探职业技能伤害提高15% / 级。","侦探施放技能额外获得20点护盾 / 级。","记者伤害传导比例提高10% / 级。","记者职业技能额外恢复4%最大生命 / 级。","记者职业技能命中获得10点护盾。"};
+    public static int careerTalentMax(int id){return id%3==2?2:3;}
+    public static int coreSpent(int[] ranks){int n=0;for(int v:ranks)n+=v;return n;}
+    public static void validateCoreTree(int[] ranks,int xp){
+        if(ranks.length!=15||coreSpent(ranks)>points(xp))throw new IllegalArgumentException("五大天赋点数无效");
+        for(int i=0;i<15;i++){Node n=CORE_NODES[i];if(ranks[i]<0||ranks[i]>n.maxRank)throw new IllegalArgumentException("五大天赋等级无效");if(ranks[i]>0&&(1+Math.min(19,xp/80)<n.minLevel||n.parent>=0&&ranks[n.parent]<(i%3==2?2:1)))throw new IllegalArgumentException("五大天赋前置无效");}
+    }
     public static boolean ultimate(int id){return id%4>=2;}
     public static int points(int xp){return 2+Math.min(16,xp/80);}
     public static int spent(int[] ranks){int n=0;for(int v:ranks)n+=v;return n;}
