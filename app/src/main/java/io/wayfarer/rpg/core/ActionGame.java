@@ -735,7 +735,7 @@ public final class ActionGame {
         float careerTaken=Math.min(careerWard,value);careerWard-=careerTaken;value-=careerTaken;
         float talentTaken=Math.min(shield,value);shield-=talentTaken;value-=talentTaken;float absorbed=talentTaken+wardTaken+careerTaken;
         if(soulKind()==1&&absorbed>0)gainSoul(Math.min(6,absorbed*.2f));
-        if(absorbed>0){signal("shield",x,y,(int)absorbed);for(Enemy e:enemies)if(len(e.x-x,e.y-y)<(rank(11)>0?150:95))hit(e,absorbed*(rank(11)>0?.65f:.25f),true,false);}
+        if(absorbed>0)signal("shield",x,y,(int)absorbed);if(talentTaken>0){for(Enemy e:enemies)if(len(e.x-x,e.y-y)<(rank(11)>0?150:95))hit(e,talentTaken*(rank(11)>0?.65f:.25f),true,false);}
         float lost=Math.min(hp,value);roomDamage=Math.min(100000,roomDamage+lost);hp=Math.max(0,hp-value);invulnerable=.65f;signal("hurt",x,y,(int)lost);
         if(hasRelic(7)&&lost>0){for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<120)hit(e,lost*.25f,false);signal("echo",x,y,120);}
         if(hp<=0&&hasRelic(8)&&!relicRevived){relicRevived=true;hp=maxHp()*.25f;invulnerable=1;signal("revive",x,y,0);}
