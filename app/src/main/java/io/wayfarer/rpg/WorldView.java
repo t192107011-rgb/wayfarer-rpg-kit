@@ -360,7 +360,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         }
         button(c,260,382,440,40,"现场线索 · "+StorySystem.TITLES[game.room-1],true);
         button(c,260,430,440,40,"局内商店 · 剩余票券 "+game.loot,false);
-        if(game.lastRelic!=0)text(c,game.relicDiscovery()+" · 收藏永久保留",480,480,12,gold,true);
+        if(game.lastRelic!=0)text(c,game.relicDiscovery()+" · 收藏永久保留",480,464,12,gold,true);
         button(c,75,486,360,42,game.tacticChosen?"✓ 本层战技刻印已领取":"战技刻印待领取",false);
         button(c,525,486,360,42,selectedReward>=0?"确认领取所选奖励":"先点选一项奖励",selectedReward>=0);
     }
