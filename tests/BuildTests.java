@@ -106,7 +106,7 @@ public final class BuildTests {
         g.start(987);check(g.shield>=40&&g.potions==3,"shield and supply permits affect expedition start");
         ActionGame restored=ActionSave.decode(ActionSave.encode(g));
         check(restored.fieldPermits[0][0]==1&&restored.fieldPermits[0][1]==1,"field permits persist through save");
-        restored.abandon();restored.returnCamp();restored.experience[0]=1200;
+        restored.pause();restored.abandon();restored.returnCamp();restored.experience[0]=1200;
         check(restored.learnCareerTalent(0)&&restored.learnCareerTalent(1)&&restored.learnCareerTalent(2),"career skill talent tree learns with independent points");
         ActionGame roundtrip=ActionSave.decode(ActionSave.encode(restored));
         check(roundtrip.careerTalents[0][0]==1&&roundtrip.careerTalents[0][1]==1&&roundtrip.careerTalents[0][2]==1,"career talents persist independently");
