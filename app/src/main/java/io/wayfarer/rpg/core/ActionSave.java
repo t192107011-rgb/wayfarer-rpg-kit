@@ -106,7 +106,7 @@ public final class ActionSave {
             }
             if(version>=12){g.careerSkillTime=f(p,"careerSkillTime",0,30);g.careerSkillDeathCd=f(p,"careerSkillDeathCd",0,2);g.careerSkillMode=n(p,"careerSkillMode",0,4);}else{g.careerSkillTime=0;g.careerSkillDeathCd=0;g.careerSkillMode=0;g.skillCd=0;g.followUpWindow=0;}
             g.careerCooldownRank=version>=12?n(p,"careerCooldownRank",0,8):0;
-            float shieldLimit=g.maxHp();if(version<14)g.shield=Math.min(g.shield,shieldLimit);else if(g.shield>shieldLimit)throw new IllegalArgumentException("护盾超过安全上限");
+            float shieldLimit=99999f;if(version<14)g.shield=Math.min(g.shield,shieldLimit);else if(g.shield>shieldLimit)throw new IllegalArgumentException("护盾超过安全上限");
             if(version>=9){
                 g.followUpWindow=f(p,"followUpWindow",0,version>=10?g.followUpDuration():2);g.ruptureTime=f(p,"ruptureTime",0,6);g.ruptureTick=f(p,"ruptureTick",0,1.5f);g.ruptureLatched=bool(p,"ruptureLatched");
                 if(g.soulBuff>0&&!((g.soulKind()==1&&g.soulArt()==2)||(g.soulKind()==2&&g.soulArt()==1)||g.ruptureTime>0||g.job()==CareerSystem.HUNTER))throw new IllegalArgumentException("灵魂强化来源无效");
