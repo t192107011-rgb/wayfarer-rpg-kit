@@ -16,7 +16,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     private final RectF rect=new RectF();
     private final List<Fx> effects=new ArrayList<>();
     private final Random cosmetic=new Random(119);
-    private int movePointer=-1,attackPointer=-1;
+    private int movePointer=-1,attackPointer=-1,selectedReward=-1;
     private float joyX=0,joyY=0,scale=1,offsetX=0,offsetY=0,cameraX=0,cameraY=0;
     private long lastFrame=0;
     private float accumulator=0,saveElapsed=0,visualTime=0,shake=0,soulMessageTime=0,eventMessageTime=0;
@@ -28,7 +28,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     public WorldView(Context c,ActionGame game,Host host){super(c);this.game=game;this.host=host;customRoster=game.custom>=0;setFocusable(true);setFocusableInTouchMode(true);setContentDescription("灯下归途：横屏即时动作地牢。左侧摇杆移动，右侧攻击、闪避、技能和药水。暂停键位于右上角。");}
     public void startFrames(){if(!running){running=true;lastFrame=0;Choreographer.getInstance().postFrameCallback(this);}}
     public void stopFrames(){running=false;lastFrame=0;resetInput();Choreographer.getInstance().removeFrameCallback(this);}
-    public void replace(ActionGame restored){game=restored;showTalents=false;customRoster=game.custom>=0;effects.clear();eventMessageTime=0;resetInput();if(game.mode==ActionGame.Mode.PLAY)game.pause();invalidate();}
+    public void replace(ActionGame restored){game=restored;selectedReward=-1;showTalents=false;customRoster=game.custom>=0;effects.clear();eventMessageTime=0;resetInput();if(game.mode==ActionGame.Mode.PLAY)game.pause();invalidate();}
     public void resetInput(){movePointer=-1;attackPointer=-1;joyX=0;joyY=0;input.mx=0;input.my=0;input.attack=false;}
     @Override public void onWindowFocusChanged(boolean hasFocus){super.onWindowFocusChanged(hasFocus);if(!hasFocus){resetInput();game.pause();host.save();}lastFrame=0;}
     @Override public void doFrame(long now){
@@ -38,7 +38,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         accumulator+=elapsed;int steps=0;
         while(accumulator>=1f/60f&&steps++<5){game.update(1f/60f,input);accumulator-=1f/60f;}
         if(accumulator>.1f)accumulator=0;
-        if(old!=game.mode||room!=game.room){resetInput();host.save();}
+        if(old!=game.mode||room!=game.room){if(old!=game.mode)selectedReward=-1;resetInput();host.save();}
         if(game.mode==ActionGame.Mode.PLAY){saveElapsed+=elapsed;if(saveElapsed>=15){saveElapsed=0;host.save();}}
         consumeSignals();
         if(game.mode==ActionGame.Mode.PLAY||game.mode==ActionGame.Mode.CAMP||game.mode==ActionGame.Mode.RESULT){
@@ -342,25 +342,38 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     }
     private void shade(Canvas c){box(c,0,0,960,540,0xD50C1820);}
     private void rewards(Canvas c){
-        shade(c);if(game.tacticDraftOpen){tacticDraft(c);return;}if(game.shopOpen){shop(c);return;}text(c,"封 锁 线 补 给",480,126,29,cream,true);text(c,"选择一项本轮增益，再选择出口继续前进",480,160,16,muted,true);
-        if(game.room>0)text(c,WorldSetting.REPORTS[game.room-1],480,190,12,gold,true);
-        String[] titles={game.damageBonus>=40?"职业技能冷却": "锋芒",game.healthBonus>=200?(game.maxHp()>=99999?"局内资金":"生命上限"):"生息",game.speedBonus>=6?"局内资金":"轻羽"};String[] body={game.damageBonus<40?"所有攻击伤害 +4（上限40）":game.careerCooldownRank<8?"职业技能冷却速度 +10%（上限80%）":"冷却速度已满，票券 +12",game.healthBonus<200?"生命上限 +20（原升级阶段上限200）":game.maxHp()<99999?"生命上限继续 +20（最高99999）":"生命上限已达99999，票券 +15",game.speedBonus<6?"移动速度 +8%，技能就绪":"局内资金 +15"};
-        for(int i=0;i<3;i++){rounded(c,45+i*300,211,270,165,12,0xFF2D4545);text(c,titles[i],180+i*300,266,26,gold,true);text(c,body[i],180+i*300,311,15,cream,true);text(c,"点击获取",180+i*300,351,13,muted,true);}
-        button(c,260,391,440,43,"现场线索 · "+StorySystem.TITLES[game.room-1],true);
-        if(game.lastRelic!=0){text(c,game.relicDiscovery(),480,457,16,gold,true);text(c,"圣遗物收藏永久保留；本轮携行不变",480,486,13,muted,true);}
-        button(c,260,445,440,43,"局内商店 · 剩余票券 "+game.loot,false);
-        button(c,260,497,440,32,game.tacticChosen?"本层战技刻印已选择":"战技刻印 · 选择一项强化",!game.tacticChosen&&game.hasTacticDraft());
+        shade(c);
+        if(!game.tacticChosen&&game.hasTacticDraft()&&!game.tacticDraftOpen&&!game.shopOpen)game.openTacticDraft();
+        if(game.tacticDraftOpen){tacticDraft(c);return;}if(game.shopOpen){shop(c);return;}
+        text(c,"封 锁 线 补 给",480,112,29,cream,true);
+        text(c,"先选中一项奖励，再按下确认领取；误触不会直接消耗选择",480,145,15,muted,true);
+        if(game.room>0)text(c,WorldSetting.REPORTS[game.room-1],480,174,12,gold,true);
+        String[] titles={game.damageBonus>=40?"职业技能冷却": "锋芒",game.healthBonus>=200?(game.maxHp()>=99999?"局内资金":"生命上限"):"生息",game.speedBonus>=6?"局内资金":"轻羽"};
+        String[] body={game.damageBonus<40?"所有攻击伤害 +4（上限40）":game.careerCooldownRank<8?"职业技能冷却速度 +10%（上限80%）":"冷却速度已满，票券 +12",game.healthBonus<200?"生命上限 +20（原升级阶段上限200）":game.maxHp()<99999?"生命上限继续 +20（最高99999）":"生命上限已达99999，票券 +15",game.speedBonus<6?"移动速度 +8%，技能就绪":"局内资金 +15"};
+        for(int i=0;i<3;i++){
+            int x=45+i*300;boolean picked=selectedReward==i;
+            rounded(c,x,195,270,174,12,picked?0xFF52634C:0xFF2D4545);
+            if(picked){rounded(c,x+5,200,260,164,9,0xFF354C3D);text(c,"✓ 已选中",x+135,225,15,gold,true);}
+            text(c,titles[i],x+135,picked?267:246,25,gold,true);
+            text(c,body[i],x+135,picked?310:306,14,cream,true);
+            text(c,picked?"再次点击可更换选择":"点此选中（不会立即领取）",x+135,348,12,muted,true);
+        }
+        button(c,260,382,440,40,"现场线索 · "+StorySystem.TITLES[game.room-1],true);
+        button(c,260,430,440,40,"局内商店 · 剩余票券 "+game.loot,false);
+        if(game.lastRelic!=0)text(c,game.relicDiscovery()+" · 收藏永久保留",480,480,12,gold,true);
+        button(c,75,486,360,42,game.tacticChosen?"✓ 本层战技刻印已领取":"战技刻印待领取",false);
+        button(c,525,486,360,42,selectedReward>=0?"确认领取所选奖励":"先点选一项奖励",selectedReward>=0);
     }
     private void tacticDraft(Canvas c){
         text(c,"战 技 刻 印",480,116,30,cream,true);
-        text(c,"每层可选一项强化；刻印仅在本轮生效，最多叠加三级",480,151,15,muted,true);
+        text(c,"本层刻印必须先领取；每层一项，最多叠加三级",480,151,16,gold,true);
         for(int i=0;i<3;i++){
             int id=game.tacticOffers[i],x=45+i*300;
             rounded(c,x,205,270,190,12,id>=0?0xFF2D4545:0xFF1B292E);
-            if(id>=0){text(c,ActionGame.TACTIC_NAMES[id],x+135,252,22,gold,true);String[] desc=ActionGame.TACTIC_DESCRIPTIONS[id].split("；");text(c,desc[0],x+135,302,12,cream,true);if(desc.length>1)text(c,desc[1],x+135,324,12,cream,true);text(c,"当前等级 "+game.tacticRanks[id]+" / 3",x+135,356,14,muted,true);text(c,"选择刻印",x+135,378,12,muted,true);}
+            if(id>=0){text(c,ActionGame.TACTIC_NAMES[id],x+135,252,22,gold,true);String[] desc=ActionGame.TACTIC_DESCRIPTIONS[id].split("；");text(c,desc[0],x+135,302,12,cream,true);if(desc.length>1)text(c,desc[1],x+135,324,12,cream,true);text(c,"当前等级 "+game.tacticRanks[id]+" / 3",x+135,356,14,muted,true);text(c,"点此领取刻印",x+135,378,12,gold,true);}
             else{text(c,"已全部强化",x+135,290,19,muted,true);}
         }
-        button(c,365,450,230,42,"返回补给选择",true);
+        text(c,"选择一张刻印卡后，系统将自动返回补给选择。",480,460,14,muted,true);
     }
     private void shop(Canvas c){
         text(c,"前 线 补 给 站",480,94,28,cream,true);text(c,"消耗本轮票券补充战斗资源；即时补给在购买时生效",480,124,14,muted,true);
@@ -415,7 +428,15 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             else if(inside(x,y,40,480,100,42))host.slots();else if(inside(x,y,155,480,110,42))host.help();
             else if(inside(x,y,280,480,155,42))host.editCharacter();else if(inside(x,y,450,480,175,42)){showTalents=true;showTraining=false;resetInput();}
             else if(inside(x,y,650,480,270,42))host.souls();
-        }else if(game.mode==ActionGame.Mode.REWARD){if(game.tacticDraftOpen){for(int i=0;i<3;i++)if(inside(x,y,45+i*300,205,270,190)){game.chooseTactic(i);host.save();return;}if(inside(x,y,365,450,230,42)){game.closeTacticDraft();host.save();return;}}else if(game.shopOpen){for(int i=0;i<6;i++){int col=i%3,row=i/3,x0=25+col*305,y0=150+row*145;if(inside(x,y,x0+55,y0+88,180,30)){game.buyShopItem(i);host.save();return;}}if(inside(x,y,365,478,230,38)){game.closeShop();host.save();return;}}else if(inside(x,y,260,391,440,43)){host.story();return;}else if(inside(x,y,260,445,440,43)){game.openShop();host.save();return;}else if(inside(x,y,260,497,440,32)){game.openTacticDraft();host.save();return;}else for(int i=0;i<3;i++)if(inside(x,y,45+i*300,211,270,165)){game.chooseReward(i);host.save();break;}}
+        }else if(game.mode==ActionGame.Mode.REWARD){
+            if(game.tacticDraftOpen){for(int i=0;i<3;i++)if(inside(x,y,45+i*300,205,270,190)){if(game.chooseTactic(i))host.save();return;}}
+            else if(game.shopOpen){for(int i=0;i<6;i++){int col=i%3,row=i/3,x0=25+col*305,y0=150+row*145;if(inside(x,y,x0+55,y0+88,180,30)){game.buyShopItem(i);host.save();return;}}if(inside(x,y,365,478,230,38)){game.closeShop();host.save();return;}}
+            else if(inside(x,y,260,382,440,40)){host.story();return;}
+            else if(inside(x,y,260,430,440,40)){game.openShop();host.save();return;}
+            else if(inside(x,y,75,486,360,42))return;
+            else if(inside(x,y,525,486,360,42)&&selectedReward>=0){game.chooseReward(selectedReward);selectedReward=-1;host.save();return;}
+            else for(int i=0;i<3;i++)if(inside(x,y,45+i*300,195,270,174)){selectedReward=i;invalidate();return;}
+        }
         else if(game.mode==ActionGame.Mode.PAUSED){
             if(inside(x,y,330,205,300,53)){game.resume();resetInput();}
             else if(inside(x,y,330,272,140,50))host.slots();else if(inside(x,y,490,272,140,50))soundOn=!soundOn;
