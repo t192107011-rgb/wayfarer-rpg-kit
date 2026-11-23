@@ -19,6 +19,18 @@ public final class ActionTests {
         in.mx=Float.NaN;in.my=Float.POSITIVE_INFINITY;ticks(a,in,1);check(Float.isFinite(a.x)&&Float.isFinite(a.y),"nonfinite input rejected");
         System.out.println("PASS normalized movement, collisions, pause and invalid input");
     }
+    private static void enemyShieldTypes()throws Exception{
+        ActionGame g=game(0);ActionGame.Enemy ward=mob(g,0,700,600,500);ward.guardType=1;ward.guard=20;
+        g.hitForTest(ward,10);near(ward.guard,6.5f,"ward shield takes amplified damage");near(ward.hp,500,"ward shield absorbs before health");
+        g.hitForTest(ward,10);check(ward.guard==0&&ward.guardBreak>0&&ward.stun>=.7f,"ward breaks with a short stagger");
+        ActionGame.Enemy plated=mob(g,4,760,600,500);plated.guardType=2;plated.guard=20;
+        g.hitForTest(plated,10);near(plated.guard,13.5f,"plated shield resists ordinary damage");near(plated.hp,500,"plating absorbs its reduced damage");
+        ActionGame.Enemy regen=mob(g,3,820,600,500);regen.guardType=3;regen.guard=18;regen.guardDelay=0;
+        ActionGame saved=ActionSave.decode(ActionSave.encode(g));ActionGame.Enemy restored=saved.enemies.get(2);
+        check(restored.guardType==3&&restored.guard==18&&restored.guardBreak==0,"enemy shield class survives save restore");
+        byte[] data=ActionSave.encode(g);rejects(data,"enemyGuardType2","4");rejects(data,"enemyGuardBreak2","4");
+        System.out.println("PASS ward, plated and regenerative enemy shield classes, break stagger and persistence");
+    }
     private static void combat()throws Exception{
         ActionGame g=game(0);ActionGame.Enemy e=mob(g,0,620,600,200);e.stun=1;
         ActionGame.Input in=new ActionGame.Input();in.attack=true;ticks(g,in,14);
@@ -245,5 +257,5 @@ public final class ActionTests {
         ActionGame g=new ActionGame();g.start(12);g.pause();float cd=g.activeSkillCd;for(int i=0;i<30;i++)g.update(1f/60f,new ActionGame.Input());near(g.activeSkillCd,cd,"pause freezes active cooldown");
         System.out.println("PASS five active skills, independent career cooldown, follow-ups, trap persistence and pause");
     }
-    public static void main(String[] args)throws Exception{movement();combat();shopAndItems();expandedEconomy();careerSoulResonance();careerActiveSoulResonance();careerFollowUpAndSoulSynergy();skillChainReactions();permanentEconomy();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
+    public static void main(String[] args)throws Exception{movement();enemyShieldTypes();combat();shopAndItems();expandedEconomy();careerSoulResonance();careerActiveSoulResonance();careerFollowUpAndSoulSynergy();skillChainReactions();permanentEconomy();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
 }
