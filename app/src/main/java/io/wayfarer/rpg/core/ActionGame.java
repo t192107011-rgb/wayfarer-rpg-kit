@@ -676,7 +676,7 @@ public final class ActionGame {
                 else if(e.type==1){e.timer=1.05f;fan(e,1,.15f,310,12+room*2);}
                 else if(e.type==2||e.type==4)e.timer=e.type==2?.5f:.34f;
                 else if(e.type==5){e.timer=1.5f;addHazard(0,e.targetX,e.targetY,100,1.05f,2.3f,enemyPower(e,12+room*2));addHazard(0,e.targetX-e.aimY*135,e.targetY+e.aimX*135,85,1.4f,1.8f,enemyPower(e,10+room*2));}
-                else if(e.type==6){e.timer=2;for(Enemy other:enemies)if(other!=e&&other.hp>0&&len(other.x-e.x,other.y-e.y)<260&&lineClear(e.x,e.y,other.x,other.y)){if(other.guardType==0)other.guardType=1;other.guard=Math.min(60,other.guard+24);other.guardDelay=2.5f;}fan(e,2,.3f,240,12);signal("enemyWard",e.x,e.y,260);
+                else if(e.type==6){e.timer=2;for(Enemy other:enemies)if(other!=e&&other.hp>0&&len(other.x-e.x,other.y-e.y)<260&&lineClear(e.x,e.y,other.x,other.y)){if(other.guardType==0)other.guardType=1;other.guard=Math.min(60,other.guard+24);other.guardDelay=2.5f;}fan(e,2,.3f,240,12);signal("enemyWard",e.x,e.y,260);}
                 else {
                     e.timer=enraged?.62f:room>=4?.88f:1.08f;
                     if(e.pattern==0){float radius=room>=4?250:220;addHazard(1,e.x,e.y,radius,.3f,.1f,enemyPower(e,room>=4?34:28));int count=enraged?(room>=4?20:16):(room>=4?16:12);for(int i=0;i<count;i++){double a=i*Math.PI*2/count+time*.1;enemyShot(e,(float)Math.cos(a),(float)Math.sin(a),enraged?300:room>=4?255:220,room>=4?22:18);}}
