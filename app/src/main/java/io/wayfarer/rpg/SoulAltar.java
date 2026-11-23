@@ -37,9 +37,7 @@ public final class SoulAltar {
         text(a,left,"灵魂归属 · 当前角色独立保存",14);Spinner kind=new Spinner(a);kind.setTag("soul-kind");kind.setContentDescription("灵魂归属");kind.setAdapter(adapter(a,SoulSystem.NAMES));kind.setSelection(draft[0]);left.addView(kind,new LinearLayout.LayoutParams(-1,dp(a,48)));
         TextView passive=text(a,left,"",14),variant=text(a,left,"",14);
         text(a,right,"职业专属形态 · 自动匹配当前职业",14);TextView form=text(a,right,"",18),detail=text(a,right,"",14);
-        text(a,right,"每轮初始40魂能，最多100。有效攻击积累魂能；光辉护盾吸收伤害也可充能。专属魂技与其伤害不能回充。
-
-光辉偏向防护、控制与稳定收益；禁忌以生命和侵蚀换取爆发。更换只在营地生效，取消不修改。",13);
+        text(a,right,"每轮初始40魂能，最多100。有效攻击积累魂能；光辉护盾吸收伤害也可充能。专属魂技与其伤害不能回充。\\n\\n光辉偏向防护、控制与稳定收益；禁忌以生命和侵蚀换取爆发。更换只在营地生效，取消不修改。",13);
         Runnable refresh=()->{passive.setText(SoulSystem.PASSIVES[draft[0]]);variant.setText("当前通用主动技\n"+SoulSystem.DETAILS[draft[0]][g.skillStyle()]);form.setText(formName(draft[0],g.job()));detail.setText(formDetail(draft[0],g.job()));};
         kind.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onItemSelected(AdapterView<?> p,View v,int pos,long id){if(pos!=draft[0]){draft[0]=pos;draft[1]=0;}refresh.run();}public void onNothingSelected(AdapterView<?> p){}});
         AlertDialog dialog=new AlertDialog.Builder(a).setTitle(g.heroName()+" · 灵魂祭坛").setView(row).setPositiveButton("确认缔结",(d,w)->{if(g.bindSoul(draft[0],draft[1])){a.save();a.world.invalidate();}}).setNegativeButton("取消",null).create();
