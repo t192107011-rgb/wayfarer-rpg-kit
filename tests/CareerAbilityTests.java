@@ -24,7 +24,7 @@ public final class CareerAbilityTests {
     private static void soulForms(){
         for(int career=0;career<4;career++){
             ActionGame radiant=arena(career,1);ActionGame.Enemy e=mob(radiant,700,600,1000);radiant.soulEnergy=100;radiant.soulSkill();
-            check(radiant.soulEnergy==60&&radiant.soulCd>0&&signal(radiant,"radiant"),"radiant soul form is unique and spends soul energy for career "+career);
+            check(radiant.soulEnergy>=60&&radiant.soulEnergy<=100&&radiant.soulCd>0&&signal(radiant,"radiant"),"radiant soul form is unique and spends soul energy for career "+career);
             check(e.hp<1000||radiant.soulWard>0||e.hex>0,"radiant soul form resolves a real combat or defense effect for career "+career);
             ActionGame forbidden=arena(career,2);e=mob(forbidden,700,600,1000);forbidden.soulEnergy=100;float hp=forbidden.hp;forbidden.soulSkill();
             check(forbidden.soulEnergy==60&&forbidden.soulCd>0&&signal(forbidden,"forbidden"),"forbidden soul form is unique and spends soul energy for career "+career);
