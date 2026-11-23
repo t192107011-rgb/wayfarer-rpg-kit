@@ -327,33 +327,30 @@ public final class ActionGame {
     }
     public void skill(){
         if(mode!=Mode.PLAY||rollTime>0||skillCd>0)return;
-        int j=job();
-        careerSkillMode=j+1;
-        careerSkillTime=30f+(j==ASSASSIN?careerTalentRank(0)*4:0);
-        careerSkillDeathCd=j==HUNTER?1f:0f;
-        float careerShield=60+((j==HUNTER||j==DETECTIVE)?careerTalentRank(2)*20:0);addTalentShield(careerShield);if(soulKind()==1){soulWard=Math.min(99999,soulWard+60);cleanse(x,y,160);}
-        else if(soulKind()==2){corruption=Math.min(100,corruption+8);for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<280)e.hex=Math.max(e.hex,3);triggerRupture();signal("forbidden",x,y,280);}
-        skillCd=skillPeriod();
+        int j=job();skillCd=skillPeriod();careerSkillMode=j+1;careerSkillTime=4f;float power=damage();int affected=0;
         if(j==HUNTER){
-            for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<430)hit(e,damage()*2.2f*(1+.15f*careerTalentRank(0)),false);
-            signal("careerSkill",x,y,1);
-            notice="猎人：瞬时猎杀";
+            Enemy target=null;float best=-1;for(Enemy e:enemies)if(e.hp>0){float score=e.type==3?e.hp*1.4f:e.hp;if(score>best){best=score;target=e;}}
+            if(target!=null){target.hex=Math.max(target.hex,8f);hit(target,power*2.15f,false);signal("careerSkill",target.x,target.y,1);}
+            for(Enemy e:enemies)if(e.hp>0&&e!=target&&len(e.x-x,e.y-y)<300)e.hex=Math.max(e.hex,3f);
+            notice="猎人：追踪锁定 · 猎物已标记";
         }else if(j==ASSASSIN){
-            signal("careerSkill",x,y,2);
-            notice="刺客：刀尖之舞";
+            aimAtNearest(600);float ox=x,oy=y;invulnerable=Math.max(invulnerable,.85f);
+            for(int i=0;i<44;i++){if(!free(x+faceX*5,y+faceY*5,PLAYER_RADIUS))break;movePlayer(faceX*5,faceY*5);}
+            for(Enemy e:enemies)if(e.hp>0&&segmentDistance(e.x,e.y,ox,oy,x,y)<e.radius()+35){hit(e,power*1.65f,false);affected++;}
+            addTalentShield(18+affected*8);signal("careerSkill",x,y,2);notice="刺客：影袭 · 突进并获得影盾";
         }else if(j==DETECTIVE){
-            careerSkillTime=0;careerSkillMode=0;
-            int affected=0;for(Enemy e:enemies)if(e.hp>0){pull(e,x,y,360f+careerTalentRank(0)*80);hit(e,damage()*2.4f*(1+.15f*careerTalentRank(1)),false);e.stun=Math.max(e.stun,.45f);affected++;}
-            signal("careerSkill",x,y,3);
-            notice="侦探：全场强制归拢 · 命中 "+affected+" 名敌人";
+            for(Enemy e:enemies)if(e.hp>0){e.hex=Math.max(e.hex,4.5f);e.stun=Math.max(e.stun,.3f);affected++;}
+            addTalentShield(24);signal("careerSkill",x,y,3);notice="警探：现场重构 · "+affected+" 个目标进入调查";
         }else{
-            careerSkillTime=0;careerSkillMode=0;
-            List<Enemy> targets=new ArrayList<>();for(Enemy e:enemies)if(e.hp>0)targets.add(e);
-            float pulse=damage();if(targets.size()==1)hit(targets.get(0),pulse*(1.3f+.1f*careerTalentRank(0)),false);
-            else if(!targets.isEmpty()){for(Enemy target:targets)if(target.hp>0)hit(target,pulse,false);for(int i=0;i<targets.size();i++){Enemy source=targets.get(i);if(source.hp<=0)continue;for(int step=1;step<targets.size();step++){Enemy next=targets.get((i+step)%targets.size());if(next.hp>0){hit(next,pulse*(.3f+.1f*careerTalentRank(0)),false);break;}}}}
-            if(careerTalentRank(1)>0)heal(maxHp()*.04f*careerTalentRank(1));for(int i=0;i<targets.size();i++)if(careerTalentRank(2)>0)addTalentShield(10*careerTalentRank(2));signal("careerSkill",x,y,4);
-            notice=targets.size()==1?"记者：单体集中 · 伤害 +30%":"记者：全场报道 · 伤害传导 +30%";
+            Enemy headline=null;float best=-1;for(Enemy e:enemies)if(e.hp>best&&e.hp>0){best=e.hp;headline=e;}
+            if(headline!=null){hit(headline,power*1.8f,false);headline.hex=Math.max(headline.hex,5f);Enemy relay=null;float near=300;
+                for(Enemy e:enemies)if(e!=headline&&e.hp>0){float d=len(e.x-headline.x,e.y-headline.y);if(d<near){near=d;relay=e;}}
+                if(relay!=null){hit(relay,power*.55f,false);relay.hex=Math.max(relay.hex,3f);}
+            }
+            signal("careerSkill",x,y,4);notice="记者：头条发布 · 伤害向邻近目标传播";
         }
+        if(soulKind()==1){soulWard=Math.min(99999,soulWard+20);cleanse(x,y,120);}
+        else if(soulKind()==2){corruption=Math.min(100,corruption+5);triggerRupture();}
     }
     public void followUp(){
         if(mode!=Mode.PLAY||followUpWindow<=0||rollTime>0)return;
@@ -472,51 +469,56 @@ public final class ActionGame {
     public void soulSkill(){
         if(mode!=Mode.PLAY||soulKind()==0||soulCd>0||rollTime>0||roomCleared||enemies.isEmpty())return;
         if(soulEnergy<40){notice="专属技能需要40魂能，命中敌人可积累。";signal("soulLow",x,y,0);return;}
-        int kind=soulKind(),art=soulArt();soulEnergy-=40;soulCd=soulPeriod();aimAtNearest(520);
-        if(kind==2&&art<=2)payForbidden(.08f,30);
-        float power=damage();
-        if(kind==1&&specialtyRank(2)>0)soulWard=Math.min(99999,soulWard+12);
-        if(kind==1&&art==0){
-            soulWard=Math.max(soulWard,30);soulFields.add(new SoulField(1,x,y,power));signal("radiant",x,y,175);
-        }else if(kind==1&&art==1){
-            soulWard=Math.max(soulWard,12);float endX=x+faceX*520,endY=y+faceY*520;
-            for(Enemy e:enemies)if(e.hp>0&&segmentDistance(e.x,e.y,x,y,endX,endY)<28+e.radius()&&lineClear(x,y,e.x,e.y)){hit(e,power*3.6f,false);e.stun=Math.max(e.stun,e.type==3?.15f:.6f);}
-            shots.removeIf(p->!p.friendly&&segmentDistance(p.x,p.y,x,y,endX,endY)<35&&lineClear(x,y,p.x,p.y));signal("lance",x,y,(int)Math.toDegrees(Math.atan2(faceY,faceX)));
-        }else if(kind==1&&art==2){
-            soulBuff=5;soulWard=Math.min(99999,soulWard+20);signal("radiant",x,y,160);
-        }else if(kind==1&&art==3){
-            soulWard=Math.min(99999,soulWard+22);heal(maxHp()*.08f);cleanse(x,y,260);
-            for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<260)e.stun=Math.max(e.stun,.9f);
-            signal("radiant",x,y,260);notice="辉光回响 · 净化、治疗与辉盾";
-        }else if(kind==1){
-            soulWard=Math.min(99999,soulWard+14);float endX=x+faceX*600,endY=y+faceY*600;
-            for(Enemy e:enemies)if(e.hp>0&&segmentDistance(e.x,e.y,x,y,endX,endY)<30+e.radius()&&lineClear(x,y,e.x,e.y)){hit(e,power*2.7f,false);e.stun=Math.max(e.stun,.8f);}
-            shots.removeIf(p->!p.friendly&&segmentDistance(p.x,p.y,x,y,endX,endY)<38&&lineClear(x,y,p.x,p.y));signal("lance",x,y,(int)Math.toDegrees(Math.atan2(faceY,faceX)));notice="星辉贯日 · 穿刺审判";
-        }else if(kind==2&&art==0){
-            float fx=Math.max(60,Math.min(WIDTH-60,x+faceX*120)),fy=Math.max(60,Math.min(HEIGHT-60,y+faceY*120));
-            soulFields.add(new SoulField(2,fx,fy,power));signal("forbidden",fx,fy,185);
-        }else if(kind==2&&art==1){
-            soulBuff=6;for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<160){hit(e,power*1.2f,false);e.hex=3;}
-            signal("forbidden",x,y,160);
-        }else if(kind==2&&art==2){
-            for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<190){hit(e,power*2.8f,false);e.hex=4;}
-            signal("forbidden",x,y,190);
-        }else if(kind==2&&art==3){
-            payForbidden(.06f,24);Enemy target=null;float best=520;
-            for(Enemy e:enemies){float d=len(e.x-x,e.y-y),dx=e.x-x,dy=e.y-y;if(e.hp>0&&d<best&&d>1&&(dx*faceX+dy*faceY)/d>.25f&&lineClear(x,y,e.x,e.y)){best=d;target=e;}}
-            if(target!=null){hit(target,power*3.4f,false);target.hex=Math.max(target.hex,7);if(target.hp<=0)heal(maxHp()*.08f);signal("forbidden",target.x,target.y,7);}
-            else signal("forbidden",x,y,520);notice="血咒猎印 · 锁定追猎";
+        int kind=soulKind(),j=job();soulEnergy-=40;soulCd=soulPeriod();aimAtNearest(600);float power=damage();int affected=0;
+        if(kind==1){
+            if(j==HUNTER){
+                Enemy target=null;float best=-1;for(Enemy e:enemies)if(e.hp>0){float score=e.type==3?e.hp*1.5f:e.hp;if(score>best){best=score;target=e;}}
+                soulWard=Math.min(99999,soulWard+28);for(Enemy e:enemies)if(e.hp>0)e.hex=Math.max(e.hex,7f);
+                if(target!=null){hit(target,power*3.1f,false);target.stun=Math.max(target.stun,.45f);}
+                signal("radiant",x,y,1);notice="曙光猎令 · 全场标记，精准猎杀";
+            }else if(j==ASSASSIN){
+                float ox=x,oy=y;invulnerable=Math.max(invulnerable,1.1f);cleanse(x,y,180);
+                for(int i=0;i<54;i++){if(!free(x+faceX*5,y+faceY*5,PLAYER_RADIUS))break;movePlayer(faceX*5,faceY*5);}
+                for(Enemy e:enemies)if(e.hp>0&&segmentDistance(e.x,e.y,ox,oy,x,y)<e.radius()+42){hit(e,power*2.25f,false);affected++;}
+                soulWard=Math.min(99999,soulWard+24+affected*8);signal("radiant",x,y,2);notice="无影圣步 · 净化弹幕，突袭并获得辉盾";
+            }else if(j==DETECTIVE){
+                for(Enemy e:enemies)if(e.hp>0){e.hex=Math.max(e.hex,8f);e.stun=Math.max(e.stun,e.type==3?.2f:.75f);affected++;}
+                soulWard=Math.min(99999,soulWard+30);cleanse(x,y,320);signal("radiant",x,y,3);notice="真相显影 · 全场线索完成，弱点暴露";
+            }else{
+                Enemy headline=null;float best=-1;for(Enemy e:enemies)if(e.hp>best&&e.hp>0){best=e.hp;headline=e;}
+                if(headline!=null){hit(headline,power*2.4f,false);Enemy relay=null;float near=360;
+                    for(Enemy e:enemies)if(e!=headline&&e.hp>0){float d=len(e.x-headline.x,e.y-headline.y);if(d<near){near=d;relay=e;}}
+                    if(relay!=null)hit(relay,power*.9f,false);}
+                soulWard=Math.min(99999,soulWard+18);heal(maxHp()*.03f);signal("radiant",x,y,4);notice="光辉头条 · 强化传播并支援自身";
+            }
         }else{
-            payForbidden(.10f,38);
-            for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<240){hit(e,power*1.8f,false);e.hex=Math.max(e.hex,6);}
-            float fx=Math.max(60,Math.min(WIDTH-60,x+faceX*110)),fy=Math.max(60,Math.min(HEIGHT-60,y+faceY*110));
-            soulFields.add(new SoulField(2,fx,fy,power*1.2f));signal("forbidden",fx,fy,240);notice="深渊裂爆 · 领域吞噬";
+            payForbidden(j==REPORTER?.10f:.08f,j==REPORTER?38:30);
+            if(j==HUNTER){
+                Enemy target=null;float best=Float.MAX_VALUE;for(Enemy e:enemies)if(e.hp>0){float d=len(e.x-x,e.y-y);if(d<best){best=d;target=e;}}
+                if(target!=null){target.hex=Math.max(target.hex,9f);hit(target,power*(target.hp<target.maxHp*.35f?4.1f:3.3f),false);if(target.hp<=0)heal(maxHp()*.06f);}
+                signal("forbidden",x,y,1);notice="血猎追魂 · 献祭生命，追猎残血目标";
+            }else if(j==ASSASSIN){
+                float ox=x,oy=y;invulnerable=Math.max(invulnerable,.75f);
+                for(int i=0;i<48;i++){if(!free(x+faceX*5,y+faceY*5,PLAYER_RADIUS))break;movePlayer(faceX*5,faceY*5);}
+                for(Enemy e:enemies)if(e.hp>0&&segmentDistance(e.x,e.y,ox,oy,x,y)<e.radius()+45){e.hex=Math.max(e.hex,6f);hit(e,power*2.8f,false);affected++;}
+                if(affected>0)heal(Math.min(maxHp()*.05f,affected*maxHp()*.015f));corruption=Math.min(100,corruption+8);triggerRupture();signal("forbidden",x,y,2);notice="蚀影处决 · 生命换取连续影袭";
+            }else if(j==DETECTIVE){
+                for(Enemy e:enemies)if(e.hp>0&&e.hex>0){hit(e,power*(1.6f+Math.min(1.4f,e.hex*.2f)),false);e.hex=Math.max(e.hex,6f);e.stun=Math.max(e.stun,e.type==3?.15f:.55f);affected++;}
+                if(affected==0)for(Enemy e:enemies)if(e.hp>0){e.hex=6f;hit(e,power*.9f,false);}
+                signal("forbidden",x,y,3);notice="深渊审讯 · 以线索完整度裁定目标";
+            }else{
+                for(Enemy e:enemies)if(e.hp>0){e.hex=Math.max(e.hex,6f);hit(e,power*1.25f,false);}
+                List<Enemy> sources=new ArrayList<>();for(Enemy e:enemies)if(e.hp>0)sources.add(e);
+                for(Enemy source:sources){Enemy relay=null;float near=190;for(Enemy e:enemies)if(e!=source&&e.hp>0){float d=len(e.x-source.x,e.y-source.y);if(d<near){near=d;relay=e;}}
+                    if(relay!=null)hit(relay,power*.35f,false);}
+                corruption=Math.min(100,corruption+8);triggerRupture();signal("forbidden",x,y,4);notice="血色头条 · 诅咒扩散并引发连锁爆发";
+            }
         }
-        // Career identity also shapes the dedicated soul art, regardless of its variant.
-        if(job()==HUNTER){soulBuff=Math.max(soulBuff,1.5f);if(careerSkillMode==1)careerSkillTime=Math.min(30,careerSkillTime+1.5f);}
-        else if(job()==ASSASSIN){activeSkillCd=Math.max(0,activeSkillCd-1.2f);}
-        else if(job()==DETECTIVE){for(Enemy e:enemies)if(e.hp>0&&e.hex>0){e.hex=Math.min(8,e.hex+1.25f);e.stun=Math.max(e.stun,.2f);}}
-        else {heal(maxHp()*.02f);gainSoul(4);}
+        if(kind==1&&specialtyRank(2)>0)soulWard=Math.min(99999,soulWard+12);
+        if(j==HUNTER&&careerSkillTime>0)careerSkillTime=Math.min(8,careerSkillTime+1.5f);
+        if(j==ASSASSIN)activeSkillCd=Math.max(0,activeSkillCd-1.5f);
+        if(j==DETECTIVE)for(Enemy e:enemies)if(e.hp>0&&e.hex>0)e.hex=Math.min(10,e.hex+1f);
+        if(j==REPORTER&&kind==1)gainSoul(4);
     }
     private void cleanse(float cx,float cy,float radius){shots.removeIf(p->!p.friendly&&len(p.x-cx,p.y-cy)<radius);}
     private void pull(Enemy e,float cx,float cy,float distance){
