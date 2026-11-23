@@ -14,7 +14,7 @@ public final class CareerAbilityTests {
         ActionGame g=arena(HUNTER,0);ActionGame.Enemy target=mob(g,700,600,1000);float speed=g.speed();g.skill();
         check(target.hex>=8&&target.hp<1000&&g.speed()>speed,"hunter marks and hunts a high-threat target while entering a short hunt window");
         g=arena(ASSASSIN,0);float x=g.x;g.skill();
-        check(g.invulnerable>=.8f&&g.x>x&&g.shield>0,"assassin performs a protected forward shadow strike and gains ward");
+        check(g.invulnerable>=.8f&&Math.hypot(g.x-x,g.y-600)>200&&g.shield>0,"assassin performs a protected forward shadow strike and gains ward");
         g=arena(DETECTIVE,0);target=mob(g,720,600,1000);g.skill();
         check(target.hex>=4.5f&&target.stun>=.29f&&g.careerSkillMode==3,"detective reconstructs the scene, records clues and interrupts suspects");
         g=arena(REPORTER,0);target=mob(g,700,600,1000);ActionGame.Enemy witness=mob(g,800,600,1000);float before=witness.hp;g.skill();
