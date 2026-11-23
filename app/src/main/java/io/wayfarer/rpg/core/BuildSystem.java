@@ -90,7 +90,7 @@ public final class BuildSystem {
         new Node("拾荒者","每级远征票券拾取量提高8%。",3,-1,1),new Node("风险投资","每级结算带回的远征票券提高5%。",2,12,2),new Node("战利品契约","每次进入远征获得20点初始远征票券。",1,13,4)
     };
     public static final String[] CAREER_TALENT_NAMES={"追踪校准","猎杀回响","猎场护盾","影袭步法","影刃增幅","暗影回流","现场勘察","弱点推演","调查护盾","传播范围","头条急救","报道回响"};
-    public static final String[] CAREER_TALENT_DESCRIPTIONS={"猎人标记目标伤害提高8% / 级。","猎人职业技能冷却缩短5% / 级。","猎人施放职业技能额外获得20点护盾 / 级。","刺客突进距离提高12% / 级。","刺客职业技能命中伤害提高10% / 级。","刺客影袭命中额外获得8点护盾。","警探线索持续时间提高15% / 级。","警探对已调查目标伤害提高10% / 级。","警探施放技能额外获得20点护盾 / 级。","记者伤害传导比例提高5% / 级。","记者施放职业技能恢复4%最大生命 / 级。","记者头条命中获得10点护盾。"};
+    public static final String[] CAREER_TALENT_DESCRIPTIONS={"猎人标记目标伤害提高15% / 级。","猎人职业技能冷却缩短5% / 级。","猎人施放职业技能额外获得20点护盾 / 级。","刺客突进距离提高约25像素 / 级。","刺客职业技能期间伤害提高10% / 级。","刺客影袭命中额外获得8点护盾。","警探线索持续时间提高0.5秒 / 级。","警探弱点审讯伤害提高15% / 级。","警探施放技能额外获得20点护盾 / 级。","记者伤害传导比例提高5% / 级。","记者职业技能恢复4%最大生命 / 级。","记者头条命中获得10点护盾。"};
     public static int careerTalentMax(int id){return id%3==2?2:3;}
     public static int coreSpent(int[] ranks){int n=0;for(int v:ranks)n+=v;return n;}
     public static int corePoints(int xp){return 2+Math.min(27,Math.max(0,xp)/55);}
