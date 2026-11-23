@@ -225,6 +225,17 @@ public final class ActionTests {
         forbidden.soulCd=8;check(forbidden.soulTuneAction()&&forbidden.soulEnergy==5&&forbidden.soulCd==4&&forbidden.corruption==12,"forbidden tuning has distinct cost and corruption");
         System.out.println("PASS expanded ticket shop and radiant/forbidden soul energy sinks");
     }
+    private static void currencySeparation()throws Exception{
+        ActionGame g=new ActionGame();g.bank=500;g.start(701);g.loot=80;
+        check(g.bank==500&&g.loot==80,"pickup currency remains isolated from camp bank");
+        g.mode=ActionGame.Mode.REWARD;g.openShop();check(g.buyShopItem(0)&&g.loot==56&&g.bank==500,"run shop spends only expedition tickets");
+        g.closeShop();g.mode=ActionGame.Mode.PAUSED;g.abandon();check(g.bank==539&&g.loot==56,"defeat settlement transfers only seventy percent of remaining run tickets");
+        g.returnCamp();int before=g.bank;check(g.buyFieldPermit(0)&&g.bank==before-80,"permanent expedition permit spends only camp bank");
+        g.start(702);check(g.shield==40&&g.loot==30,"permit grants its starting shield and separate run tickets");
+        g.mode=ActionGame.Mode.REWARD;g.openShop();check(g.buyShopItem(0)&&g.loot==6&&g.bank==before-80,"second run shop purchase leaves camp bank untouched");
+        ActionGame restored=ActionSave.decode(ActionSave.encode(g));check(restored.bank==before-80&&restored.loot==6&&restored.fieldPermits[0][0]==1,"both currencies and permanent purchases persist independently");
+        System.out.println("PASS strict separation of expedition tickets, camp bank, settlement and permit purchases");
+    }
     private static void permanentEconomy()throws Exception{
         ActionGame g=new ActionGame();g.bank=100000;
         for(int i=0;i<20;i++){g.upgrade(false);g.upgrade(true);}
@@ -257,5 +268,5 @@ public final class ActionTests {
         ActionGame g=new ActionGame();g.start(12);g.pause();float cd=g.activeSkillCd;for(int i=0;i<30;i++)g.update(1f/60f,new ActionGame.Input());near(g.activeSkillCd,cd,"pause freezes active cooldown");
         System.out.println("PASS five active skills, independent career cooldown, follow-ups, trap persistence and pause");
     }
-    public static void main(String[] args)throws Exception{movement();enemyShieldTypes();combat();shopAndItems();expandedEconomy();careerSoulResonance();careerActiveSoulResonance();careerFollowUpAndSoulSynergy();skillChainReactions();permanentEconomy();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
+    public static void main(String[] args)throws Exception{movement();enemyShieldTypes();combat();shopAndItems();currencySeparation();expandedEconomy();careerSoulResonance();careerActiveSoulResonance();careerFollowUpAndSoulSynergy();skillChainReactions();permanentEconomy();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
 }
