@@ -29,6 +29,7 @@ public final class SmokeInstrumentation extends Instrumentation {
             ui(()->activity.world.replace(new ActionGame()));
             ui(()->activity.world.replace(new ActionGame()));
             careerFlow();
+            ui(()->activity.world.replace(new ActionGame()));
             growthTreesFlow();
             ui(()->activity.world.replace(new ActionGame()));
             relicFlow();
