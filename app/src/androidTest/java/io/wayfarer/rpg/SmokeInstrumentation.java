@@ -52,8 +52,8 @@ public final class SmokeInstrumentation extends Instrumentation {
             pointers(down,MotionEvent.ACTION_POINTER_UP|(1<<MotionEvent.ACTION_POINTER_INDEX_SHIFT),new float[][]{{117,370},{850,420}},new int[]{0,1});
             pointers(down,MotionEvent.ACTION_UP,new float[][]{{117,370}},new int[]{0});
             tap(737,456);ui(()->check(activity.world.game.rollCd>0,"dodge button triggers"));
-            tap(855,298); // May be ignored during dodge, as designed.
-            SystemClock.sleep(330);tap(855,298);ui(()->check(activity.world.game.skillCd>0,"skill button triggers"));
+            tap(855,210); // Career skill is the upper-right control; 855,298 is the general active skill.
+            SystemClock.sleep(330);tap(855,210);ui(()->check(activity.world.game.skillCd>0,"career skill button triggers"));
             screenshot("02-dungeon.png");
             tap(900,37);ui(()->check(activity.world.game.mode==ActionGame.Mode.PAUSED,"pause button works"));
             float[] snapshot={0,0};ui(()->{snapshot[0]=activity.world.game.time;snapshot[1]=activity.world.game.hp;});SystemClock.sleep(350);
@@ -110,8 +110,10 @@ public final class SmokeInstrumentation extends Instrumentation {
         tap(770,35);tap(900,35);waitForIdleSync();ui(()->{check(!activity.world.showTalents,"growth hub returns to camp");activity.world.startFrames();});
     }
     private void inscriptionFlow(){
-        ui(()->{activity.world.stopFrames();ActionGame g=new ActionGame();g.start(8821);g.enemies.clear();g.update(.016f,new ActionGame.Input());check(g.mode==ActionGame.Mode.REWARD&&g.hasTacticDraft(),"combat clear opens inscription reward");g.openTacticDraft();activity.world.replace(g);});
-        waitForIdleSync();screenshot("30-inscription-selection.png");
+        ui(()->{activity.world.stopFrames();ActionGame g=new ActionGame();g.start(8821);g.enemies.clear();g.update(.016f,new ActionGame.Input());check(g.mode==ActionGame.Mode.REWARD&&g.hasTacticDraft()&&!g.tacticDraftOpen,"combat clear pauses before inscription selection");activity.world.replace(g);});
+        waitForIdleSync();screenshot("30-inscription-intermission.png");
+        tap(480,410);ui(()->check(activity.world.game.tacticDraftOpen,"explicitly enter inscription selection after intermission"));
+        screenshot("30-inscription-selection.png");
         tap(180,290);ui(()->{ActionGame g=activity.world.game;check(g.tacticSelected==0&&g.tacticRanks[g.tacticOffers[0]]==0&&!g.tacticChosen,"first card tap only previews and cannot spend inscription");});
         tap(480,449);ui(()->{ActionGame g=activity.world.game;check(g.tacticChosen&&!g.tacticDraftOpen&&g.tacticRanks[0]==1,"separate confirm button commits selected inscription");activity.world.startFrames();});
     }
