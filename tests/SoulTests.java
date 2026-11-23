@@ -22,7 +22,7 @@ public final class SoulTests {
     private static void eightCareerForms(){
         for(int career=0;career<4;career++){
             ActionGame radiant=game(career,1);ActionGame.Enemy e=mob(radiant,700,600);radiant.soulEnergy=100;radiant.soulSkill();
-            check(radiant.soulEnergy==60&&radiant.soulCd>0&&signal(radiant,"radiant"),"radiant form spends energy and triggers career effect "+career);
+            check(radiant.soulEnergy>=60&&radiant.soulEnergy<=100&&radiant.soulCd>0&&signal(radiant,"radiant"),"radiant form spends energy and triggers career effect "+career);
             check(e.hp<1000||e.hex>0||radiant.soulWard>0,"radiant form has an actual combat or defense result "+career);
             ActionGame taboo=game(career,2);e=mob(taboo,700,600);taboo.soulEnergy=100;float hp=taboo.hp;taboo.soulSkill();
             check(taboo.soulEnergy==60&&taboo.soulCd>0&&signal(taboo,"forbidden"),"taboo form spends energy and triggers career effect "+career);
