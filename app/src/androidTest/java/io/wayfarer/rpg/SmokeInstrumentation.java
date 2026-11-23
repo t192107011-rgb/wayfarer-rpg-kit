@@ -105,7 +105,7 @@ public final class SmokeInstrumentation extends Instrumentation {
         tap(770,35);waitForIdleSync();ui(()->check(activity.world.showTraining,"camp training tab opens"));
         tap(830,79);waitForIdleSync();ui(()->check(activity.world.showPermits,"expedition permit shop opens"));
         tap(365,211);waitForIdleSync();ui(()->check(activity.world.game.fieldPermits[activity.world.game.buildId()][0]==1&&activity.world.game.bank==920,"permit purchase debits camp bank and unlocks start shield"));
-        tap(770,35);tap(900,35);waitForIdleSync();ui(()->check(!activity.world.showTalents,"growth hub returns to camp"));
+        tap(770,35);tap(900,35);waitForIdleSync();ui(()->{check(!activity.world.showTalents,"growth hub returns to camp");activity.world.startFrames();});
     }
     private void journalItem(int index){ui(()->{AlertDialog dialog=activity.storyDialog;ListView list=dialog==null?null:dialog.getListView();if(list==null){if(dialog!=null)dialog.dismiss();StoryJournal.show(activity);dialog=activity.storyDialog;list=dialog.getListView();}check(list!=null,"story journal list is present");list.performItemClick(null,index,index);});waitForIdleSync();}
     private void storyButton(int which){ui(()->activity.storyDialog.getButton(which).performClick());waitForIdleSync();}
