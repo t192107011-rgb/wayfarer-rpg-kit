@@ -377,7 +377,7 @@ public final class ActionGame {
         if(style==0||style==1||style==2){
             if(style==2){invulnerable=Math.max(invulnerable,.35f);for(int i=0;i<Math.min(42,(int)(range/5));i++)movePlayer(faceX*5,faceY*5);endX=x;endY=y;}
             for(Enemy e:enemies)if(e.hp>0&&segmentDistance(e.x,e.y,ox,oy,endX,endY)<(style==0?42:style==1?22:34)+e.radius()&&lineClear(ox,oy,e.x,e.y)){
-                if(style==1)breakEnemyGuard(e);float before=e.hp;hit(e,followPower*(specialtyRank(6)>0?1.15f:1)*(style==0?(e.stun>0?2.15f:1.55f):style==1?2.05f:1.8f));connected|=e.hp<before;
+                if(style==1&&e.guard>0)breakEnemyGuard(e);float before=e.hp;hit(e,followPower*(specialtyRank(6)>0?1.15f:1)*(style==0?(e.stun>0?2.15f:1.55f):style==1?2.05f:1.8f));connected|=e.hp<before;
             }
         }else if(style==3){
             for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<range&&lineClear(x,y,e.x,e.y)&&(e.hex>0||e.stun>0)){float before=e.hp;hit(e,damage()*2.2f);connected|=e.hp<before;if(soulKind()==2&&e.hex>0){e.hex=0;heal(maxHp()*.025f);}if(soulKind()==1){e.stun=Math.max(e.stun,.35f);soulWard=Math.min(99999,soulWard+3);}}
@@ -708,7 +708,7 @@ public final class ActionGame {
             p.x=nx;p.y=ny;if(gone)it.remove();
         }
     }
-    private void breakEnemyGuard(Enemy e){if(e.guard<=0)return;e.guard=0;e.guardBreak=e.guardType==1?.75f:e.guardType==2?1.65f:2.4f;e.guardDelay=Math.max(e.guardDelay,3f);e.stun=Math.max(e.stun,e.guardType==2?.45f:.7f);signal("shieldBreak",e.x,e.y,e.guardType);}
+    private void breakEnemyGuard(Enemy e){e.guard=0;e.guardBreak=e.guardType==1?.75f:e.guardType==2?1.65f:2.4f;e.guardDelay=Math.max(e.guardDelay,3f);e.stun=Math.max(e.stun,e.guardType==2?.45f:.7f);signal("shieldBreak",e.x,e.y,e.guardType);}
     public void hitForTest(Enemy e,float value){hit(e,value,true);}
     private void hit(Enemy e,float value){hit(e,value,true);}
     private void hit(Enemy e,float value,boolean charge){hit(e,value,charge,charge);}
