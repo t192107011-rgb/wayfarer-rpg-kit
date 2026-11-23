@@ -52,12 +52,19 @@ public final class BuildSystem {
         if(specialtyUltimate(id)){int first=id<4?2:6;for(int i=first;i<first+2;i++)if(i!=id&&ranks[i]>0)return "该分支终阶二选一";}
         return "";
     }
-    public static void validateSpecialties(int[] ranks,int xp,int talentSpent){
+    private static int validateSpecialtyRanks(int[] ranks,int xp){
         if(ranks.length!=8)throw new IllegalArgumentException("专精结构无效");
         int spent=0;for(int i=0;i<8;i++){Node n=SPECIALTIES[i];if(ranks[i]<0||ranks[i]>n.maxRank)throw new IllegalArgumentException("专精等级无效");spent+=ranks[i];
             if(ranks[i]>0){if(1+Math.min(19,xp/80)<n.minLevel||n.parent>=0&&ranks[n.parent]<specialtyPrerequisite(i))throw new IllegalArgumentException("缺少专精前置");}}
-        if(spent>specialtyPoints(xp))throw new IllegalArgumentException("专精点数超支");
         if(ranks[2]>0&&ranks[3]>0||ranks[6]>0&&ranks[7]>0)throw new IllegalArgumentException("专精终阶互斥");
+        return spent;
+    }
+    /** Legacy saves shared the original talent pool; keep validating them under that historical rule. */
+    public static void validateSpecialties(int[] ranks,int xp,int talentSpent){
+        if(validateSpecialtyRanks(ranks,xp)+talentSpent>points(xp))throw new IllegalArgumentException("天赋与专精点数超支");
+    }
+    public static void validateSpecialtiesIndependent(int[] ranks,int xp){
+        if(validateSpecialtyRanks(ranks,xp)>specialtyPoints(xp))throw new IllegalArgumentException("专精点数超支");
     }
 
     public static final Node[] NODES={
