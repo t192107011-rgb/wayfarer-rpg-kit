@@ -312,7 +312,7 @@ public final class ActionTests {
         ActionGame assassin=new ActionGame();assassin.careers[assassin.buildId()][0]=CareerSystem.ASSASSIN;assassin.start(733);assassin.blocks.clear();assassin.enemies.clear();assassin.skill();
         float shieldBefore=assassin.shield;ActionGame.Enemy target=new ActionGame.Enemy(assassin.nextId++,0,assassin.x+70,assassin.y,1000);assassin.enemies.add(target);assassin.hitForTest(target,20);
         check(assassin.shield>=shieldBefore+3,"assassin overdrive grants a repeatable base shield on successful hits");
-        float hp=assassin.hp;assassin.invulnerable=0;assassin.hurtForTest(40);float assassinLoss=hp-assassin.hp;
+        assassin.shield=0;float hp=assassin.hp;assassin.invulnerable=0;assassin.hurtForTest(40);float assassinLoss=hp-assassin.hp;
         ActionGame baseline=new ActionGame();baseline.start(734);baseline.blocks.clear();baseline.enemies.clear();baseline.invulnerable=0;hp=baseline.hp;baseline.hurtForTest(40);float normalLoss=hp-baseline.hp;
         check(assassinLoss<normalLoss*.8f,"assassin overdrive reduces incoming damage by 25 percent");
         ActionGame reporter=new ActionGame();reporter.careers[reporter.buildId()][0]=CareerSystem.REPORTER;reporter.start(735);reporter.blocks.clear();reporter.enemies.clear();reporter.x=500;reporter.y=500;
