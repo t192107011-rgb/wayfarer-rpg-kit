@@ -9,7 +9,7 @@ public final class ThreatSystem {
         float depth=g.endless?Math.min(98f,(g.endlessDepth-1)*.49f):0;
         return Math.min(99f,1.2f+g.room*.18f+growth+g.pressure+depth);
     }
-    public static void enter(ActionGame g){g.threat=rating(g);g.encounterHpFloor=g.maxHp()*1.2f+g.baseDamage()*2;g.encounterDamageFloor=g.baseDamage()*1.12f;g.roomDamage=0;g.roomElapsed=0;}
+    public static void enter(ActionGame g){g.threat=rating(g);g.encounterHpFloor=g.maxHp()*1.2f+g.baseDamage()*2;g.encounterDamageFloor=g.baseDamage()*.68f;g.roomDamage=0;g.roomElapsed=0;}
     public static void clear(ActionGame g){float loss=g.roomDamage/Math.max(1,g.maxHp());if(loss<=.12f&&g.roomElapsed<=45)g.pressure=Math.min(.6f,g.pressure+.12f);else if(loss>=.55f)g.pressure=Math.max(0,g.pressure-.12f);}
     public static int potionChance(int type){return type==3?50:type>=4?18:12;}
 }
