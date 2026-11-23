@@ -329,6 +329,7 @@ public final class ActionGame {
         if(mode!=Mode.PLAY||rollTime>0||skillCd>0)return;
         int j=job();skillCd=skillPeriod();careerSkillMode=j+1;careerSkillTime=4f;float power=damage();int affected=0;
         if(j==HUNTER){
+            if(careerTalentRank(2)>0)addTalentShield(20*careerTalentRank(2));
             Enemy target=null;float best=-1;for(Enemy e:enemies)if(e.hp>0){float score=e.type==3?e.hp*1.4f:e.hp;if(score>best){best=score;target=e;}}
             if(target!=null){target.hex=Math.max(target.hex,8f);hit(target,power*2.15f*(1+.15f*careerTalentRank(0)),false);signal("careerSkill",target.x,target.y,1);}
             for(Enemy e:enemies)if(e.hp>0&&e!=target&&len(e.x-x,e.y-y)<300)e.hex=Math.max(e.hex,3f);
@@ -339,6 +340,7 @@ public final class ActionGame {
             for(Enemy e:enemies)if(e.hp>0&&segmentDistance(e.x,e.y,ox,oy,x,y)<e.radius()+35){hit(e,power*1.65f,false);affected++;}
             addTalentShield(18+affected*8);signal("careerSkill",x,y,2);notice="刺客：影袭 · 突进并获得影盾";
         }else if(j==DETECTIVE){
+            addTalentShield(24+20*careerTalentRank(2));
             for(Enemy e:enemies)if(e.hp>0){e.hex=Math.max(e.hex,4.5f+.5f*careerTalentRank(0));e.stun=Math.max(e.stun,.3f);affected++;}
             addTalentShield(24);signal("careerSkill",x,y,3);notice="警探：现场重构 · "+affected+" 个目标进入调查";
         }else{
@@ -347,7 +349,7 @@ public final class ActionGame {
                 for(Enemy e:enemies)if(e!=headline&&e.hp>0){float d=len(e.x-headline.x,e.y-headline.y);if(d<near){near=d;relay=e;}}
                 if(relay!=null){hit(relay,power*(.55f+.05f*careerTalentRank(0)),false);relay.hex=Math.max(relay.hex,3f);}
             }
-            signal("careerSkill",x,y,4);notice="记者：头条发布 · 伤害向邻近目标传播";
+            signal("careerSkill",x,y,4);if(careerTalentRank(1)>0)heal(maxHp()*.04f*careerTalentRank(1));if(careerTalentRank(2)>0)addTalentShield(10*careerTalentRank(2));notice="记者：头条发布 · 伤害向邻近目标传播";
         }
         if(soulKind()==1){soulWard=Math.min(99999,soulWard+20);cleanse(x,y,120);}
         else if(soulKind()==2){corruption=Math.min(100,corruption+5);triggerRupture();}
@@ -712,7 +714,7 @@ public final class ActionGame {
             if(isSpec(DETECTIVE,2)&&e.stun>0)value*=1.20f;
             if(isSpec(REPORTER,1)&&e.type==3)value*=1.15f;
             // Career identities shape every deliberate hit, not only the active skill.
-            if(job()==HUNTER&&e.hex>0)value*=1.18f;
+            if(job()==HUNTER&&e.hex>0)value*=1.18f;if(job()==DETECTIVE&&e.hex>0)value*=1+.15f*careerTalentRank(1);
         }
         if(echoEligible&&relicEcho>0&&hasRelic(3)){value*=1.35f;relicEcho=0;signal("echo",e.x,e.y,65);}
         value*=e.hex>0?1.15f*(hasRelic(6)?1.1f:1)*(1+.12f*tacticRanks[4]):1;if(echoEligible&&coreRank(2)>0&&e.stun>0)value*=1+.12f*coreRank(2);if(echoEligible&&job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0)value*=1+.10f*careerTalentRank(1);float beforeGuard=e.guard;float guardFactor=e.guardType==2?.65f:1f;float guardDamage=value*guardFactor;float absorbed=Math.min(e.guard,guardDamage);e.guard=Math.max(0,e.guard-absorbed);float healthLeak=Math.min(value,absorbed/guardFactor);value-=healthLeak;if(absorbed>0){e.guardDelay=2.5f;signal("enemyShield",e.x,e.y,(int)absorbed);}if(beforeGuard>0&&e.guard<=.0001f)breakEnemyGuard(e);float dealt=Math.min(e.hp,value);e.hp=Math.max(0,e.hp-value);
