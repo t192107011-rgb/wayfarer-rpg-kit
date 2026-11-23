@@ -100,10 +100,13 @@ public final class ActionTests {
     private static void rejects(byte[] bytes,String key,String value)throws Exception{boolean rejected=false;try{ActionSave.decode(mutate(bytes,key,value));}catch(IOException e){rejected=true;}check(rejected,"reject invalid "+key);}
     private static void tacticalInscriptions()throws Exception{
         ActionGame g=game(0);g.mode=ActionGame.Mode.REWARD;g.tacticOffers[0]=0;g.tacticOffers[1]=1;g.tacticOffers[2]=2;
-        g.openTacticDraft();check(g.tacticDraftOpen,"reward opens tactical inscription draft");ActionGame draftSave=ActionSave.decode(ActionSave.encode(g));check(draftSave.tacticDraftOpen,"open inscription draft persists across save restore");
-        check(g.chooseTactic(0)&&g.tacticRanks[0]==1&&g.tacticChosen&&!g.tacticDraftOpen,"one inscription can be selected per cleared room");
-        g.openTacticDraft();check(!g.tacticDraftOpen&&!g.chooseTactic(1),"second inscription cannot be claimed in the same room");
-        ActionGame saved=ActionSave.decode(ActionSave.encode(g));check(saved.tacticRanks[0]==1&&saved.tacticChosen,"chosen inscription persists in reward snapshot");
+        g.openTacticDraft();check(g.tacticDraftOpen,"reward opens tactical inscription draft");
+        check(g.selectTactic(0)&&g.tacticSelected==0&&g.tacticRanks[0]==0&&!g.tacticChosen,"first tap only previews an inscription without spending it");
+        ActionGame draftSave=ActionSave.decode(ActionSave.encode(g));check(draftSave.tacticDraftOpen&&draftSave.tacticSelected==0&&draftSave.tacticRanks[0]==0,"pending inscription selection persists safely across save restore");
+        check(g.selectTactic(1)&&g.tacticSelected==1&&g.tacticRanks[1]==0,"second card tap changes preview instead of claiming");
+        check(g.confirmTactic()&&g.tacticRanks[1]==1&&g.tacticChosen&&!g.tacticDraftOpen&&g.tacticSelected==-1,"explicit confirmation claims exactly one inscription");
+        g.openTacticDraft();check(!g.tacticDraftOpen&&!g.selectTactic(0)&&!g.confirmTactic(),"second inscription cannot be claimed in the same room");
+        ActionGame saved=ActionSave.decode(ActionSave.encode(g));check(saved.tacticRanks[1]==1&&saved.tacticChosen,"confirmed inscription persists in reward snapshot");
         g=game(0);g.tacticRanks[0]=2;g.enemies.add(new ActionGame.Enemy(1,0,620,600,1000));g.activeSkill();check(g.activeSkillCd>0,"signature technique still uses normal cooldown");
         ActionGame baseline=game(0);baseline.enemies.add(new ActionGame.Enemy(1,0,620,600,1000));baseline.activeSkill();check(1000-g.enemies.get(0).hp>1000-baseline.enemies.get(0).hp,"signature technique increases active skill damage");
         ActionGame radiant=new ActionGame();radiant.bindSoul(1,0);radiant.start(1);radiant.blocks.clear();radiant.enemies.clear();radiant.tacticRanks[2]=2;radiant.hitForTest(new ActionGame.Enemy(1,0,620,600,1000),100);
@@ -125,7 +128,7 @@ public final class ActionTests {
         byte[] bytes=ActionSave.encode(g);ActionGame a=ActionSave.decode(bytes);
         check(a.hero==g.hero&&a.hp==g.hp&&a.potions==g.potions&&a.shots.size()==g.shots.size()&&a.rngState==g.rngState,"save restores action snapshot");
         check(a.random(1000)==g.random(1000),"RNG continues from persisted state");
-        rejects(bytes,"version","99");rejects(bytes,"x","NaN");rejects(bytes,"hp","Infinity");rejects(bytes,"hero","3");rejects(bytes,"potions","-1");rejects(bytes,"enemies","500");rejects(bytes,"power","21");rejects(bytes,"training0.0","11");rejects(bytes,"bank","2147483647");rejects(bytes,"mode","BAD");rejects(bytes,"rng","0");rejects(bytes,"x","1");rejects(bytes,"room","0");rejects(bytes,"format","wayfarer-rpg");
+        rejects(bytes,"version","99");rejects(bytes,"x","NaN");rejects(bytes,"hp","Infinity");rejects(bytes,"hero","3");rejects(bytes,"potions","-1");rejects(bytes,"enemies","500");rejects(bytes,"power","1000000");rejects(bytes,"training0.0","1000000");rejects(bytes,"bank","2147483647");rejects(bytes,"mode","BAD");rejects(bytes,"rng","0");rejects(bytes,"x","1");rejects(bytes,"room","0");rejects(bytes,"format","wayfarer-rpg");
         boolean bad=false;try{ActionSave.decode(new byte[131073]);}catch(IOException e){bad=true;}check(bad,"oversize saves rejected");
         g=game(0);ActionGame.Enemy e=mob(g,0,610,600,200);e.stun=1;ActionGame.Input in=new ActionGame.Input();in.attack=true;ticks(g,in,8);float enemyHp=e.hp;
         a=ActionSave.decode(ActionSave.encode(g));in.attack=false;ticks(a,in,8);check(a.enemies.get(0).hp==enemyHp,"restore cannot replay a partially resolved swing");
@@ -278,10 +281,27 @@ public final class ActionTests {
         for(int route=0;route<4;route++)for(int i=0;i<10;i++)check(g.train(route),"permanent training purchase "+route+"/"+i);
         check(g.power==20&&g.vitality==20,"permanent camp upgrades reach level 20");
         for(int route=0;route<4;route++)check(g.training[0][route]==10,"permanent training route reaches level 10");
-        int bank=g.bank;g.upgrade(false);check(g.bank==bank&&g.power==20,"permanent upgrade cap prevents overspending");
-        ActionGame restored=ActionSave.decode(ActionSave.encode(g));check(restored.power==20&&restored.vitality==20,"expanded permanent upgrade levels persist");
-        for(int route=0;route<4;route++)check(restored.training[0][route]==10,"expanded training levels persist");
-        System.out.println("PASS permanent ticket sinks, level-20 camp upgrades and level-10 training");
+        int bank=g.bank;int nextCost=g.upgradeCost(g.power);g.upgrade(false);check(g.power==21&&g.bank==bank-nextCost,"shared camp upgrade remains purchasable beyond former level-20 cap");
+        int trainCost=g.trainingCost(g.training[0][0]);check(g.train(0)&&g.training[0][0]==11&&g.bank==bank-nextCost-trainCost,"character training remains purchasable beyond former level-10 cap");
+        ActionGame restored=ActionSave.decode(ActionSave.encode(g));check(restored.power==21&&restored.vitality==20,"repeatable permanent upgrade levels persist");
+        check(restored.training[0][0]==11&&restored.training[0][1]==10&&restored.training[0][2]==10&&restored.training[0][3]==10,"repeatable training levels persist");
+        System.out.println("PASS repeatable bank-funded camp upgrades and character training beyond former caps");
+    }
+    private static void completeTalentBudgets()throws Exception{
+        ActionGame g=game(0);g.experience[0]=1540;
+        check(BuildSystem.points(g.heroXp())==18&&BuildSystem.specialtyPoints(g.heroXp())==9&&BuildSystem.corePoints(g.heroXp())==30,"max level grants enough independent points for every tree");
+        for(int branch=0;branch<3;branch++){int root=branch*4;for(int i=0;i<3;i++)check(g.learn(root),"base root rank "+root);for(int i=0;i<2;i++)check(g.learn(root+1),"base middle rank "+root);check(g.learn(root+2),"base capstone "+root);}
+        check(g.availablePoints()==0,"all 18 base points are spent on the base tree");
+        for(int i=0;i<2;i++)check(g.learnSpecialty(0),"soul specialty root");for(int i=0;i<2;i++)check(g.learnSpecialty(1),"soul specialty middle");check(g.learnSpecialty(2),"soul specialty capstone");
+        for(int i=0;i<2;i++)check(g.learnSpecialty(4),"hunt specialty root");check(g.learnSpecialty(5),"hunt specialty middle");check(g.learnSpecialty(6),"hunt specialty capstone");
+        check(g.availableSpecialtyPoints()==0,"all 9 specialty points can be spent independently");
+        for(int branch=0;branch<5;branch++){int root=branch*3;for(int i=0;i<3;i++)check(g.learnCoreTalent(root),"core root "+root);for(int i=0;i<2;i++)check(g.learnCoreTalent(root+1),"core middle "+root);check(g.learnCoreTalent(root+2),"core capstone "+root);}
+        check(g.availableCorePoints()==0,"all 30 five-branch points can be spent");
+        for(int i=0;i<3;i++)check(g.learnCareerTalent(0),"career root rank "+i);for(int i=0;i<3;i++)check(g.learnCareerTalent(1),"career middle rank "+i);for(int i=0;i<2;i++)check(g.learnCareerTalent(2),"career capstone rank "+i);
+        check(g.availableCareerPoints()==0,"all 8 career skill points can be spent");
+        ActionGame restored=ActionSave.decode(ActionSave.encode(g));
+        check(restored.availablePoints()==0&&restored.availableSpecialtyPoints()==0&&restored.availableCorePoints()==0&&restored.availableCareerPoints()==0,"all full talent trees persist and validate");
+        System.out.println("PASS full independent point budgets: base 18, specialties 9, five branches 30, career 8");
     }
     private static void threatCap(){
         ActionGame g=new ActionGame();g.startEndless(91);g.endlessDepth=2;float early=ThreatSystem.rating(g);
@@ -304,5 +324,5 @@ public final class ActionTests {
         ActionGame g=new ActionGame();g.start(12);g.pause();float cd=g.activeSkillCd;for(int i=0;i<30;i++)g.update(1f/60f,new ActionGame.Input());near(g.activeSkillCd,cd,"pause freezes active cooldown");
         System.out.println("PASS five active skills, independent career cooldown, follow-ups, trap persistence and pause");
     }
-    public static void main(String[] args)throws Exception{movement();shieldSaveValidation();shieldSourceSummary();enemyShieldTypes();combat();shopAndItems();currencySeparation();fullPermitFlow();expandedEconomy();careerSoulResonance();careerActiveSoulResonance();careerFollowUpAndSoulSynergy();skillChainReactions();permanentEconomy();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
+    public static void main(String[] args)throws Exception{movement();shieldSaveValidation();shieldSourceSummary();enemyShieldTypes();combat();shopAndItems();currencySeparation();fullPermitFlow();expandedEconomy();careerSoulResonance();careerActiveSoulResonance();careerFollowUpAndSoulSynergy();skillChainReactions();permanentEconomy();completeTalentBudgets();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
 }
