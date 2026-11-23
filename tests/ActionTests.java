@@ -245,13 +245,10 @@ public final class ActionTests {
         g.soulEnergy=10;check(g.buyShopItem(4)&&g.soulEnergy==45&&g.loot==170,"soul crystal spends tickets and restores energy");
         int oldDamage=g.damageBonus;check(g.buyShopItem(5)&&g.damageBonus==oldDamage+4&&g.loot==115,"field modification spends tickets and improves run damage");
         check(g.shopPrice(5)>g.shopPrice(0)&&!g.buyShopItem(6),"expanded shop prices and invalid item guard");
-        ActionGame radiant=new ActionGame();radiant.bindSoul(1,0);radiant.start(72);radiant.soulEnergy=80;radiant.soulCd=8;
-        check(radiant.soulWardAction()&&radiant.soulEnergy==55&&radiant.soulWard==30,"radiant soul infusion converts energy into ward");
-        check(radiant.soulTuneAction()&&radiant.soulEnergy==25&&radiant.soulCd==3,"radiant tuning spends energy to shorten soul cooldown");
-        radiant.soulEnergy=35;float boosted=radiant.damage();check(radiant.soulResonanceAction()&&radiant.soulEnergy==0&&radiant.soulBuff==4&&radiant.damage()>boosted,"soul resonance spends energy for a timed combat boost");
-        ActionGame forbidden=new ActionGame();forbidden.bindSoul(2,0);forbidden.start(73);forbidden.soulEnergy=60;
-        check(forbidden.soulWardAction()&&forbidden.soulEnergy==35&&forbidden.corruption==8&&forbidden.soulWard==24,"forbidden infusion trades corruption for ward");
-        forbidden.soulCd=8;check(forbidden.soulTuneAction()&&forbidden.soulEnergy==5&&forbidden.soulCd==4&&forbidden.corruption==12,"forbidden tuning has distinct cost and corruption");
+        ActionGame radiant=new ActionGame();radiant.bindSoul(1,0);radiant.start(72);radiant.soulEnergy=98;radiant.soulCd=8;
+        radiant.gainSoulForTest(10);near(radiant.soulEnergy,100,"soul energy clamps at full capacity");near(radiant.soulCd,6.56f,"overflow energy automatically shortens a running soul cooldown");
+        radiant.soulCd=0;radiant.soulEnergy=100;radiant.shield=0;radiant.gainSoulForTest(8);near(radiant.soulEnergy,100,"full soul energy remains capped after conversion");near(radiant.shield,10,"overflow energy automatically converts to shield while soul skill is ready");
+        ActionGame forbidden=new ActionGame();forbidden.bindSoul(2,0);forbidden.start(73);forbidden.soulEnergy=100;forbidden.soulCd=4;forbidden.gainSoulForTest(10);near(forbidden.soulCd,2.2f,"forbidden soul overflow also accelerates cooldown without manual subskills");
         System.out.println("PASS expanded ticket shop and radiant/forbidden soul energy sinks");
     }
     private static void currencySeparation()throws Exception{
@@ -311,6 +308,21 @@ public final class ActionTests {
         check(restored.availablePoints()==0&&restored.availableSpecialtyPoints()==0&&restored.availableCorePoints()==0&&restored.availableCareerPoints()==0,"all full talent trees persist and validate: base="+restored.availablePoints()+" specialty="+restored.availableSpecialtyPoints()+" core="+restored.availableCorePoints()+" career="+restored.availableCareerPoints()+" xp="+restored.heroXp()+" job="+restored.job());
         System.out.println("PASS full independent point budgets: base 18, specialties 9, five branches 29, career 8");
     }
+    private static void careerDefenseAndCurse(){
+        ActionGame assassin=new ActionGame();assassin.careers[assassin.buildId()][0]=CareerSystem.ASSASSIN;assassin.start(733);assassin.blocks.clear();assassin.enemies.clear();assassin.skill();
+        float shieldBefore=assassin.shield;ActionGame.Enemy target=new ActionGame.Enemy(assassin.nextId++,0,assassin.x+70,assassin.y,1000);assassin.enemies.add(target);assassin.hitForTest(target,20);
+        check(assassin.shield>=shieldBefore+3,"assassin overdrive grants a repeatable base shield on successful hits");
+        float hp=assassin.hp;assassin.invulnerable=0;assassin.hurtForTest(40);float assassinLoss=hp-assassin.hp;
+        ActionGame baseline=new ActionGame();baseline.start(734);baseline.blocks.clear();baseline.enemies.clear();baseline.invulnerable=0;hp=baseline.hp;baseline.hurtForTest(40);float normalLoss=hp-baseline.hp;
+        check(assassinLoss<normalLoss*.8f,"assassin overdrive reduces incoming damage by 25 percent");
+        ActionGame reporter=new ActionGame();reporter.careers[reporter.buildId()][0]=CareerSystem.REPORTER;reporter.start(735);reporter.blocks.clear();reporter.enemies.clear();reporter.x=500;reporter.y=500;
+        ActionGame.Enemy first=new ActionGame.Enemy(reporter.nextId++,0,620,500,1000),second=new ActionGame.Enemy(reporter.nextId++,0,650,540,1000),third=new ActionGame.Enemy(reporter.nextId++,0,680,580,1000);reporter.enemies.add(first);reporter.enemies.add(second);reporter.enemies.add(third);float pulse=reporter.damage();reporter.skill();
+        check(1000-first.hp>=pulse-.1f&&1000-second.hp>=pulse*1.29f-.1f&&1000-third.hp>=pulse*1.29f-.1f,"reporter pulse transmits a distinct 30-percent damage echo to every other living target");
+        ActionGame curse=new ActionGame();curse.start(736);curse.blocks.clear();curse.enemies.clear();ActionGame.Enemy marked=new ActionGame.Enemy(curse.nextId++,0,620,500,1000);marked.hex=10;marked.stun=20;curse.enemies.add(marked);for(int i=0;i<600;i++)curse.update(1f/60f,new ActionGame.Input());
+        check(marked.hex>0,"curse duration is extended by the slower decay rate");
+        ActionGame scaling=new ActionGame();scaling.start(737);scaling.threat=8;ActionGame.Enemy ordinary=new ActionGame.Enemy(1,0,600,500,100);float incoming=scaling.enemyPower(ordinary,20);check(incoming<=37.1f,"late-game enemy damage growth is capped instead of multiplying directly by threat");
+        System.out.println("PASS reporter conduction, assassin damage reduction and shield, longer curses and controlled enemy damage scaling");
+    }
     private static void threatCap(){
         ActionGame g=new ActionGame();g.startEndless(91);g.endlessDepth=2;float early=ThreatSystem.rating(g);
         g.endlessDepth=80;float late=ThreatSystem.rating(g);check(late>early,"endless enemy threat grows with depth");
@@ -332,5 +344,5 @@ public final class ActionTests {
         ActionGame g=new ActionGame();g.start(12);g.pause();float cd=g.activeSkillCd;for(int i=0;i<30;i++)g.update(1f/60f,new ActionGame.Input());near(g.activeSkillCd,cd,"pause freezes active cooldown");
         System.out.println("PASS five active skills, independent career cooldown, follow-ups, trap persistence and pause");
     }
-    public static void main(String[] args)throws Exception{movement();shieldSaveValidation();shieldSourceSummary();enemyShieldTypes();combat();shopAndItems();currencySeparation();fullPermitFlow();expandedEconomy();careerSoulResonance();careerActiveSoulResonance();careerFollowUpAndSoulSynergy();skillChainReactions();permanentEconomy();legacyTalentBudgetMigration();completeTalentBudgets();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
+    public static void main(String[] args)throws Exception{movement();shieldSaveValidation();shieldSourceSummary();enemyShieldTypes();combat();shopAndItems();currencySeparation();fullPermitFlow();expandedEconomy();careerSoulResonance();careerActiveSoulResonance();careerFollowUpAndSoulSynergy();skillChainReactions();careerDefenseAndCurse();permanentEconomy();legacyTalentBudgetMigration();completeTalentBudgets();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
 }
