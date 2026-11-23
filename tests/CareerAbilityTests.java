@@ -9,18 +9,18 @@ public final class CareerAbilityTests {
         ActionGame g=new ActionGame();g.chooseCareer(career,0,0);g.start(91);g.experience[g.hero]=160;g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;g.invulnerable=0;return g;
     }
     private static void careerTreeEffects(){
-        ActionGame g=arena(HUNTER);g.experience[g.hero]=800;g.careerTalents[g.buildId()][0]=2;ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,700,600,1000);g.enemies.add(e);g.skill();check(1000-e.hp>g.damage()*2.2f,"hunter first node increases burst damage");
-        g=arena(HUNTER);g.experience[g.hero]=800;float period=g.skillPeriod();g.careerTalents[g.buildId()][1]=2;check(g.skillPeriod()<period,"hunter second node shortens career cooldown");
-        g=arena(HUNTER);g.careerTalents[g.buildId()][2]=2;g.skill();check(g.shield==100,"hunter final node strengthens cast shield");
-        g=arena(ASSASSIN);g.careerTalents[g.buildId()][0]=2;g.skill();check(g.careerSkillTime==38,"assassin first node extends overdrive duration");
-        g=arena(ASSASSIN);g.careerTalents[g.buildId()][1]=2;g.skill();g.shield=0;e=new ActionGame.Enemy(g.nextId++,0,620,600,1000);g.enemies.add(e);g.hitForTest(e,100);check(1000-e.hp>100,"assassin second node increases overdrive hit damage");
-        g=arena(ASSASSIN);g.careerTalents[g.buildId()][2]=2;g.skill();g.shield=0;e=new ActionGame.Enemy(g.nextId++,0,620,600,1000);g.enemies.add(e);g.hitForTest(e,20);check(g.shield==16,"assassin final node grants ward on each successful hit");
-        g=arena(DETECTIVE);g.careerTalents[g.buildId()][0]=2;e=new ActionGame.Enemy(g.nextId++,0,1000,600,1000);g.enemies.add(e);g.skill();check(e.x-g.x<100,"detective first node increases forced pull distance");
-        g=arena(DETECTIVE);g.careerTalents[g.buildId()][1]=2;e=new ActionGame.Enemy(g.nextId++,0,700,600,1000);g.enemies.add(e);g.skill();check(1000-e.hp>g.damage()*2.4f,"detective second node increases pulse damage");
-        g=arena(DETECTIVE);g.careerTalents[g.buildId()][2]=2;g.skill();check(g.shield==100,"detective final node strengthens cast shield");
-        g=arena(REPORTER);g.careerTalents[g.buildId()][0]=2;e=new ActionGame.Enemy(g.nextId++,0,700,600,1000);g.enemies.add(e);g.skill();check(Math.abs((1000-e.hp)-g.damage()*1.5f)<.05f,"reporter first node increases conduction damage");
-        g=arena(REPORTER);g.careerTalents[g.buildId()][1]=2;g.hp=g.maxHp()-20;float hp=g.hp;g.skill();check(g.hp-hp>=g.maxHp()*.08f-.05f,"reporter second node improves skill recovery");
-        g=arena(REPORTER);g.careerTalents[g.buildId()][2]=2;e=new ActionGame.Enemy(g.nextId++,0,700,600,1000);g.enemies.add(e);g.skill();check(g.shield==20,"reporter final node grants ten ward per hit rank");
+        ActionGame g=arena(HUNTER);g.experience[g.hero]=800;g.careerTalents[g.buildId()][g.job()*3+0]=2;ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,700,600,1000);g.enemies.add(e);g.skill();check(1000-e.hp>g.damage()*2.2f,"hunter first node increases burst damage");
+        g=arena(HUNTER);g.experience[g.hero]=800;float period=g.skillPeriod();g.careerTalents[g.buildId()][g.job()*3+1]=2;check(g.skillPeriod()<period,"hunter second node shortens career cooldown");
+        g=arena(HUNTER);g.careerTalents[g.buildId()][g.job()*3+2]=2;g.skill();check(g.shield==100,"hunter final node strengthens cast shield");
+        g=arena(ASSASSIN);g.careerTalents[g.buildId()][g.job()*3+0]=2;g.skill();check(g.careerSkillTime==38,"assassin first node extends overdrive duration");
+        g=arena(ASSASSIN);g.careerTalents[g.buildId()][g.job()*3+1]=2;g.skill();g.shield=0;e=new ActionGame.Enemy(g.nextId++,0,620,600,1000);g.enemies.add(e);g.hitForTest(e,100);check(1000-e.hp>100,"assassin second node increases overdrive hit damage");
+        g=arena(ASSASSIN);g.careerTalents[g.buildId()][g.job()*3+2]=2;g.skill();g.shield=0;e=new ActionGame.Enemy(g.nextId++,0,620,600,1000);g.enemies.add(e);g.hitForTest(e,20);check(g.shield==16,"assassin final node grants ward on each successful hit");
+        g=arena(DETECTIVE);g.careerTalents[g.buildId()][g.job()*3+0]=2;e=new ActionGame.Enemy(g.nextId++,0,1000,600,1000);g.enemies.add(e);g.skill();check(e.x-g.x<100,"detective first node increases forced pull distance");
+        g=arena(DETECTIVE);g.careerTalents[g.buildId()][g.job()*3+1]=2;e=new ActionGame.Enemy(g.nextId++,0,700,600,1000);g.enemies.add(e);g.skill();check(1000-e.hp>g.damage()*2.4f,"detective second node increases pulse damage");
+        g=arena(DETECTIVE);g.careerTalents[g.buildId()][g.job()*3+2]=2;g.skill();check(g.shield==100,"detective final node strengthens cast shield");
+        g=arena(REPORTER);g.careerTalents[g.buildId()][g.job()*3+0]=2;e=new ActionGame.Enemy(g.nextId++,0,700,600,1000);g.enemies.add(e);g.skill();check(Math.abs((1000-e.hp)-g.damage()*1.5f)<.05f,"reporter first node increases conduction damage");
+        g=arena(REPORTER);g.careerTalents[g.buildId()][g.job()*3+1]=2;g.hp=g.maxHp()-20;float hp=g.hp;g.skill();check(g.hp-hp>=g.maxHp()*.08f-.05f,"reporter second node improves skill recovery");
+        g=arena(REPORTER);g.careerTalents[g.buildId()][g.job()*3+2]=2;e=new ActionGame.Enemy(g.nextId++,0,700,600,1000);g.enemies.add(e);g.skill();check(g.shield==20,"reporter final node grants ten ward per hit rank");
         System.out.println("PASS twelve career skill-tree node effects");
     }
     private static void careerTreeBudgetAndReset(){
