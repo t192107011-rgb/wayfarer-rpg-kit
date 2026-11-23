@@ -137,9 +137,9 @@ public final class SmokeInstrumentation extends Instrumentation {
         tap(835,105);waitForIdleSync();journalItem(6);journalItem(0);screenshotNativeDialog("24-hunter-story-fixture.png",activity.storyDialog);
         float[] personalHp={0};ui(()->personalHp[0]=activity.world.game.maxHp());storyButton(AlertDialog.BUTTON_POSITIVE);
         ui(()->{ActionGame g=activity.world.game;check(g.maxHp()==personalHp[0]+4,"personal decision grants actual persistent passive");try{SaveStore store=new SaveStore(activity);store.write(2,g);ActionGame loaded=store.read(2);check(loaded.storyChoices[0]==1&&loaded.characterJobs[0]==CareerSystem.HUNTER&&loaded.characterChoices[0][0]==1&&loaded.maxHp()==g.maxHp(),"story and derived health survive AtomicFile");}catch(IOException e){throw new RuntimeException(e);}activity.world.replace(new ActionGame());});
-        ui(()->{ActionGame g=new ActionGame();g.bindSoul(2,0);g.start(91);g.blocks.clear();g.enemies.clear();g.x=560;g.y=430;ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,100,100,1000);g.enemies.add(e);
-            // No injected erosion: five real forbidden-soul casts, legal 40-energy cost and full cooldown between casts.
-            for(int cast=0;cast<5;cast++){g.soulEnergy=40;g.soulSkill();if(cast<4)for(int t=0;t<481;t++){e.stun=1;g.hitStop=0;g.update(1f/60,new ActionGame.Input());g.signals.clear();}}
+        ui(()->{ActionGame g=new ActionGame();g.bindSoul(2,0);g.start(91);g.blocks.clear();g.enemies.clear();g.x=560;g.y=430;ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,g.x+100,g.y,1000);g.enemies.add(e);
+            // Six legal hunter taboo casts; combat decay is slower and each cast uses its full 14-second cooldown.
+            for(int cast=0;cast<6;cast++){g.soulEnergy=40;g.soulSkill();if(cast<5)for(int t=0;t<841;t++){e.stun=1;g.hitStop=0;g.update(1f/60,new ActionGame.Input());g.signals.clear();}}
             check(g.corruption==100&&g.ruptureTime>0,"legal soul-art sequence reaches actual 100 erosion");activity.world.replace(g);g.resume();});
         screenshot("25-erosion-100-fixture.png");
         ui(()->{ActionGame g=activity.world.game;g.enemies.clear();g.shots.clear();g.signals.clear();g.hitStop=0;g.room=4;
@@ -157,7 +157,7 @@ public final class SmokeInstrumentation extends Instrumentation {
         ui(()->{View root=activity.careerDialog.getWindow().getDecorView();Spinner jobs=root.findViewWithTag("career-job");check(jobs.getCount()==4,"exactly four rebuilt careers");jobs.setSelection(CareerSystem.ASSASSIN);((Spinner)root.findViewWithTag("career-background")).setSelection(1);check(!root.findViewWithTag("career-spec").isEnabled(),"level-one specialization remains locked");activity.careerDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();});waitForIdleSync();
         ui(()->check(activity.world.game.job()==CareerSystem.ASSASSIN&&activity.world.game.background()==1,"new career and background commit"));
         tap(785,405);ui(()->check(activity.world.game.careerWard==10,"background grants entry shield"));float basePeriod=activity.world.game.attackPeriod();tap(855,210);
-        ui(()->check(activity.world.game.careerSkillMode==2&&activity.world.game.careerSkillTime>9.5f&&activity.world.game.attackPeriod()>basePeriod,"assassin knife skill activates with a slight attack interval increase"));
+        ui(()->check(activity.world.game.careerSkillMode==2&&activity.world.game.careerSkillTime>=3.9f&&activity.world.game.attackPeriod()<basePeriod,"assassin shadow strike opens a short fast-attack window"));
         screenshot("16-career-combat.png");tap(900,37);
         ui(()->{try{SaveStore store=new SaveStore(activity);store.write(1,activity.world.game);ActionGame loaded=store.read(1);check(loaded.job()==CareerSystem.ASSASSIN&&loaded.background()==1&&loaded.careerSkillMode==2&&loaded.careerSkillTime>0,"rebuilt career and skill state survive AtomicFile");}catch(IOException e){throw new RuntimeException(e);}});
     }
