@@ -204,7 +204,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         text(c,BuildSystem.doctrine(game.talents[game.buildId()]),50,446,12,gold,false);
         text(c,"每个类别终阶二选一，可同时拥有三类终阶。",50,461,14,muted,false);
         text(c,"初始2点，每80经验+1点，最多18点。各角色独立成长。",50,501,13,gold,false);
-        button(c,700,475,210,42,"免费重置天赋",false);
+        button(c,700,475,210,42,"免费重置全部成长",false);
     }
     private void specialtyTree(Canvas c){
         box(c,0,0,960,540,0xFF12282D);glow(c,480,270,370,0x224F8B76);
