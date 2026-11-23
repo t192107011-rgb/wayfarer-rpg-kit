@@ -270,9 +270,9 @@ public final class ActionGame {
         if(which==0){if(damageBonus<40){damageBonus=Math.min(40,damageBonus+4);notice="锋芒：本轮伤害 +4";}else if(careerCooldownRank<8){careerCooldownRank++;notice="职业技能冷却速度 +10%（累计 "+(careerCooldownRank*10)+"%）";}else{loot=Math.min(99999,loot+12);notice="职业冷却已满 · 本轮票券 +12";}}
         if(which==1){if(maxHp()<99999){int cap=healthBonus<200?200:99999-(int)baseMaxHp();int gain=(int)Math.min(20,Math.min(cap-healthBonus,99999-maxHp()));healthBonus+=Math.max(0,gain);heal(35);notice=(healthBonus<=200?"生息":"生命上限")+ "：生命上限 +"+Math.max(0,gain)+"，"+(healthBonus<=200?"阶段上限200":"最高99999")+"，基础恢复35";}else{loot=Math.min(99999,loot+15);notice="生命上限已达99999 · 本轮票券 +15";}}
         if(which==2){if(speedBonus<6){speedBonus=Math.min(6,speedBonus+1);skillCd=0;followUpWindow=0;notice="轻羽：移速增益 +8%，技能立即就绪";}else{loot=Math.min(99999,loot+15);notice="轻羽已满 · 本轮票券 +15";}}
-        shopOpen=false;tacticDraftOpen=false;tacticChosen=false;Arrays.fill(tacticOffers,-1);roomCleared=true;mode=Mode.PLAY;signal("clear",x,y,0);
+        shopOpen=false;tacticDraftOpen=false;tacticChosen=false;tacticSelected=-1;Arrays.fill(tacticOffers,-1);roomCleared=true;mode=Mode.PLAY;signal("clear",x,y,0);
     }
-    public void openShop(){if(mode==Mode.REWARD){tacticDraftOpen=false;shopOpen=true;}}
+    public void openShop(){if(mode==Mode.REWARD){tacticDraftOpen=false;tacticSelected=-1;shopOpen=true;}}
     public void closeShop(){shopOpen=false;}
     public int shopPrice(int item){return item==0?24:item==1?28:item==2?32:item==3?38:item==4?42:item==5?55:-1;}
     public boolean buyShopItem(int item){
