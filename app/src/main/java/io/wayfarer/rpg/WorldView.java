@@ -136,7 +136,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         text(c,"携行："+game.relicLoadout(),40,354,13,gold,false);
         button(c,40,365,280,57,"磨刃 Lv."+game.power+" · "+game.upgradeCost(game.power)+" 储备",false);
         button(c,340,365,280,57,"护火 Lv."+game.vitality+" · "+game.upgradeCost(game.vitality)+" 储备",false);
-        text(c,"永久攻击 "+game.power+"/20     永久生命 "+game.vitality+"/20",40,445,13,muted,false);
+        text(c,"永久攻击强化 Lv."+game.power+"     永久生命强化 Lv."+game.vitality+" · 可重复购买",40,445,13,muted,false);
         button(c,660,365,260,80,"剧情远征  →",true);
         button(c,660,448,260,27,"无尽远征 · 最深 "+game.bestDepth+"层",false);
         text(c,game.notice.length()>38?game.notice.substring(0,38):game.notice,40,465,12,muted,false);
