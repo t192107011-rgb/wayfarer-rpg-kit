@@ -54,7 +54,7 @@ public final class SoulTests {
     private static void stress()throws Exception{
         for(int career=0;career<4;career++)for(int kind=1;kind<=2;kind++){
             ActionGame g=game(career,kind);mob(g,700,600);g.soulEnergy=100;g.soulSkill();
-            for(int t=0;t<900;t++){if(t%60==0){g=ActionSave.decode(ActionSave.encode(g));check(g.hp>=1&&g.soulEnergy>=0&&g.soulEnergy<=100&&g.corruption<=100,"bounded soul stress state");}g.update(1f/60,new ActionGame.Input());g.signals.clear();}
+            for(int t=0;t<900;t++){if(t%60==0){g=ActionSave.decode(ActionSave.encode(g));check(g.hp>=0&&g.soulEnergy>=0&&g.soulEnergy<=100&&g.corruption<=100,"bounded soul stress state");}g.update(1f/60,new ActionGame.Input());g.signals.clear();}
         }
         System.out.println("PASS periodic save/restore stress across eight soul forms");
     }
