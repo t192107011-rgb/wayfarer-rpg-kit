@@ -296,7 +296,7 @@ public final class ActionTests {
         System.out.println("PASS legacy v27 shared talent-point save migration");
     }
     private static void completeTalentBudgets()throws Exception{
-        ActionGame g=game(0);g.experience[0]=1540;
+        ActionGame g=new ActionGame();g.selectHero(0);g.experience[0]=1540;
         check(BuildSystem.points(g.heroXp())==18&&BuildSystem.specialtyPoints(g.heroXp())==9&&BuildSystem.corePoints(g.heroXp())==30,"max level grants enough independent points for every tree");
         for(int branch=0;branch<3;branch++){int root=branch*4;for(int i=0;i<3;i++)check(g.learn(root),"base root rank "+root);for(int i=0;i<2;i++)check(g.learn(root+1),"base middle rank "+root);check(g.learn(root+2),"base capstone "+root);}
         check(g.availablePoints()==0,"all 18 base points are spent on the base tree");
