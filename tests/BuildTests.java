@@ -58,7 +58,7 @@ public final class BuildTests {
         g=ultimate(6);arena(g);e=mob(g,610,600);g.dodge(0,-1);check(e.hp<500&&e.stun>=.45,"dodge pulse has real damage and stun");
         g=ultimate(7);arena(g);mob(g,300,300);g.skillCd=6;g.dodge(0,-1);near(g.skillCd,3.5f,"dodge reduces skill cooldown");g.dodge(0,-1);near(g.skillCd,3.5f,"failed dodge grants no free cooldown reduction");
         g=new ActionGame();points(g);learn(g,4,1);learn(g,5,2);arena(g);e=mob(g,610,600);g.dodge(0,-1);g.rollTime=0;g.x=560;g.y=600;float damage=g.damage();tick(g,true,10);near(500-e.hp,damage*1.3f,"dodge primes one empowered attack");check(g.dodgeCharge==0,"charge consumed once");
-        g=ultimate(10);g.bindSoul(1,0);g.soulEnergy=40;arena(g);mob(g,300,300);g.soulSkill();check(g.soulWard==30&&g.soulFields.size()==1,"radiant soul art creates ward and domain independently of career skill");
+        g=ultimate(10);g.bindSoul(1,0);g.soulEnergy=40;arena(g);mob(g,300,300);g.soulSkill();check(g.soulWard==28&&g.soulFields.isEmpty(),"radiant hunter soul form grants its career-specific ward without a shared domain");
         g=ultimate(11);arena(g);e=mob(g,590,600);g.shield=24;g.hp=g.maxHp();g.hitStop=0;e.stun=0;e.hp=500;e.state=1;e.timer=.001f;float hp=g.hp;tick(g,false,1);near(g.hp,hp,"shield absorbs melee");near(g.shield,10,"shield is consumed");near(e.hp,490.9f,"mirror reflects 65 percent of absorbed damage");
         ActionGame a=ActionSave.decode(ActionSave.encode(g));near(a.shield,g.shield,"remaining shield persists");
         g=new ActionGame();points(g);g.selectHero(1);g.experience[1]=1200;learn(g,0,1);learn(g,1,2);arena(g);e=mob(g,720,600);g.combo=1;g.comboWindow=.7f;tick(g,true,1);near(g.shots.get(0).damage,g.damage()*1.59f,"archer benefits from third-beat talent");
