@@ -82,7 +82,7 @@ public final class MainActivity extends Activity implements WorldView.Host {
     }
     @Override public void coreTalent(int id){
         ActionGame g=world.game;if(g.mode!=ActionGame.Mode.CAMP||id<0||id>=15)return;
-        BuildSystem.Node node=BuildSystem.CORE_NODES[id];String reason=BuildSystem.lockReason(g.coreTalents[g.buildId()],g.heroXp(),id);if(reason.isEmpty()&&g.availableCorePoints()<=0)reason="五大天赋点数不足";
+        BuildSystem.Node node=BuildSystem.CORE_NODES[id];String reason=BuildSystem.coreLockReason(g.coreTalents[g.buildId()],g.heroXp(),id);if(reason.isEmpty()&&g.availableCorePoints()<=0)reason="五大天赋点数不足";
         String requirements="需要角色 Lv."+node.minLevel+(node.parent<0?" · 无前置":" · 前置「"+BuildSystem.CORE_NODES[node.parent].name+"」"+(id%3==2?2:1)+"级");
         talentDialog=new AlertDialog.Builder(this).setTitle(node.name+"  "+g.coreRank(id)+" / "+node.maxRank)
             .setMessage(node.description+"\\n\\n"+requirements+"\\n独立可用点数："+g.availableCorePoints()+"\\n"+(reason.isEmpty()?"消耗1点学习。":reason))
