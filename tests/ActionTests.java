@@ -236,6 +236,14 @@ public final class ActionTests {
         ActionGame restored=ActionSave.decode(ActionSave.encode(g));check(restored.bank==before-80&&restored.loot==6&&restored.fieldPermits[0][0]==1,"both currencies and permanent purchases persist independently");
         System.out.println("PASS strict separation of expedition tickets, camp bank, settlement and permit purchases");
     }
+    private static void fullPermitFlow()throws Exception{
+        ActionGame g=new ActionGame();g.bank=1000;g.bindSoul(1,0);
+        for(int i=0;i<5;i++)check(g.buyFieldPermit(i),"permit purchase "+i);
+        check(g.bank==190,"all five permit prices debit camp bank exactly once");
+        g.start(703);check(g.shield==40&&g.potions==3&&g.loot==30&&g.damageBonus==4&&g.soulEnergy>=20,"all five permits apply their correct run-start effects");
+        ActionGame saved=ActionSave.decode(ActionSave.encode(g));check(saved.bank==190&&saved.shield==40&&saved.potions==3&&saved.loot==30&&saved.damageBonus==4,"all permit effects and ledgers persist");
+        System.out.println("PASS all five permanent permit purchases, costs, start effects and persistence");
+    }
     private static void permanentEconomy()throws Exception{
         ActionGame g=new ActionGame();g.bank=100000;
         for(int i=0;i<20;i++){g.upgrade(false);g.upgrade(true);}
@@ -268,5 +276,5 @@ public final class ActionTests {
         ActionGame g=new ActionGame();g.start(12);g.pause();float cd=g.activeSkillCd;for(int i=0;i<30;i++)g.update(1f/60f,new ActionGame.Input());near(g.activeSkillCd,cd,"pause freezes active cooldown");
         System.out.println("PASS five active skills, independent career cooldown, follow-ups, trap persistence and pause");
     }
-    public static void main(String[] args)throws Exception{movement();enemyShieldTypes();combat();shopAndItems();currencySeparation();expandedEconomy();careerSoulResonance();careerActiveSoulResonance();careerFollowUpAndSoulSynergy();skillChainReactions();permanentEconomy();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
+    public static void main(String[] args)throws Exception{movement();enemyShieldTypes();combat();shopAndItems();currencySeparation();fullPermitFlow();expandedEconomy();careerSoulResonance();careerActiveSoulResonance();careerFollowUpAndSoulSynergy();skillChainReactions();permanentEconomy();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
 }
