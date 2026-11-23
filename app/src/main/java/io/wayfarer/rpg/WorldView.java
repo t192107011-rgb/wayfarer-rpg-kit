@@ -375,8 +375,9 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     private void shade(Canvas c){box(c,0,0,960,540,0xD50C1820);}
     private void rewards(Canvas c){
         shade(c);
-        if(!game.tacticChosen&&game.hasTacticDraft()&&!game.tacticDraftOpen&&!game.shopOpen)game.openTacticDraft();
-        if(game.tacticDraftOpen){tacticDraft(c);return;}if(game.shopOpen){shop(c);return;}
+        if(game.shopOpen){shop(c);return;}
+        if(!game.tacticChosen&&game.hasTacticDraft()&&!game.tacticDraftOpen){tacticIntermission(c);return;}
+        if(game.tacticDraftOpen){tacticDraft(c);return;}
         text(c,"封 锁 线 补 给",480,112,29,cream,true);
         text(c,"先选中一项奖励，再按下确认领取；误触不会直接消耗选择",480,145,15,muted,true);
         if(game.room>0)text(c,WorldSetting.REPORTS[game.room-1],480,174,12,gold,true);
@@ -395,6 +396,15 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         if(game.lastRelic!=0)text(c,game.relicDiscovery()+" · 收藏永久保留",480,464,12,gold,true);
         button(c,75,486,360,42,game.tacticChosen?"✓ 本层战技刻印已领取":"战技刻印待领取",false);
         button(c,525,486,360,42,selectedReward>=0?"确认领取所选奖励":"先点选一项奖励",selectedReward>=0);
+    }
+    private void tacticIntermission(Canvas c){
+        text(c,"战斗结束 · 战技待选",480,142,30,cream,true);
+        text(c,"本层战斗已经结束。所有敌人停止行动，先整理战场，再决定本轮强化。",480,195,16,muted,true);
+        rounded(c,180,235,600,104,14,0xFF2D4545);
+        text(c,"战技刻印尚未领取",480,273,22,gold,true);
+        text(c,"进入后需要先点选卡片，再单独确认；误触不会直接消耗刻印。",480,309,14,cream,true);
+        button(c,300,382,360,58,"开始选择战技刻印",true);
+        text(c,"当前战斗已暂停 · 可以稍后再作决定",480,472,13,muted,true);
     }
     private void tacticDraft(Canvas c){
         text(c,"战 技 刻 印",480,116,30,cream,true);
@@ -469,6 +479,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             else if(inside(x,y,280,480,155,42))host.editCharacter();else if(inside(x,y,450,480,175,42)){showTalents=true;showTraining=false;resetInput();}
             else if(inside(x,y,650,480,270,42))host.souls();
         }else if(game.mode==ActionGame.Mode.REWARD){
+            if(!game.tacticChosen&&game.hasTacticDraft()&&!game.tacticDraftOpen&&!game.shopOpen){if(inside(x,y,300,382,360,58)){game.openTacticDraft();host.save();invalidate();}return;}
             if(game.tacticDraftOpen){for(int i=0;i<3;i++)if(inside(x,y,45+i*300,205,270,190)){if(game.selectTactic(i))invalidate();return;}if(inside(x,y,260,425,440,48)&&game.confirmTactic()){host.save();invalidate();return;}}
             else if(game.shopOpen){for(int i=0;i<6;i++){int col=i%3,row=i/3,x0=25+col*305,y0=150+row*145;if(inside(x,y,x0+55,y0+88,180,30)){game.buyShopItem(i);host.save();return;}}if(inside(x,y,365,478,230,38)){game.closeShop();host.save();return;}}
             else if(inside(x,y,260,382,440,40)){host.story();return;}
