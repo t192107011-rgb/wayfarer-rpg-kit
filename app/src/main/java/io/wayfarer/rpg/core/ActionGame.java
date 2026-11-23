@@ -15,7 +15,7 @@ public final class ActionGame {
     public float threat=1,pressure=0,encounterHpFloor=0,encounterDamageFloor=0,roomDamage=0,roomElapsed=0;
     public float enemyRange(float base){return base*(1+Math.min(.4f,(threat-1)*.04f));}
     public float enemySpeed(float base){return base*(1+Math.min(.75f,(threat-1)*.08f));}
-    public float enemyPower(Enemy e,float base){return Math.max(base*threat,encounterDamageFloor)*enemyForce(e);}
+    public float enemyPower(Enemy e,float base){float growth=1f+Math.min(.85f,Math.max(0,threat-1)*.17f);return Math.max(base*growth,encounterDamageFloor)*enemyForce(e);}
     public float reachFactor(){return rank(3)>0&&hp<maxHp()*.4f?1.25f:1;}
     public float meleeReach(){return (hero==0?120:100)*reachFactor();}
     public float activeRadius(){int k=soulKind();return (skillStyle()==0?(k==1?235:k==2?260:200):(k==1?180:k==2?190:160))*reachFactor()*(specialtyRank(7)>0?1.10f:1); }
@@ -112,7 +112,7 @@ public final class ActionGame {
         clearSoulRuntime();hp=maxHp();notice="已缔结："+SoulSystem.NAMES[kind];return true;
     }
     private void clearSoulRuntime(){soulEnergy=0;soulCd=0;soulWard=0;corruption=0;soulQuiet=0;soulBuff=0;ruptureTime=0;ruptureTick=0;ruptureLatched=false;soulFields.clear();}
-    private void gainSoul(float value){if(soulKind()!=0&&mode==Mode.PLAY)soulEnergy=Math.min(100,soulEnergy+value*(hasRelic(12)?1.1f:1)*(specialtyRank(3)>0?1.2f:1)*(1+.15f*tacticRanks[2]));}
+    private void gainSoul(float value){if(soulKind()==0||mode!=Mode.PLAY||value<=0)return;float gain=value*(hasRelic(12)?1.1f:1)*(specialtyRank(3)>0?1.2f:1)*(1+.15f*tacticRanks[2]);float accepted=Math.min(gain,Math.max(0,100-soulEnergy));soulEnergy+=accepted;float overflow=gain-accepted;if(overflow>0){if(soulCd>0){float reduced=Math.min(soulCd,overflow*.18f);soulCd-=reduced;overflow-=reduced/.18f;}if(overflow>0)addTalentShield(overflow*1.25f);}}
     public float healingFactor(){return ordinaryHealingFactor();}
     private float ordinaryHealingFactor(){return (soulKind()==1?1.15f:soulKind()==2?1-corruption*.003f:1)*(hasRelic(4)?1.1f:1);}
     private void heal(float amount){float restored=Math.min(maxHp()-hp,Math.max(0,amount)*healingFactor());hp+=restored;if(restored>.01f)signal("heal",x,y,(int)restored);}
@@ -261,7 +261,7 @@ public final class ActionGame {
             do{ex=120+random(880);ey=130+random(300);tries++;}while((!free(ex,ey,type==3?32:24)||len(ex-x,ey-y)<230)&&tries<100);
             if(!free(ex,ey,type==3?32:24)){ex=560;ey=130+i*40;}
             float life=type==3?(room==2?900:room==4?1500:2200):55+room*12+(type==1?10:type==2?24:type==5?15:type==6?25:0);
-            Enemy spawned=new Enemy(nextId++,type,ex,ey,Math.max(life*threat,encounterHpFloor));if(type==3){spawned.guardType=3;spawned.guard=18+room*3;}else if(type==4){spawned.guardType=2;spawned.guard=14;}else if(type==6){spawned.guardType=1;spawned.guard=24;}enemies.add(spawned);
+            Enemy spawned=new Enemy(nextId++,type,ex,ey,Math.max(life*threat,encounterHpFloor));spawned.pattern=random(type==3?3:2);if(type==3){spawned.guardType=3;spawned.guard=18+room*3;}else if(type==4){spawned.guardType=2;spawned.guard=14;}else if(type==6){spawned.guardType=1;spawned.guard=24;}enemies.add(spawned);
         }
         notice=ROOM_NAMES[room-1]+" · 清除敌人开启出口";signal("enter",x,y,room);
     }
@@ -291,27 +291,6 @@ public final class ActionGame {
         else{speedBonus=Math.min(6,speedBonus+1);notice="战术改装 · 移动速度 +8%";}
         if(item<3)notice=item==0?"购入爆裂瓶":item==1?"购入捕缚钉":"购入战斗兴奋剂";
         signal("purchase",x,y,item);return true;
-    }
-    public boolean soulWardAction(){
-        if(mode!=Mode.PLAY||soulKind()==0||soulEnergy<25)return false;
-        soulEnergy-=25;
-        if(soulKind()==1){soulWard=Math.min(99999,soulWard+30);notice="灵魂灌注 · 获得30点辉盾";}
-        else{payForbidden(0,8);soulWard=Math.min(99999,soulWard+24);notice="禁忌灌注 · 获得24点魂盾，侵蚀 +8";}
-        signal("shield",x,y,30);return true;
-    }
-    public boolean soulTuneAction(){
-        if(mode!=Mode.PLAY||soulKind()==0||soulEnergy<30||soulCd<=0)return false;
-        soulEnergy-=30;soulCd=Math.max(0,soulCd-(soulKind()==1?5f:4f));
-        if(soulKind()==2)corruption=Math.min(100,corruption+4);
-        notice=soulKind()==1?"灵魂调律 · 魂技冷却缩短5秒":"禁忌调律 · 魂技冷却缩短4秒，侵蚀 +4";
-        signal("echo",x,y,120);return true;
-    }
-    public boolean soulResonanceAction(){
-        if(mode!=Mode.PLAY||soulKind()==0||soulEnergy<35)return false;
-        soulEnergy-=35;soulBuff=Math.max(soulBuff,4f);
-        if(soulKind()==2)corruption=Math.min(100,corruption+10);
-        notice=soulKind()==1?"灵魂共鸣 · 4秒内伤害与攻速强化":"禁忌共鸣 · 4秒强化，侵蚀 +10";
-        signal("radiant",x,y,140);return true;
     }
     public void useBomb(){
         if(mode!=Mode.PLAY||bombs<=0)return;bombs--;int hitCount=0;
@@ -371,7 +350,7 @@ public final class ActionGame {
             careerSkillTime=0;careerSkillMode=0;
             List<Enemy> targets=new ArrayList<>();for(Enemy e:enemies)if(e.hp>0)targets.add(e);
             float pulse=damage();if(targets.size()==1)hit(targets.get(0),pulse*(1.3f+.1f*careerTalentRank(0)),false);
-            else if(!targets.isEmpty()){for(int i=0;i<targets.size();i++){Enemy target=targets.get(i);if(target.hp>0)hit(target,pulse,false);Enemy next=targets.get((i+1)%targets.size());if(next.hp>0)hit(next,pulse*(.3f+.1f*careerTalentRank(0)),false);}}
+            else if(!targets.isEmpty()){for(Enemy target:targets)if(target.hp>0)hit(target,pulse,false);for(int i=0;i<targets.size();i++){Enemy source=targets.get(i);if(source.hp<=0)continue;for(int step=1;step<targets.size();step++){Enemy next=targets.get((i+step)%targets.size());if(next.hp>0){hit(next,pulse*(.3f+.1f*careerTalentRank(0)),false);break;}}}}
             if(careerTalentRank(1)>0)heal(maxHp()*.04f*careerTalentRank(1));for(int i=0;i<targets.size();i++)if(careerTalentRank(2)>0)addTalentShield(10*careerTalentRank(2));signal("careerSkill",x,y,4);
             notice=targets.size()==1?"记者：单体集中 · 伤害 +30%":"记者：全场报道 · 伤害传导 +30%";
         }
@@ -654,21 +633,21 @@ public final class ActionGame {
     }
     private void aimEnemy(Enemy e,float prediction){
         e.targetX=Math.max(64,Math.min(WIDTH-64,x+motionX*prediction));e.targetY=Math.max(64,Math.min(HEIGHT-64,y+motionY*prediction));
-        float dx=e.targetX-e.x,dy=e.targetY-e.y,d=Math.max(.01f,len(dx,dy));e.aimX=dx/d;e.aimY=dy/d;
+        float dx=e.targetX-e.x,dy=e.targetY-e.y,d=Math.max(.01f,len(dx,dy));float angle=(random(2001)-1000)*.00018f;float cs=(float)Math.cos(angle),sn=(float)Math.sin(angle);e.aimX=(dx/d)*cs-(dy/d)*sn;e.aimY=(dx/d)*sn+(dy/d)*cs;
     }
     private void fan(Enemy e,int half,float spread,float speed,float power){double base=Math.atan2(e.aimY,e.aimX);for(int i=-half;i<=half;i++)enemyShot(e,(float)Math.cos(base+i*spread),(float)Math.sin(base+i*spread),speed,power);}
     private void updateEnemy(Enemy e,float dt){
-        e.hex=dec(e.hex,dt);e.flash=dec(e.flash,dt);e.guardBreak=dec(e.guardBreak,dt);e.guardDelay=dec(e.guardDelay,dt);
+        e.hex=dec(e.hex,dt*.65f);e.flash=dec(e.flash,dt);e.guardBreak=dec(e.guardBreak,dt);e.guardDelay=dec(e.guardDelay,dt);
         if(e.stun>0){e.stun=dec(e.stun,dt);return;}
         float dx=x-e.x,dy=y-e.y,distance=Math.max(.01f,len(dx,dy));boolean enraged=e.type==3&&e.hp<e.maxHp*.5f;
         if(e.state==0){
             float reach=enemyRange(e.type==0?90:e.type==1?520:e.type==2?360:e.type==3?550:e.type==4?300:e.type==5?520:420);
             if(distance<reach&&lineClear(e.x,e.y,x,y)){
-                e.state=1;e.timer=e.type==0?.42f:e.type==1?.7f:e.type==2?.7f:e.type==3?(enraged?.72f:1.05f):e.type==4?.55f:e.type==5?.75f:1;
+                e.state=1;float windup=e.type==0?.42f:e.type==1?.7f:e.type==2?.7f:e.type==3?(enraged?.72f:1.05f):e.type==4?.55f:e.type==5?.75f:1;e.timer=windup*(.88f+random(25)*.01f);
                 aimEnemy(e,e.type==1?.22f:e.type==4?.35f:e.type==5?.5f:0);e.struck=false;
             }else {
                 float speed=enemySpeed(e.type==3?115:e.type==4?235:135+room*5);
-                float side=(e.id%2==0?1:-1)*(e.type==4?.45f:distance>150?.2f:0);
+                float side=(e.pattern%2==0?1:-1)*(e.type==4?.45f:distance>150?.2f:0);
                 float nx=dx/distance-dy/distance*side,ny=dy/distance+dx/distance*side,n=len(nx,ny);
                 moveEnemy(e,nx/n*speed*dt,ny/n*speed*dt);
             }
@@ -696,7 +675,7 @@ public final class ActionGame {
             e.timer-=dt;
             if(e.type==2||e.type==4){float speed=enemySpeed(e.type==2?440:520);moveEnemy(e,e.aimX*speed*dt,e.aimY*speed*dt);if(!e.struck&&len(x-e.x,y-e.y)<e.radius()+PLAYER_RADIUS+7){e.struck=true;hurt(enemyPower(e,18+room*2));}}
             if((e.type==1||e.type==3&&e.pattern==1)&&!e.struck&&e.timer<(e.type==1?.5f:.4f)){e.struck=true;fan(e,e.type==1?1:2,.12f,e.type==1?330:370,e.type==1?12+room*2:20);}
-            if(e.timer<=0){if(e.type==2||e.type==4){e.state=3;e.timer=e.type==2?.65f:.5f;}else if(e.type==3){e.state=3;e.timer=.9f;e.pattern=(e.pattern+1)%3;}else e.state=0;}
+            if(e.timer<=0){if(e.type==2||e.type==4){e.state=3;e.timer=e.type==2?.65f:.5f;}else if(e.type==3){e.state=3;e.timer=.9f*(.9f+random(21)*.01f);e.pattern=random(3);}else e.state=0;}
         }
         for(Enemy other:enemies)if(other!=e&&other.hp>0){float sx=e.x-other.x,sy=e.y-other.y,d=len(sx,sy),min=e.radius()+other.radius();if(d>.1&&d<min)moveEnemy(e,sx/d*30*dt,sy/d*30*dt);}
     }
@@ -716,6 +695,8 @@ public final class ActionGame {
     }
     private void breakEnemyGuard(Enemy e){e.guard=0;e.guardBreak=e.guardType==1?.75f:e.guardType==2?1.65f:2.4f;e.guardDelay=Math.max(e.guardDelay,3f);e.stun=Math.max(e.stun,e.guardType==2?.45f:.7f);signal("shieldBreak",e.x,e.y,e.guardType);}
     public void hitForTest(Enemy e,float value){hit(e,value,true);}
+    public void hurtForTest(float value){hurt(value);}
+    public void gainSoulForTest(float value){gainSoul(value);}
     private void hit(Enemy e,float value){hit(e,value,true);}
     private void hit(Enemy e,float value,boolean charge){hit(e,value,charge,charge);}
     private void hit(Enemy e,float value,boolean charge,boolean echoEligible){
@@ -733,12 +714,12 @@ public final class ActionGame {
         value*=e.hex>0?1.15f*(hasRelic(6)?1.1f:1)*(1+.12f*tacticRanks[4]):1;if(echoEligible&&coreRank(2)>0&&e.stun>0)value*=1+.12f*coreRank(2);if(echoEligible&&job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0)value*=1+.10f*careerTalentRank(1);float beforeGuard=e.guard;float guardFactor=e.guardType==2?.65f:1f;float guardDamage=value*guardFactor;float absorbed=Math.min(e.guard,guardDamage);e.guard=Math.max(0,e.guard-absorbed);float healthLeak=Math.min(value,absorbed/guardFactor);value-=healthLeak;if(absorbed>0){e.guardDelay=2.5f;signal("enemyShield",e.x,e.y,(int)absorbed);}if(beforeGuard>0&&e.guard<=.0001f)breakEnemyGuard(e);float dealt=Math.min(e.hp,value);e.hp=Math.max(0,e.hp-value);
         e.flash=.12f;if(absorbed==0)e.stun=Math.max(e.stun,e.type==3?.03f:e.type==2||e.type==4?.06f:.12f);signal("hit",e.x,e.y,(int)value);
         if(dealt>0&&job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0)heal(dealt*.20f);
-        if(job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0&&dealt>0){addTalentShield(8*careerTalentRank(2));if(e.hp<=0){activeSkillCd=0;heal(maxHp()*.03f);}}
+        if(job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0&&dealt>0){addTalentShield(3+8*careerTalentRank(2));if(e.hp<=0){activeSkillCd=0;heal(maxHp()*.03f);}}
         if(charge&&dealt>0){gainSoul(Math.min(4,dealt*.08f));if(soulBuff>0)heal(Math.min(maxHp()*.015f,dealt*.08f));}
     }
     private void hurt(float value){
         if(invulnerable>0||mode!=Mode.PLAY)return;
-        value*= (custom>=0&&profile().trait==1?1.12f:1)*(job()==DETECTIVE&&careerSkillMode==3&&careerSkillTime>0?1.15f:1)*(rank(3)>0?1.15f:1)*(soulKind()==2?1+corruption*.004f:1);
+        value*= (custom>=0&&profile().trait==1?1.12f:1)*(job()==DETECTIVE&&careerSkillMode==3&&careerSkillTime>0?1.15f:1)*(job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0?.75f:1)*(rank(3)>0?1.15f:1)*(soulKind()==2?1+corruption*.004f:1);
         float wardTaken=Math.min(soulWard,value);soulWard-=wardTaken;value-=wardTaken;
         float careerTaken=Math.min(careerWard,value);careerWard-=careerTaken;value-=careerTaken;
         float shieldBefore=shield;float talentTaken=Math.min(shield,value);shield-=talentTaken;value-=talentTaken;float absorbed=talentTaken+wardTaken+careerTaken;if(shieldBefore>0&&shield<=.0001f&&coreRank(11)>0){for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<145)hit(e,talentTaken*.35f*coreRank(11),false);signal("shieldBreak",x,y,145);}
