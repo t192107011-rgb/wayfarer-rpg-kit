@@ -231,7 +231,7 @@ public final class ActionTests {
         g.mode=ActionGame.Mode.REWARD;g.openShop();check(g.buyShopItem(0)&&g.loot==56&&g.bank==500,"run shop spends only expedition tickets");
         g.closeShop();g.mode=ActionGame.Mode.PAUSED;g.abandon();check(g.bank==539&&g.loot==56,"defeat settlement transfers only seventy percent of remaining run tickets");
         g.returnCamp();int before=g.bank;check(g.buyFieldPermit(0)&&g.bank==before-80,"permanent expedition permit spends only camp bank");
-        g.start(702);check(g.shield==40&&g.loot==0,"guard permit grants its starting shield without adding ticket permit rewards");g.loot=30;
+        g.start(702);check(g.shield==40&&g.loot==0,"guard permit grants its starting shield without adding ticket permit rewards");g.loot=30;g.enemies.clear();
         g.mode=ActionGame.Mode.REWARD;g.openShop();check(g.buyShopItem(0)&&g.loot==6&&g.bank==before-80,"second run shop purchase leaves camp bank untouched");
         ActionGame restored=ActionSave.decode(ActionSave.encode(g));check(restored.bank==before-80&&restored.loot==6&&restored.fieldPermits[0][0]==1,"both currencies and permanent purchases persist independently");
         System.out.println("PASS strict separation of expedition tickets, camp bank, settlement and permit purchases");
