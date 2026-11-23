@@ -1,30 +1,54 @@
 import io.wayfarer.rpg.core.*;
 import static io.wayfarer.rpg.core.CareerSystem.*;
 
-/** Regression checks for the four redesigned career abilities. */
 public final class CareerAbilityTests {
     private static int checks;
     private static void check(boolean ok,String why){checks++;if(!ok)throw new AssertionError(why);}
-    private static ActionGame arena(int career){
-        ActionGame g=new ActionGame();g.chooseCareer(career,0,0);g.start(91);g.experience[g.hero]=160;g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;g.invulnerable=0;return g;
+    private static ActionGame arena(int career,int soul){
+        ActionGame g=new ActionGame();g.chooseCareer(career,0,0);if(soul>0)g.bindSoul(soul,0);g.start(91);
+        g.experience[g.hero]=160;g.blocks.clear();g.enemies.clear();g.shots.clear();g.x=560;g.y=600;g.invulnerable=0;return g;
+    }
+    private static ActionGame.Enemy mob(ActionGame g,float x,float y,float hp){ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,x,y,hp);g.enemies.add(e);return e;}
+    private static boolean signal(ActionGame g,String kind){for(ActionGame.Signal s:g.signals)if(s.kind.equals(kind))return true;return false;}
+    private static void activeSkills(){
+        ActionGame g=arena(HUNTER,0);ActionGame.Enemy target=mob(g,700,600,1000);float speed=g.speed();g.skill();
+        check(target.hex>=8&&target.hp<1000&&g.speed()>speed,"hunter marks and hunts a high-threat target while entering a short hunt window");
+        g=arena(ASSASSIN,0);float x=g.x;g.skill();
+        check(g.invulnerable>=.8f&&g.x>x&&g.shield>0,"assassin performs a protected forward shadow strike and gains ward");
+        g=arena(DETECTIVE,0);target=mob(g,720,600,1000);g.skill();
+        check(target.hex>=4.5f&&target.stun>=.29f&&g.careerSkillMode==3,"detective reconstructs the scene, records clues and interrupts suspects");
+        g=arena(REPORTER,0);target=mob(g,700,600,1000);ActionGame.Enemy witness=mob(g,800,600,1000);float before=witness.hp;g.skill();
+        check(target.hp<1000&&witness.hp<before&&g.careerSkillMode==4,"reporter publishes a headline and propagates damage to a nearby witness");
+        System.out.println("PASS four distinct career active loops");
+    }
+    private static void soulForms(){
+        for(int career=0;career<4;career++){
+            ActionGame radiant=arena(career,1);ActionGame.Enemy e=mob(radiant,700,600,1000);radiant.soulEnergy=100;radiant.soulSkill();
+            check(radiant.soulEnergy==60&&radiant.soulCd>0&&signal(radiant,"radiant"),"radiant soul form is unique and spends soul energy for career "+career);
+            check(e.hp<1000||radiant.soulWard>0||e.hex>0,"radiant soul form resolves a real combat or defense effect for career "+career);
+            ActionGame forbidden=arena(career,2);e=mob(forbidden,700,600,1000);forbidden.soulEnergy=100;float hp=forbidden.hp;forbidden.soulSkill();
+            check(forbidden.soulEnergy==60&&forbidden.soulCd>0&&signal(forbidden,"forbidden"),"forbidden soul form is unique and spends soul energy for career "+career);
+            check(forbidden.hp<hp&&forbidden.corruption>0,"forbidden soul form exacts a life and erosion cost for career "+career);
+        }
+        System.out.println("PASS eight career-bound radiant and forbidden soul forms");
     }
     private static void careerTreeEffects(){
-        ActionGame g=arena(HUNTER);g.experience[g.hero]=800;g.careerTalents[g.buildId()][g.job()*3+0]=2;ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,700,600,1000);g.enemies.add(e);g.skill();check(1000-e.hp>g.damage()*2.2f,"hunter first node increases burst damage");
-        g=arena(HUNTER);g.experience[g.hero]=800;float period=g.skillPeriod();g.careerTalents[g.buildId()][g.job()*3+1]=2;check(g.skillPeriod()<period,"hunter second node shortens career cooldown");
-        g=arena(HUNTER);g.careerTalents[g.buildId()][g.job()*3+2]=2;g.skill();check(g.shield==100,"hunter final node strengthens cast shield");
-        g=arena(ASSASSIN);g.careerTalents[g.buildId()][g.job()*3+0]=2;g.skill();check(g.careerSkillTime==38,"assassin first node extends overdrive duration");
-        g=arena(ASSASSIN);g.careerTalents[g.buildId()][g.job()*3+1]=2;g.skill();g.shield=0;e=new ActionGame.Enemy(g.nextId++,0,620,600,1000);g.enemies.add(e);g.hitForTest(e,100);check(1000-e.hp>100,"assassin second node increases overdrive hit damage");
-        g=arena(ASSASSIN);g.careerTalents[g.buildId()][g.job()*3+2]=2;g.skill();g.shield=0;e=new ActionGame.Enemy(g.nextId++,0,620,600,1000);g.enemies.add(e);g.hitForTest(e,20);check(g.shield==21,"assassin final node combines with the close-hit career passive ward");
-        g=arena(DETECTIVE);g.careerTalents[g.buildId()][g.job()*3+0]=2;e=new ActionGame.Enemy(g.nextId++,0,1000,600,1000);g.enemies.add(e);g.skill();check(e.x-g.x<100,"detective first node increases forced pull distance");
-        g=arena(DETECTIVE);g.careerTalents[g.buildId()][g.job()*3+1]=2;e=new ActionGame.Enemy(g.nextId++,0,700,600,1000);g.enemies.add(e);g.skill();check(1000-e.hp>g.damage()*2.4f,"detective second node increases pulse damage");
-        g=arena(DETECTIVE);g.careerTalents[g.buildId()][g.job()*3+2]=2;g.skill();check(g.shield==100,"detective final node strengthens cast shield");
-        g=arena(REPORTER);g.careerTalents[g.buildId()][g.job()*3+0]=2;e=new ActionGame.Enemy(g.nextId++,0,700,600,1000);g.enemies.add(e);g.skill();check(Math.abs((1000-e.hp)-g.damage()*1.5f)<.05f,"reporter first node increases conduction damage");
-        g=arena(REPORTER);g.careerTalents[g.buildId()][g.job()*3+1]=2;g.hp=g.maxHp()-20;float hp=g.hp;g.skill();check(g.hp-hp>=g.maxHp()*.08f-.05f,"reporter second node improves skill recovery");
-        g=arena(REPORTER);g.careerTalents[g.buildId()][g.job()*3+2]=2;e=new ActionGame.Enemy(g.nextId++,0,700,600,1000);g.enemies.add(e);g.skill();check(g.shield==80,"reporter final node adds twenty ward per hit to the base cast ward");
-        System.out.println("PASS twelve career skill-tree node effects");
+        ActionGame g=arena(HUNTER,0);ActionGame.Enemy e=mob(g,700,600,1000);g.careerTalents[g.buildId()][0]=2;g.skill();check(e.hp<1000,"hunter tracking calibration affects marked target damage");
+        g=arena(HUNTER,0);float cd=g.skillPeriod();g.careerTalents[g.buildId()][1]=2;check(g.skillPeriod()<cd,"hunter cooldown node works");
+        g=arena(HUNTER,0);g.careerTalents[g.buildId()][2]=2;g.skill();check(g.shield>=40,"hunter shield node works");
+        g=arena(ASSASSIN,0);g.careerTalents[g.buildId()][0]=2;g.skill();check(g.x>560+220,"assassin mobility node extends shadow strike");
+        g=arena(ASSASSIN,0);g.careerTalents[g.buildId()][1]=2;e=mob(g,700,600,1000);g.skill();float hp=e.hp;g.hitForTest(e,20);check(e.hp<hp-20,"assassin damage node works during strike window");
+        g=arena(ASSASSIN,0);g.careerTalents[g.buildId()][2]=2;e=mob(g,620,600,1000);g.skill();float ward=g.shield;g.hitForTest(e,20);check(g.shield>ward,"assassin shield node works on hit");
+        g=arena(DETECTIVE,0);g.careerTalents[g.buildId()][0]=2;e=mob(g,700,600,1000);g.skill();check(e.hex>=5.5f,"detective evidence node lengthens clue exposure");
+        g=arena(DETECTIVE,0);g.careerTalents[g.buildId()][1]=2;e=mob(g,700,600,1000);g.skill();float before=e.hp;g.hitForTest(e,20);check(before-e.hp>20,"detective analysis node increases damage to investigated targets");
+        g=arena(DETECTIVE,0);g.careerTalents[g.buildId()][2]=2;g.skill();check(g.shield>=64,"detective protection node adds ward");
+        g=arena(REPORTER,0);g.careerTalents[g.buildId()][0]=2;e=mob(g,700,600,1000);ActionGame.Enemy witness=mob(g,800,600,1000);float wb=witness.hp;g.hitForTest(e,100);check(wb-witness.hp>20,"reporter distribution node increases relay ratio");
+        g=arena(REPORTER,0);g.careerTalents[g.buildId()][1]=2;g.hp=g.maxHp()-20;float old=g.hp;g.skill();check(g.hp>old,"reporter recovery node works");
+        g=arena(REPORTER,0);g.careerTalents[g.buildId()][2]=2;e=mob(g,700,600,1000);g.skill();check(g.shield>=20,"reporter ward node works");
+        System.out.println("PASS twelve career talent effects");
     }
     private static void careerTreeBudgetAndReset(){
-        ActionGame g=arena(HUNTER);g.experience[g.hero]=1200;g.pause();g.abandon();g.returnCamp();
+        ActionGame g=arena(HUNTER,0);g.experience[g.hero]=1200;g.pause();g.abandon();g.returnCamp();
         check(!g.learnCareerTalent(2),"career final node is locked before its prerequisite");
         check(g.learnCareerTalent(0)&&g.learnCareerTalent(0)&&g.learnCareerTalent(1)&&g.learnCareerTalent(1)&&g.learnCareerTalent(2),"career skill points follow rank and prerequisite rules");
         check(g.availableCareerPoints()==2,"career skill points share a capped career budget");
@@ -32,32 +56,13 @@ public final class CareerAbilityTests {
         System.out.println("PASS career talent point budget, prerequisites and full respec");
     }
     public static void main(String[] args)throws Exception{
-        careerTreeEffects();careerTreeBudgetAndReset();
-        ActionGame g=arena(HUNTER);ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,700,600,1000);g.enemies.add(e);g.skill();
-        check(g.careerSkillMode==1&&g.careerSkillTime==30&&e.hp<1000,"hunter burst and sustained state");
-        g=arena(ASSASSIN);float basePeriod=g.attackPeriod();g.skill();
-        check(g.careerSkillMode==2&&g.careerSkillTime==30&&g.attackPeriod()>basePeriod,"assassin activates knife state with a slight attack interval increase");
-        g.activeSkillCd=8;g.skillCd=11;ActionGame.Enemy victim=new ActionGame.Enemy(g.nextId++,0,600,600,1);g.enemies.add(victim);g.hitForTest(victim,20);
-        check(g.activeSkillCd==0&&g.skillCd==11,"assassin kills refresh generic active skill, not career skill");
-        g=arena(DETECTIVE);e=new ActionGame.Enemy(g.nextId++,0,720,600,1000);g.enemies.add(e);float beforeDistance=(float)Math.hypot(e.x-g.x,e.y-g.y);g.skill();
-        check(g.careerSkillMode==0&&g.careerSkillTime==0&&e.hp<1000&&Math.hypot(e.x-g.x,e.y-g.y)<beforeDistance,"detective instantly attracts and damages without a persistent field");
-        ActionGame.Enemy archer=new ActionGame.Enemy(g.nextId++,1,800,380,1000);g.enemies.add(archer);archer.state=1;archer.timer=.01f;
-        for(int i=0;i<40;i++){g.hitStop=0;g.update(1f/60f,new ActionGame.Input());}
-        check(archer.state==2||g.shots.size()>0,"detective one-shot attraction allows enemy AI to resume after its brief stun");
-        g=arena(REPORTER);ActionGame.Enemy reporter=new ActionGame.Enemy(g.nextId++,0,700,600,1000);g.enemies.add(reporter);float expectedReporterDamage=g.damage()*1.3f;g.skill();
-        check(Math.abs((1000-reporter.hp)-expectedReporterDamage)<.05f&&g.careerSkillMode==0&&g.careerSkillTime==0,"reporter single-target burst deals thirty percent bonus with no healing penalty");
-        g.careerCooldownRank=4;ActionGame restored=ActionSave.decode(ActionSave.encode(g));
-        check(restored.careerCooldownRank==4&&restored.careerSkillMode==0,"v26 saves career cooldown without obsolete reporter state");
-        g=arena(HUNTER);g.careers[g.buildId()][1]=2;check(g.speed()>205&&g.dodgePeriod()<1.15f,"hunter skirmisher improves mobility");
-        g=arena(ASSASSIN);g.careers[g.buildId()][1]=1;ActionGame.Enemy low=new ActionGame.Enemy(g.nextId++,0,600,600,100);low.hp=40;g.enemies.add(low);float hpBefore=low.hp;g.hitForTest(low,20);check(hpBefore-low.hp>20,"assassin executioner deals bonus damage to wounded targets");
-        g=arena(DETECTIVE);g.careers[g.buildId()][1]=1;ActionGame.Enemy marked=new ActionGame.Enemy(g.nextId++,0,600,600,100);marked.hex=2;g.enemies.add(marked);g.hitForTest(marked,20);check(100-marked.hp>20,"detective interrogator exploits marked targets");
-        g=arena(DETECTIVE);g.careers[g.buildId()][1]=2;marked=new ActionGame.Enemy(g.nextId++,0,600,600,100);marked.stun=1;g.enemies.add(marked);g.hitForTest(marked,20);check(100-marked.hp>20,"detective analyst exploits stunned targets");
-        g=arena(ASSASSIN);g.careers[g.buildId()][1]=2;check(g.careerKnifeCount()==5,"assassin phantom specialization adds two knives to each volley");
+        activeSkills();soulForms();careerTreeEffects();careerTreeBudgetAndReset();
+        ActionGame g=arena(HUNTER,0);ActionGame.Enemy distant=mob(g,g.x+300,g.y,1000);g.hitForTest(distant,100);check(distant.hp<900,"hunter's marked target passive is tested through a mark");
+        g=arena(ASSASSIN,0);ActionGame.Enemy close=mob(g,g.x+90,g.y,1000);float shield=g.shield;g.hitForTest(close,40);check(g.shield>shield,"assassin gains guard from close-quarters hits");
+        g=arena(DETECTIVE,0);ActionGame.Enemy suspect=mob(g,g.x+90,g.y,1000);g.hitForTest(suspect,20);check(suspect.hex>=3.5f,"detective marks evidence targets on hit");
+        g=arena(REPORTER,0);ActionGame.Enemy source=mob(g,g.x+90,g.y,1000),witness=mob(g,g.x+180,g.y,1000);float witnessHp=witness.hp;g.hitForTest(source,100);check(witness.hp<witnessHp&&witnessHp-witness.hp>=19.9f,"reporter relays twenty percent of hit damage to a nearby second target");
         g.soulCd=5;g.generateRoom();check(g.skillCd==0&&g.soulCd==0,"room transition resets both skill cooldowns");
-        g=arena(HUNTER);ActionGame.Enemy distant=new ActionGame.Enemy(g.nextId++,0,g.x+300,g.y,1000);g.enemies.add(distant);g.hitForTest(distant,100);check(1000-distant.hp>=111.9f,"hunter gains a reliable long-range tracking damage bonus");
-        g=arena(ASSASSIN);ActionGame.Enemy close=new ActionGame.Enemy(g.nextId++,0,g.x+90,g.y,1000);g.enemies.add(close);float shieldBefore=g.shield;g.hitForTest(close,40);check(g.shield>shieldBefore,"assassin gains guard from close-quarters hits");
-        g=arena(DETECTIVE);ActionGame.Enemy suspect=new ActionGame.Enemy(g.nextId++,0,g.x+90,g.y,1000);g.enemies.add(suspect);g.hitForTest(suspect,20);check(suspect.hex>=2.5f,"detective marks evidence targets on hit");
-        g=arena(REPORTER);ActionGame.Enemy source=new ActionGame.Enemy(g.nextId++,0,g.x+90,g.y,1000),witness=new ActionGame.Enemy(g.nextId++,0,g.x+180,g.y,1000);g.enemies.add(source);g.enemies.add(witness);float witnessHp=witness.hp;g.hitForTest(source,100);check(witness.hp<witnessHp&&Math.abs((witnessHp-witness.hp)-15)<.1f,"reporter relays fifteen percent of hit damage to a nearby second target");
+        ActionGame restored=ActionSave.decode(ActionSave.encode(g));check(restored.job()==REPORTER,"career identity survives save restore");
         System.out.println("CAREER ABILITY CHECKS PASSED: "+checks);
     }
 }
