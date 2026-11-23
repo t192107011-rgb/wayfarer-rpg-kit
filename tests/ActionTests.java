@@ -37,7 +37,7 @@ public final class ActionTests {
     private static void shieldSourceSummary(){
         ActionGame g=game(0);String base=g.shieldSourceSummary();
         check(base.contains("闪避+12")&&base.contains("击杀+2"),"baseline shield sources are visible");
-        g.coreTalents[0][4]=1;g.coreTalents[0][7]=1;g.coreTalents[0][10]=2;g.coreTalents[0][11]=1;
+        g.coreTalents[0][4]=1;g.coreTalents[0][7]=1;g.coreTalents[0][10]=2;g.talents[0][11]=1;
         g.fieldPermits[0][0]=1;g.careers[0][0]=CareerSystem.HUNTER;
         String summary=g.shieldSourceSummary();
         check(summary.contains("闪避+20")&&summary.contains("远征许可开局+40"),"dodge and permit shield sources are accurate");
