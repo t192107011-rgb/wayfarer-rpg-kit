@@ -346,7 +346,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             if(game.soulKind()==2){box(c,30,143,275,4,0xFF3D454E);box(c,30,143,275*game.corruption/100,4,game.ruptureTime>0?0xFFE66D87:tint);}
             text(c,game.soulArtName(),855,248,12,tint,true);
         }
-        if(game.shield>0||game.dodgeCharge>0){int shieldY=game.soulKind()>0?170:98;text(c,"天赋护盾 "+(int)game.shield+(game.dodgeCharge>0?"  · 借势就绪":""),30,shieldY,13,gold,false);text(c,game.shieldSourceSummary(),30,shieldY+(game.soulKind()>0?46:46),9,muted,false);}
+        int shieldY=game.soulKind()>0?170:98;if(game.shield>0||game.dodgeCharge>0)text(c,"天赋护盾 "+(int)game.shield+(game.dodgeCharge>0?"  · 借势就绪":""),30,shieldY,13,gold,false);text(c,game.shieldSourceSummary(),30,shieldY+46,9,muted,false);
         if(game.relics[game.buildId()][0]!=0||game.relics[game.buildId()][1]!=0){
             text(c,"遗物："+game.relicLoadout(),30,game.soulKind()>0?193:122,11,gold,false);
             if(game.relicEcho>0||game.hasRelic(8))text(c,(game.relicEcho>0?"铜铃待发  ":"")+(game.hasRelic(8)?(game.relicRevived?"沙漏已用":"沙漏待命"):""),30,game.soulKind()>0?210:140,11,muted,false);
