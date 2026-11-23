@@ -180,7 +180,7 @@ public final class SmokeInstrumentation extends Instrumentation {
         float[] paused={0,0};ui(()->{paused[0]=activity.world.game.soulFields.get(0).life;paused[1]=activity.world.game.soulCd;});SystemClock.sleep(180);
         ui(()->{check(activity.world.game.soulFields.get(0).life==paused[0]&&activity.world.game.soulCd==paused[1],"pause freezes domain and exclusive cooldown");
             try{SaveStore store=new SaveStore(activity);store.write(3,activity.world.game);ActionGame loaded=store.read(3);check(loaded.soulKind()==1&&loaded.soulFields.size()==1&&loaded.soulEnergy==activity.world.game.soulEnergy,"soul snapshot restored");}catch(IOException e){throw new RuntimeException(e);}
-            ActionGame g=new ActionGame();g.selectCustom(1);activity.world.replace(g);
+            ActionGame g=new ActionGame();g.selectCustom(1);check(g.chooseCareer(CareerSystem.HUNTER,0,0)&&g.job()==CareerSystem.HUNTER,"forbidden soul fixture binds an explicit hunter career");activity.world.replace(g);
         });
         tap(350,500);waitForIdleSync();ui(()->((Spinner)activity.workshopDialog.getWindow().getDecorView().findViewWithTag("profile-soul")).setSelection(2));waitForIdleSync();
         ui(()->((Spinner)activity.workshopDialog.getWindow().getDecorView().findViewWithTag("profile-soul-art")).setSelection(1));waitForIdleSync();
@@ -191,7 +191,7 @@ public final class SmokeInstrumentation extends Instrumentation {
         tap(785,405);float[] hp={0};ui(()->hp[0]=activity.world.game.hp);tap(735,240);
         ui(()->check(activity.world.game.soulBuff>0&&activity.world.game.corruption>29&&activity.world.game.corruption<=30&&activity.world.game.hp<hp[0],"forbidden soul art has actual cost and buff"));
         tap(855,210);SystemClock.sleep(100);screenshot("12-forbidden-soul-art.png");
-        ui(()->{check(activity.world.game.corruption>29&&activity.world.game.corruption<=30&&activity.world.game.careerSkillMode==1&&activity.world.game.skillCd>0,"career active is independent of forbidden soul art");try{ActionGame g=ActionSave.decode(ActionSave.encode(activity.world.game));check(g.soulBuff>0&&g.soulArt()==1,"forbidden runtime persists");}catch(IOException e){throw new RuntimeException(e);}});
+        ui(()->{check(activity.world.game.corruption>29&&activity.world.game.corruption<=30&&activity.world.game.careerSkillMode==1&&activity.world.game.skillCd>0,"career active is independent of forbidden soul art: job="+activity.world.game.job()+" mode="+activity.world.game.mode+" skillMode="+activity.world.game.careerSkillMode+" skillCd="+activity.world.game.skillCd+" custom="+activity.world.game.custom);try{ActionGame g=ActionSave.decode(ActionSave.encode(activity.world.game));check(g.soulBuff>0&&g.soulArt()==1,"forbidden runtime persists");}catch(IOException e){throw new RuntimeException(e);}});
     }
     private void screenshotSoulDialog(String name){ui(()->{try{View v=activity.soulDialog.getWindow().getDecorView();Bitmap b=Bitmap.createBitmap(v.getWidth(),v.getHeight(),Bitmap.Config.ARGB_8888);v.draw(new Canvas(b));writeBitmap(b,name);}catch(IOException e){throw new RuntimeException(e);}});}
     private void workshopFlow(){
