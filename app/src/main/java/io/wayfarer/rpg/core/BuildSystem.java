@@ -93,7 +93,7 @@ public final class BuildSystem {
     public static final String[] CAREER_TALENT_DESCRIPTIONS={"职业技能伤害提高15% / 级。","职业技能冷却缩短5% / 级。","施放职业技能额外获得20点护盾 / 级。","刺客职业技能持续时间延长4秒 / 级。","刺客职业技能伤害提高10% / 级。","刺客技能命中获得8点护盾。","侦探全场吸引范围与力度提高。","侦探职业技能伤害提高15% / 级。","侦探施放技能额外获得20点护盾 / 级。","记者伤害传导比例提高10% / 级。","记者职业技能额外恢复4%最大生命 / 级。","记者职业技能命中获得10点护盾。"};
     public static int careerTalentMax(int id){return id%3==2?2:3;}
     public static int coreSpent(int[] ranks){int n=0;for(int v:ranks)n+=v;return n;}
-    public static int corePoints(int xp){return 2+Math.min(28,Math.max(0,xp)/55);}
+    public static int corePoints(int xp){return 2+Math.min(27,Math.max(0,xp)/55);}
     public static int specialtyPoints(int xp){return Math.min(9,points(xp));}
     public static String coreLockReason(int[] ranks,int xp,int id){
         if(id<0||id>=CORE_NODES.length)return "未知五大天赋";
