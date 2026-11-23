@@ -25,7 +25,7 @@ public final class EndlessTests {
     }
     static void ranges(){
         ActionGame g=new ActionGame();g.start(1);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;ActionGame.Enemy e=mob(g,0,675,600);float before=e.hp;attack(g);for(int i=0;i<15;i++)step(g);check(e.hp<before,"sword reaches 115, beyond old 90");
-        g=new ActionGame();g.chooseCareer(CareerSystem.REPORTER,0,0);g.start(1);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;e=mob(g,0,800,600);before=e.hp;float reporterPeriod=g.attackPeriod();g.skill();check(e.hp==before&&g.careerSkillTime==30&&g.attackPeriod()<reporterPeriod,"reporter skill boosts attack speed without a burst");
+        g=new ActionGame();g.chooseCareer(CareerSystem.REPORTER,0,0);g.start(1);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;e=mob(g,0,800,600);before=e.hp;float expectedReporter=g.damage()*1.3f;g.skill();check(Math.abs((before-e.hp)-expectedReporter)<.05f&&g.careerSkillTime==0&&g.careerSkillMode==0,"reporter skill delivers a focused single-target burst without a persistent speed state");
         g=new ActionGame();g.start(1);g.blocks.clear();g.enemies.clear();g.invulnerable=0;g.x=560;g.y=600;e=mob(g,0,665,600);e.stun=0;e.state=1;e.timer=.001f;e.aimX=-1;e.aimY=0;before=g.hp;step(g);check(g.hp<before,"enemy strike hits beyond old 82 range");
     }
     static void threat()throws Exception{
