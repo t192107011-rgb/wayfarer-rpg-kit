@@ -157,7 +157,7 @@ public final class SmokeInstrumentation extends Instrumentation {
         screenshot("16-career-combat.png");tap(900,37);
         ui(()->{try{SaveStore store=new SaveStore(activity);store.write(1,activity.world.game);ActionGame loaded=store.read(1);check(loaded.job()==CareerSystem.ASSASSIN&&loaded.background()==1&&loaded.careerSkillMode==2&&loaded.careerSkillTime>0,"rebuilt career and skill state survive AtomicFile");}catch(IOException e){throw new RuntimeException(e);}});
     }
-    private void screenshotNativeDialog(String name,AlertDialog dialog){ui(()->{try{View v=dialog.getWindow().getDecorView();Bitmap b=Bitmap.createBitmap(v.getWidth(),v.getHeight(),Bitmap.Config.ARGB_8888);v.draw(new Canvas(b));writeBitmap(b,name);}catch(IOException e){throw new RuntimeException(e);}});}
+    private void screenshotNativeDialog(String name,AlertDialog dialog){ui(()->{try{if(dialog==null||dialog.getWindow()==null)return;View v=dialog.getWindow().getDecorView();if(!v.isAttachedToWindow()||v.getWidth()<=0||v.getHeight()<=0)return;Bitmap b=Bitmap.createBitmap(v.getWidth(),v.getHeight(),Bitmap.Config.ARGB_8888);v.draw(new Canvas(b));writeBitmap(b,name);}catch(IOException e){throw new RuntimeException(e);}});}
     private void relicFlow(){
         tap(815,142);waitForIdleSync();
         ui(()->{check(activity.relicDialog.isShowing(),"relic cabinet opens from camp");View root=activity.relicDialog.getWindow().getDecorView();((Spinner)root.findViewWithTag("relic-slot-0")).setSelection(1);((Spinner)root.findViewWithTag("relic-slot-1")).setSelection(1);});waitForIdleSync();
@@ -176,7 +176,7 @@ public final class SmokeInstrumentation extends Instrumentation {
         tap(815,142);waitForIdleSync();ui(()->{java.util.List<Integer> ownedIds=new java.util.ArrayList<>();for(int id=0;id<RelicSystem.NAMES.length;id++)if(RelicSystem.owns(activity.world.game.relicOwned,id))ownedIds.add(id);int ownedIndex=ownedIds.indexOf(found[0]);Spinner slot=(Spinner)activity.relicDialog.getWindow().getDecorView().findViewWithTag("relic-slot-0");check(found[0]>0&&ownedIndex>=0,"discovered relic is in shared collection: id="+found[0]+" mask="+activity.world.game.relicOwned+" ids="+ownedIds);slot.setSelection(ownedIndex);});waitForIdleSync();ui(()->{Spinner slot=(Spinner)activity.relicDialog.getWindow().getDecorView().findViewWithTag("relic-slot-0");check(slot.getSelectedItemPosition()>=0&&activity.relicDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled(),"new relic selection validates: id="+found[0]+" position="+slot.getSelectedItemPosition()+" count="+slot.getCount());activity.relicDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();});waitForIdleSync();
         ui(()->check(activity.world.game.hasRelic(found[0]),"newly found relic can be equipped in camp"));
     }
-    private void screenshotRelicDialog(String name){ui(()->{try{View v=activity.relicDialog.getWindow().getDecorView();Bitmap b=Bitmap.createBitmap(v.getWidth(),v.getHeight(),Bitmap.Config.ARGB_8888);v.draw(new Canvas(b));writeBitmap(b,name);}catch(IOException e){throw new RuntimeException(e);}});}
+    private void screenshotRelicDialog(String name){ui(()->{try{if(activity.relicDialog==null||activity.relicDialog.getWindow()==null)return;View v=activity.relicDialog.getWindow().getDecorView();if(!v.isAttachedToWindow()||v.getWidth()<=0||v.getHeight()<=0)return;Bitmap b=Bitmap.createBitmap(v.getWidth(),v.getHeight(),Bitmap.Config.ARGB_8888);v.draw(new Canvas(b));writeBitmap(b,name);}catch(IOException e){throw new RuntimeException(e);}});}
     private void soulFlow(){
         tap(780,500);waitForIdleSync();
         ui(()->{check(activity.soulDialog.isShowing(),"soul altar opens");((Spinner)activity.soulDialog.getWindow().getDecorView().findViewWithTag("soul-kind")).setSelection(1);});waitForIdleSync();
@@ -203,7 +203,7 @@ public final class SmokeInstrumentation extends Instrumentation {
         tap(855,210);SystemClock.sleep(100);screenshot("12-forbidden-soul-art.png");
         ui(()->{check(activity.world.game.soulBuff>0&&activity.world.game.soulArt()==1&&activity.world.game.careerSkillMode==1&&activity.world.game.skillCd>0,"career active is independent of forbidden soul art: corruption="+activity.world.game.corruption+" job="+activity.world.game.job()+" mode="+activity.world.game.mode+" skillMode="+activity.world.game.careerSkillMode+" skillCd="+activity.world.game.skillCd+" custom="+activity.world.game.custom);try{ActionGame g=ActionSave.decode(ActionSave.encode(activity.world.game));check(g.soulBuff>0&&g.soulArt()==1,"forbidden runtime persists");}catch(IOException e){throw new RuntimeException(e);}});
     }
-    private void screenshotSoulDialog(String name){ui(()->{try{View v=activity.soulDialog.getWindow().getDecorView();Bitmap b=Bitmap.createBitmap(v.getWidth(),v.getHeight(),Bitmap.Config.ARGB_8888);v.draw(new Canvas(b));writeBitmap(b,name);}catch(IOException e){throw new RuntimeException(e);}});}
+    private void screenshotSoulDialog(String name){ui(()->{try{if(activity.soulDialog==null||activity.soulDialog.getWindow()==null)return;View v=activity.soulDialog.getWindow().getDecorView();if(!v.isAttachedToWindow()||v.getWidth()<=0||v.getHeight()<=0)return;Bitmap b=Bitmap.createBitmap(v.getWidth(),v.getHeight(),Bitmap.Config.ARGB_8888);v.draw(new Canvas(b));writeBitmap(b,name);}catch(IOException e){throw new RuntimeException(e);}});}
     private void workshopFlow(){
         tap(250,142);tap(140,230);ui(()->check(activity.world.game.custom==0,"custom roster selects independent slot"));
         tap(350,500);waitForIdleSync();
@@ -241,7 +241,7 @@ public final class SmokeInstrumentation extends Instrumentation {
         activity.world.dispatchTouchEvent(event);event.recycle();
     });}
     private void screenshot(String name){ui(()->{
-        try{WorldView v=activity.world;Bitmap b=Bitmap.createBitmap(v.getWidth(),v.getHeight(),Bitmap.Config.ARGB_8888);v.draw(new Canvas(b));File dir=new File(activity.getExternalFilesDir(null),"smoke");if(!dir.isDirectory()&&!dir.mkdirs())throw new IOException("screenshot directory");
+        try{WorldView v=activity.world;if(!v.isAttachedToWindow()||v.getWidth()<=0||v.getHeight()<=0)return;Bitmap b=Bitmap.createBitmap(v.getWidth(),v.getHeight(),Bitmap.Config.ARGB_8888);v.draw(new Canvas(b));File dir=new File(activity.getExternalFilesDir(null),"smoke");if(!dir.isDirectory()&&!dir.mkdirs())throw new IOException("screenshot directory");
             try(FileOutputStream out=new FileOutputStream(new File(dir,name))){b.compress(Bitmap.CompressFormat.PNG,100,out);}b.recycle();
         }catch(IOException e){throw new RuntimeException(e);}
     });}
