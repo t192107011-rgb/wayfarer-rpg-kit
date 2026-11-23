@@ -20,7 +20,7 @@ public final class CareerAbilityTests {
         g=arena(DETECTIVE);g.careerTalents[g.buildId()][2]=2;g.skill();check(g.shield==100,"detective final node strengthens cast shield");
         g=arena(REPORTER);g.careerTalents[g.buildId()][0]=2;e=new ActionGame.Enemy(g.nextId++,0,700,600,1000);g.enemies.add(e);g.skill();check(Math.abs((1000-e.hp)-g.damage()*1.5f)<.05f,"reporter first node increases conduction damage");
         g=arena(REPORTER);g.careerTalents[g.buildId()][1]=2;g.hp=g.maxHp()-20;float hp=g.hp;g.skill();check(g.hp-hp>=g.maxHp()*.08f-.05f,"reporter second node improves skill recovery");
-        g=arena(REPORTER);g.careerTalents[g.buildId()][2]=2;e=new ActionGame.Enemy(g.nextId++,0,700,600,1000);g.enemies.add(e);g.skill();check(g.shield==10,"reporter final node grants ward for skill hits");
+        g=arena(REPORTER);g.careerTalents[g.buildId()][2]=2;e=new ActionGame.Enemy(g.nextId++,0,700,600,1000);g.enemies.add(e);g.skill();check(g.shield==20,"reporter final node grants ten ward per hit rank");
         System.out.println("PASS twelve career skill-tree node effects");
     }
     private static void careerTreeBudgetAndReset(){
