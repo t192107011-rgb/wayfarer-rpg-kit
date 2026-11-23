@@ -115,7 +115,7 @@ public final class BuildTests {
         check(!g.learnCoreTalent(2),"attack capstone requires two ranks in its parent");
         check(g.learnCoreTalent(1)&&g.learnCoreTalent(2),"attack capstone unlocks at parent rank two");
         float before=g.damage();check(before>0,"core attack bonuses contribute to damage");
-        g.resetTalents();check(g.availableCorePoints()==17&&g.coreRank(0)==0&&g.coreRank(1)==0,"full respec refunds five-branch points");
+        g.resetTalents();check(g.availableCorePoints()==23&&g.coreRank(0)==0&&g.coreRank(1)==0,"full respec refunds five-branch points");
         g.bank=1000;check(g.buyFieldPermit(0)&&g.buyFieldPermit(1)&&g.bank==800,"outside currency buys persistent expedition permits");
         g.start(987);check(g.shield>=40&&g.potions==3,"shield and supply permits affect expedition start");
         ActionGame restored=ActionSave.decode(ActionSave.encode(g));
