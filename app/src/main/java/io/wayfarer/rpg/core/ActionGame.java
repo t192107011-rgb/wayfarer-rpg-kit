@@ -679,7 +679,7 @@ public final class ActionGame {
         }
         for(Enemy other:enemies)if(other!=e&&other.hp>0){float sx=e.x-other.x,sy=e.y-other.y,d=len(sx,sy),min=e.radius()+other.radius();if(d>.1&&d<min)moveEnemy(e,sx/d*30*dt,sy/d*30*dt);}
     }
-    private float enemyForce(Enemy e){return e.type==3?(room==2?1.22f:room==4?1.42f:room>=5?1.62f:1f):1f;}
+    private float enemyForce(Enemy e){return e.type==3?(room==2?1.08f:room==4?1.16f:room>=5?1.25f:1f):1f;}
     private void enemyShot(Enemy e,float dx,float dy,float speed,float damage){if(shots.size()<160)shots.add(new Shot(e.x+dx*24,e.y+dy*24,dx*enemySpeed(speed),dy*enemySpeed(speed),enemyPower(e,damage),false));}
     private void updateShots(float dt){
         Iterator<Shot> it=shots.iterator();while(it.hasNext()){
