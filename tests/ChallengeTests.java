@@ -58,7 +58,7 @@ public final class ChallengeTests {
     private static void specialties()throws Exception{
         ActionGame g=new ActionGame();g.experience[0]=320;g.bindSoul(1,0);
         check(g.learnSpecialty(0)&&g.learnSpecialty(0)&&g.learnSpecialty(1)&&g.learnSpecialty(1)&&g.learnSpecialty(3),"pact path follows prerequisites and permits one capstone");
-        check(g.availablePoints()==1&&g.learn(0)&&g.availablePoints()==0&&!g.learn(0),"talents and specialties share one character point budget");
+        check(g.availableSpecialtyPoints()==1&&g.availablePoints()==6&&g.learn(0)&&g.availablePoints()==5&&g.availableSpecialtyPoints()==1,"base talents and specialties use independent point budgets");
         float expected=40+16;g.start(31);near(g.soulEnergy,expected,"pact path increases expedition starting soul energy");near(g.soulPeriod(),SoulSystem.COOLDOWNS[1][0]-1.6f,"deep current shortens soul cooldown");
         ActionGame restored=ActionSave.decode(ActionSave.encode(g));check(restored.specialties[0][0]==2&&restored.specialties[0][3]==1,"specialty ranks persist in v22 snapshots");
         g=new ActionGame();g.experience[0]=320;g.learnSpecialty(4);g.learnSpecialty(4);g.learnSpecialty(5);g.learnSpecialty(6);
