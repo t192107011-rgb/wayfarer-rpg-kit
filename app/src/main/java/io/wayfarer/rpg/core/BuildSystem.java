@@ -56,7 +56,7 @@ public final class BuildSystem {
         if(ranks.length!=8)throw new IllegalArgumentException("专精结构无效");
         int spent=0;for(int i=0;i<8;i++){Node n=SPECIALTIES[i];if(ranks[i]<0||ranks[i]>n.maxRank)throw new IllegalArgumentException("专精等级无效");spent+=ranks[i];
             if(ranks[i]>0){if(1+Math.min(19,xp/80)<n.minLevel||n.parent>=0&&ranks[n.parent]<specialtyPrerequisite(i))throw new IllegalArgumentException("缺少专精前置");}}
-        if(spent+talentSpent>points(xp))throw new IllegalArgumentException("天赋与专精点数超支");
+        if(spent>specialtyPoints(xp))throw new IllegalArgumentException("专精点数超支");
         if(ranks[2]>0&&ranks[3]>0||ranks[6]>0&&ranks[7]>0)throw new IllegalArgumentException("专精终阶互斥");
     }
 
@@ -86,16 +86,18 @@ public final class BuildSystem {
     public static final String[] CAREER_TALENT_DESCRIPTIONS={"职业技能伤害提高15% / 级。","职业技能冷却缩短5% / 级。","施放职业技能额外获得20点护盾 / 级。","刺客职业技能持续时间延长4秒 / 级。","刺客职业技能伤害提高10% / 级。","刺客技能命中获得8点护盾。","侦探全场吸引范围与力度提高。","侦探职业技能伤害提高15% / 级。","侦探施放技能额外获得20点护盾 / 级。","记者伤害传导比例提高10% / 级。","记者职业技能额外恢复4%最大生命 / 级。","记者职业技能命中获得10点护盾。"};
     public static int careerTalentMax(int id){return id%3==2?2:3;}
     public static int coreSpent(int[] ranks){int n=0;for(int v:ranks)n+=v;return n;}
+    public static int corePoints(int xp){return 2+Math.min(28,Math.max(0,xp)/55);}
+    public static int specialtyPoints(int xp){return 1+Math.min(8,Math.max(0,xp)/190);}
     public static String coreLockReason(int[] ranks,int xp,int id){
         if(id<0||id>=CORE_NODES.length)return "未知五大天赋";
         Node n=CORE_NODES[id];if(ranks[id]>=n.maxRank)return "已学满";
         if(1+Math.min(19,xp/80)<n.minLevel)return "需要角色 Lv."+n.minLevel;
         if(n.parent>=0&&ranks[n.parent]<(id%3==2?2:1))return "需要「"+CORE_NODES[n.parent].name+"」"+(id%3==2?2:1)+"级";
-        if(coreSpent(ranks)>=points(xp))return "没有可用五大天赋点";
+        if(coreSpent(ranks)>=corePoints(xp))return "没有可用五大天赋点";
         return "";
     }
     public static void validateCoreTree(int[] ranks,int xp){
-        if(ranks.length!=15||coreSpent(ranks)>points(xp))throw new IllegalArgumentException("五大天赋点数无效");
+        if(ranks.length!=15||coreSpent(ranks)>corePoints(xp))throw new IllegalArgumentException("五大天赋点数无效");
         for(int i=0;i<15;i++){Node n=CORE_NODES[i];if(ranks[i]<0||ranks[i]>n.maxRank)throw new IllegalArgumentException("五大天赋等级无效");if(ranks[i]>0&&(1+Math.min(19,xp/80)<n.minLevel||n.parent>=0&&ranks[n.parent]<(i%3==2?2:1)))throw new IllegalArgumentException("五大天赋前置无效");}
     }
     public static boolean ultimate(int id){return id%4>=2;}
