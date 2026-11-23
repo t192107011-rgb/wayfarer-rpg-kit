@@ -285,7 +285,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         c.restore();
     }
     private void enemy(Canvas c,ActionGame.Enemy e){
-        if(e.guard>0){ring(c,e.x,e.y-16,e.radius()+11,0xFF92C3DB,3);text(c,"盾 "+(int)e.guard,e.x,e.y-49,10,0xFF92C3DB,true);}
+        if(e.guard>0){int guardTint=e.guardType==2?0xFFD5A86C:e.guardType==3?0xFFB79AD8:0xFF92C3DB;ring(c,e.x,e.y-16,e.radius()+11,guardTint,3);String guardName=e.guardType==2?"甲":e.guardType==3?"再生盾":"屏障";text(c,guardName+" "+(int)e.guard,e.x,e.y-49,10,guardTint,true);}
         if(e.type>=4)text(c,EncounterSystem.NAMES[e.type],e.x,e.y-65,11,0xFFE4C8A4,true);
         if(e.hex>0){ring(c,e.x,e.y,22,0xFFBA7CD9,2);text(c,"咒",e.x,e.y-52,12,0xFFDAACEE,true);}
         c.save();c.translate(e.x,e.y);float s=e.type==3?2.1f:1;c.scale(s,s);color(0x880B151B);c.drawOval(-19,-2,19,11,p);
