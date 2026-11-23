@@ -12,7 +12,7 @@ public final class MainActivity extends Activity implements WorldView.Host {
     private SaveStore store;
     private GameAudio audio;
     private boolean ready=false,saveFailed=false;
-    public AlertDialog workshopDialog,talentDialog,soulDialog,relicDialog,careerDialog,settingDialog,storyDialog;
+    public AlertDialog workshopDialog,talentDialog,soulDialog,relicDialog,careerDialog,settingDialog,storyDialog,resetDialog;
     @Override public void onCreate(Bundle state){
         super.onCreate(state);getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY|View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
@@ -97,7 +97,7 @@ public final class MainActivity extends Activity implements WorldView.Host {
             .setPositiveButton("学习 · 1点",(d,w)->{if(g.learnCareerTalent(local)){save();world.invalidate();}}).setNegativeButton("返回",null).create();
         talentDialog.show();talentDialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(reason.isEmpty());
     }
-    @Override public void resetTalents(){if(world.game.mode!=ActionGame.Mode.CAMP)return;new AlertDialog.Builder(this).setTitle("重置「"+world.game.heroName()+"」的天赋？").setMessage("免费返还基础天赋、专精、五大天赋与职业技能树全部点数；保留训练、远征许可、角色经验和其他角色成长。")
+    @Override public void resetTalents(){if(world.game.mode!=ActionGame.Mode.CAMP)return;resetDialog=new AlertDialog.Builder(this).setTitle("重置「"+world.game.heroName()+"」的天赋？").setMessage("免费返还基础天赋、专精、五大天赋与职业技能树全部点数；保留训练、远征许可、角色经验和其他角色成长。")
         .setPositiveButton("重置",(d,w)->{world.game.resetTalents();save();world.invalidate();}).setNegativeButton("取消",null).show();}
     @Override public void sound(String event){if(audio!=null)audio.play(event);}
     @Override protected void onResume(){super.onResume();if(world!=null)world.startFrames();}
