@@ -7,7 +7,7 @@ import java.util.*;
 public final class ActionSave {
     private ActionSave(){}
     public static byte[] encode(ActionGame g) throws IOException {
-        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",26);
+        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",27);
         p.setProperty("endless",Boolean.toString(g.endless));put(p,"endlessDepth",g.endlessDepth);put(p,"bestDepth",g.bestDepth);put(p,"threat",g.threat);put(p,"pressure",g.pressure);put(p,"encounterHpFloor",g.encounterHpFloor);put(p,"encounterDamageFloor",g.encounterDamageFloor);put(p,"roomDamage",g.roomDamage);put(p,"roomElapsed",g.roomElapsed);
         p.setProperty("mode",g.mode.name());p.setProperty("rng",Long.toString(g.rngState));p.setProperty("won",Boolean.toString(g.won));p.setProperty("cleared",Boolean.toString(g.roomCleared));
         String[] ik={"hero","bank","power","vitality","runs","wins","room","loot","kills","potions","damageBonus","healthBonus","speedBonus","combo","nextId"};
@@ -32,7 +32,7 @@ public final class ActionSave {
         float[] fv={g.x,g.y,g.hp,g.faceX,g.faceY,g.time,g.attackCd,g.rollTime,g.rollCd,g.skillCd,g.invulnerable,g.comboWindow,g.rollX,g.rollY};
         for(int i=0;i<fk.length;i++)put(p,fk[i],fv[i]);
         put(p,"enemies",g.enemies.size());int i=0;
-        for(ActionGame.Enemy e:g.enemies){p.setProperty("enemyTactics"+i,csv(e.guard,e.targetX,e.targetY,e.pattern));put(p,"hex"+i,e.hex);p.setProperty("e"+i++,csv(e.id,e.type,e.state,e.x,e.y,e.hp,e.maxHp,e.timer,e.aimX,e.aimY,e.stun,e.flash,e.struck?1:0));}
+        for(ActionGame.Enemy e:g.enemies){p.setProperty("enemyTactics"+i,csv(e.guard,e.targetX,e.targetY,e.pattern));put(p,"enemyGuardType"+i,e.guardType);put(p,"enemyGuardBreak"+i,e.guardBreak);put(p,"enemyGuardDelay"+i,e.guardDelay);put(p,"hex"+i,e.hex);p.setProperty("e"+i++,csv(e.id,e.type,e.state,e.x,e.y,e.hp,e.maxHp,e.timer,e.aimX,e.aimY,e.stun,e.flash,e.struck?1:0));}
         put(p,"shots",g.shots.size());i=0;
         for(ActionGame.Shot s:g.shots){put(p,"shotEffect"+i,s.effect);put(p,"shotPierce"+i,s.pierce);StringJoiner hits=new StringJoiner(",");for(int id:s.hitIds)hits.add(Integer.toString(id));p.setProperty("shotHits"+i,hits.toString());p.setProperty("s"+i++,csv(s.x,s.y,s.vx,s.vy,s.life,s.damage,s.radius,s.friendly?1:0));}
         put(p,"blocks",g.blocks.size());i=0;
@@ -132,7 +132,7 @@ public final class ActionSave {
                 float[] a=array(p,"e"+i,13);int id=integer(a[0],1,g.nextId-1);if(!ids.add(id))throw new IllegalArgumentException("重复敌人ID");
                 ActionGame.Enemy e=new ActionGame.Enemy(id,integer(a[1],0,version>=9?6:3),range(a[3],48,1072),range(a[4],48,712),range(a[6],1,version>=25?300000:version>=14?150000:version>=10?12000:1000));
                 e.hp=range(a[5],0,e.maxHp);e.state=integer(a[2],0,version>=9?3:2);e.timer=range(a[7],-.1f,2);e.aimX=range(a[8],-1,1);e.aimY=range(a[9],-1,1);e.stun=range(a[10],0,version>=18?3:1);e.flash=range(a[11],0,1);e.struck=integer(a[12],0,1)==1;
-                if(version>=9){float[] t=array(p,"enemyTactics"+i,4);e.guard=range(t[0],0,version>=21?90:40);e.targetX=range(t[1],64,1056);e.targetY=range(t[2],64,696);e.pattern=integer(t[3],0,e.type==3?2:0);if(e.state==3&&e.type!=2&&e.type!=3&&e.type!=4)throw new IllegalArgumentException("敌人恢复状态无效");}
+                if(version>=9){float[] t=array(p,"enemyTactics"+i,4);e.guard=range(t[0],0,version>=21?90:40);e.targetX=range(t[1],64,1056);e.targetY=range(t[2],64,696);e.pattern=integer(t[3],0,e.type==3?2:0);e.guardType=version>=27?n(p,"enemyGuardType"+i,0,3):e.guard>0?(e.type==3?3:1):0;e.guardBreak=version>=27?f(p,"enemyGuardBreak"+i,0,3):0;e.guardDelay=version>=27?f(p,"enemyGuardDelay"+i,0,10):0;if(e.guard>0&&e.guardType==0)throw new IllegalArgumentException("敌方护盾类型无效");if(e.state==3&&e.type!=2&&e.type!=3&&e.type!=4)throw new IllegalArgumentException("敌人恢复状态无效");}
                 if(version>=3)e.hex=f(p,"hex"+i,0,version>=24?8:3);
                 if(!g.free(e.x,e.y,e.radius()))throw new IllegalArgumentException("敌人位置无效");g.enemies.add(e);
             }
