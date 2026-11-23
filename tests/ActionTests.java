@@ -292,7 +292,7 @@ public final class ActionTests {
         ActionGame legacy=game(0);legacy.experience[0]=400;legacy.talents[0][0]=3;legacy.specialties[0][0]=2;legacy.specialties[0][1]=2;
         byte[] bytes=mutate(ActionSave.encode(legacy),"version","27");
         ActionGame restored=ActionSave.decode(bytes);
-        check(BuildSystem.spent(restored.talents[0])==3&&BuildSystem.spent(restored.specialties[0])==4,"legacy v27 shared-point build still loads before migration");
+        check(BuildSystem.spent(restored.talents[0])==3&&BuildSystem.spent(restored.specialties[0])==4&&restored.availableSpecialtyPoints()>=0,"legacy v27 shared-point build still loads with all prior specialty ranks preserved");
         System.out.println("PASS legacy v27 shared talent-point save migration");
     }
     private static void completeTalentBudgets()throws Exception{
