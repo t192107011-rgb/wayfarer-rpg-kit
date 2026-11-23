@@ -126,6 +126,10 @@ public final class SmokeInstrumentation extends Instrumentation {
         tap(785,405);waitForIdleSync();ui(()->check(activity.world.game.mode==ActionGame.Mode.PLAY,"story flow starts expedition: "+activity.world.game.mode));
         // Deterministic clear fixture exercises the actual clear event, choice UI and durable award.
         ui(()->{ActionGame g=activity.world.game;for(ActionGame.Enemy e:g.enemies)e.hp=0;g.update(.05f,new ActionGame.Input());check(g.mode==ActionGame.Mode.REWARD&&g.storyUnlocked==1,"clear reveals main scene: "+g.mode+" flags="+g.storyUnlocked);});
+        // The inscription intermission owns the first reward-screen tap; complete its two-step flow before opening the story scene.
+        ui(()->check(activity.world.game.hasTacticDraft()&&!activity.world.game.tacticDraftOpen,"main-story fixture begins with an inscription intermission"));
+        tap(480,410);ui(()->check(activity.world.game.tacticDraftOpen,"inscription intermission opens before story scene"));
+        tap(180,290);tap(480,449);ui(()->check(activity.world.game.tacticChosen&&!activity.world.game.tacticDraftOpen,"inscription is confirmed before opening story scene"));
         tap(480,412);waitForIdleSync();screenshotNativeDialog("23-main-story-fixture.png",activity.storyDialog);
         int[] bank={0};ui(()->bank[0]=activity.world.game.bank);storyButton(AlertDialog.BUTTON_POSITIVE);ui(()->check(activity.world.game.storyChoices[0]==1&&activity.world.game.bank==bank[0]+12,"main choice commits actual once-only reward"));
         tap(480,412);waitForIdleSync();journalItem(1);
