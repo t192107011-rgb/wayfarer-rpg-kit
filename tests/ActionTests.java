@@ -304,12 +304,12 @@ public final class ActionTests {
         for(int i=0;i<2;i++)check(g.learnSpecialty(4),"hunt specialty root");check(g.learnSpecialty(5),"hunt specialty middle");check(g.learnSpecialty(6),"hunt specialty capstone");
         check(g.availableSpecialtyPoints()==0,"all 9 specialty points can be spent independently");
         for(int branch=0;branch<5;branch++){int root=branch*3;for(int i=0;i<BuildSystem.CORE_NODES[root].maxRank;i++)check(g.learnCoreTalent(root),"core root "+root);for(int i=0;i<BuildSystem.CORE_NODES[root+1].maxRank;i++)check(g.learnCoreTalent(root+1),"core middle "+root);check(g.learnCoreTalent(root+2),"core capstone "+root);}
-        check(g.availableCorePoints()==0,"all 30 five-branch points can be spent");
+        check(g.availableCorePoints()==0,"all 30 five-branch points can be spent: available="+g.availableCorePoints()+" spent="+BuildSystem.coreSpent(g.coreTalents[g.buildId()])+" ranks="+java.util.Arrays.toString(g.coreTalents[g.buildId()]));
         for(int i=0;i<3;i++)check(g.learnCareerTalent(0),"career root rank "+i);for(int i=0;i<3;i++)check(g.learnCareerTalent(1),"career middle rank "+i);for(int i=0;i<2;i++)check(g.learnCareerTalent(2),"career capstone rank "+i);
         check(g.availableCareerPoints()==0,"all 8 career skill points can be spent");
         ActionGame restored;try{restored=ActionSave.decode(ActionSave.encode(g));}catch(Exception e){throw new AssertionError("full talent save rejected: "+e.getMessage(),e);}
         check(restored.availablePoints()==0&&restored.availableSpecialtyPoints()==0&&restored.availableCorePoints()==0&&restored.availableCareerPoints()==0,"all full talent trees persist and validate: base="+restored.availablePoints()+" specialty="+restored.availableSpecialtyPoints()+" core="+restored.availableCorePoints()+" career="+restored.availableCareerPoints()+" xp="+restored.heroXp()+" job="+restored.job());
-        System.out.println("PASS full independent point budgets: base 18, specialties 9, five branches 29, career 8");
+        System.out.println("PASS full independent point budgets: base 18, specialties 9, five branches 30, career 8");
     }
     private static void threatCap(){
         ActionGame g=new ActionGame();g.startEndless(91);g.endlessDepth=2;float early=ThreatSystem.rating(g);
