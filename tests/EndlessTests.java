@@ -19,8 +19,8 @@ public final class EndlessTests {
     static void branches()throws Exception{
         for(int mask=0;mask<8;mask++){ActionGame g=build(mask);for(int b=0;b<3;b++)check(!g.learn(b*4+2+(1-((mask>>b)&1))),"same-category final blocked");check(g.availablePoints()==6,"18-point budget leaves six points after three paths");ActionGame a=ActionSave.decode(ActionSave.encode(g));for(int i=0;i<12;i++)check(g.rank(i)==a.rank(i),"three-final snapshot");reject(ActionSave.encode(g),"version","9");g.selectHero(1);check(g.rank(2)+g.rank(3)+g.rank(6)+g.rank(7)+g.rank(10)+g.rank(11)==0,"roles independent");}
         check(BuildSystem.points(1280)==18&&BuildSystem.points(1000000)==18,"budget capped at eighteen");
-        ActionGame g=new ActionGame();g.chooseCareer(CareerSystem.REPORTER,0,0);g.startEndless(91);g.blocks.clear();g.enemies.clear();ActionGame.Enemy first=mob(g,0,610,600),second=mob(g,0,640,600);g.skill();check(g.careerSkillMode==4&&g.careerSkillTime==30&&first.hp==1000&&second.hp==1000&&g.healingFactor()<.21f,"reporter enters speed state without a burst and reduces healing");
-        ActionGame restored=ActionSave.decode(ActionSave.encode(g));check(restored.job()==CareerSystem.REPORTER&&restored.careerSkillMode==4,"reporter active state survives snapshot");
+        ActionGame g=new ActionGame();g.chooseCareer(CareerSystem.REPORTER,0,0);g.startEndless(91);g.blocks.clear();g.enemies.clear();ActionGame.Enemy first=mob(g,0,610,600),second=mob(g,0,640,600);g.skill();check(g.careerSkillMode==0&&g.careerSkillTime==0&&first.hp<1000&&second.hp<1000,"reporter skill damages all targets and chains a secondary pulse without a persistent state");
+        ActionGame restored=ActionSave.decode(ActionSave.encode(g));check(restored.job()==CareerSystem.REPORTER&&restored.careerSkillMode==0,"reporter instant skill leaves no obsolete active state in snapshot");
         System.out.println("PASS all eight per-category builds, independent saves and reporter career ability");
     }
     static void ranges(){
