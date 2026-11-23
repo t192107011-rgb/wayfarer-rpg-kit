@@ -527,7 +527,7 @@ public final class ActionGame {
     private void triggerRupture(){if(corruption>=100&&!ruptureLatched){ruptureLatched=true;ruptureTime=5f;ruptureTick=1.5f;soulBuff=5f;signal("rupture",x,y,0);}}
     private void updateSoul(float dt){
         soulCd=dec(soulCd,dt);soulBuff=dec(soulBuff,dt);
-        if(soulKind()==2)corruption=Math.max(0,corruption-dt);
+        if(soulKind()==2){float decay=enemies.stream().anyMatch(e->e.hp>0)?1f:4f;corruption=Math.max(0,corruption-dt*decay);}
         triggerRupture();
         if(ruptureTime>0){float elapsed=Math.min(dt,ruptureTime);ruptureTime=dec(ruptureTime,elapsed);ruptureTick-=elapsed;
             if(ruptureTick<=.0001f){ruptureTick+=1.5f;float before=hp;hp=Math.max(Math.min(1,hp),hp-maxHp()*.03f);signal("sacrifice",x,y,(int)(before-hp));}
@@ -598,7 +598,7 @@ public final class ActionGame {
         if(mode!=Mode.PLAY)return;
         updateHazards(dt);if(mode!=Mode.PLAY)return;updateShots(dt);if(mode!=Mode.PLAY)return;
         Iterator<Enemy> it=enemies.iterator();while(it.hasNext()){
-            Enemy e=it.next();if(e.hp<=0){it.remove();addTalentShield(2);kills=Math.min(99999,kills+1);drops.add(new Drop(e.x,e.y,(e.type==3?55:5+room)+(background()==6?2:0),false));if(background()==5){heal(1);gainSoul(e.type==3?8:2);}if(random(6)==0)drops.add(new Drop(e.x+15,e.y,15,true));if(random(100)<ThreatSystem.potionChance(e.type)){Drop bottle=new Drop(e.x-15,e.y,1,false);bottle.potion=true;drops.add(bottle);}signal("defeat",e.x,e.y,e.type);}
+            Enemy e=it.next();if(e.hp<=0){it.remove();addTalentShield(2);kills=Math.min(99999,kills+1);drops.add(new Drop(e.x,e.y,(e.type==3?55:5+room)+(background()==6?2:0),false));if(background()==5){heal(e.type==3?12:4);gainSoul(e.type==3?8:2);}if(random(6)==0)drops.add(new Drop(e.x+15,e.y,15,true));if(random(100)<ThreatSystem.potionChance(e.type)){Drop bottle=new Drop(e.x-15,e.y,1,false);bottle.potion=true;drops.add(bottle);}signal("defeat",e.x,e.y,e.type);}
         }
         Iterator<Drop> d=drops.iterator();while(d.hasNext()){
             Drop p=d.next();float dist=len(p.x-x,p.y-y);if(dist<100&&dist>1){float speed=270*dt;p.x+=(x-p.x)/dist*Math.min(speed,dist);p.y+=(y-p.y)/dist*Math.min(speed,dist);}
@@ -637,7 +637,7 @@ public final class ActionGame {
     }
     private void fan(Enemy e,int half,float spread,float speed,float power){double base=Math.atan2(e.aimY,e.aimX);for(int i=-half;i<=half;i++)enemyShot(e,(float)Math.cos(base+i*spread),(float)Math.sin(base+i*spread),speed,power);}
     private void updateEnemy(Enemy e,float dt){
-        e.hex=dec(e.hex,dt*.65f);e.flash=dec(e.flash,dt);e.guardBreak=dec(e.guardBreak,dt);e.guardDelay=dec(e.guardDelay,dt);
+        e.hex=dec(e.hex,dt*.35f);e.flash=dec(e.flash,dt);e.guardBreak=dec(e.guardBreak,dt);e.guardDelay=dec(e.guardDelay,dt);
         if(e.stun>0){e.stun=dec(e.stun,dt);return;}
         float dx=x-e.x,dy=y-e.y,distance=Math.max(.01f,len(dx,dy));boolean enraged=e.type==3&&e.hp<e.maxHp*.5f;
         if(e.state==0){
