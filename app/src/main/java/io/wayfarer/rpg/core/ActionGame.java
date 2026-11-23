@@ -57,7 +57,7 @@ public final class ActionGame {
     }
     public float careerWardLimit(){return entryCareerWard();}
     public float entryCareerWard(){return background()==1?10:0;}
-    public float soulPeriod(){return Math.max(4f,SoulSystem.COOLDOWNS[soulKind()][soulArt()]-.3f*training[buildId()][3]-.8f*specialtyRank(1));}
+    public float soulPeriod(){float base=soulKind()==1?new float[]{12,10,14,12}[job()]:new float[]{14,16,18,20}[job()];return Math.max(4f,base-.3f*training[buildId()][3]-.8f*specialtyRank(1));}
     public float springRatio(){return background()==2?.26f:.18f;}
     public int storyUnlocked=0;
     public final int[] storyChoices=new int[5],characterUnlocked=new int[6],characterJobs={-1,-1,-1,-1,-1,-1};
@@ -105,7 +105,7 @@ public final class ActionGame {
     public int soulKind(){return custom<0?presetSouls[hero]:profile().soul;}
     public int soulArt(){return custom<0?presetArts[hero]:profile().soulArt;}
     public String skillName(){return CareerSystem.SKILL_NAMES[job()];}
-    public String soulArtName(){return SoulSystem.ARTS[soulKind()][soulArt()];}
+    public String soulArtName(){return soulKind()==0?"未缔结":SoulSystem.ARTS[soulKind()][job()];}
     public boolean bindSoul(int kind,int art){
         if(mode!=Mode.CAMP)return false;SoulSystem.validate(kind,art);
         if(custom<0){presetSouls[hero]=kind;presetArts[hero]=art;}else{profile().soul=kind;profile().soulArt=art;}
@@ -330,22 +330,22 @@ public final class ActionGame {
         int j=job();skillCd=skillPeriod();careerSkillMode=j+1;careerSkillTime=4f;float power=damage();int affected=0;
         if(j==HUNTER){
             Enemy target=null;float best=-1;for(Enemy e:enemies)if(e.hp>0){float score=e.type==3?e.hp*1.4f:e.hp;if(score>best){best=score;target=e;}}
-            if(target!=null){target.hex=Math.max(target.hex,8f);hit(target,power*2.15f,false);signal("careerSkill",target.x,target.y,1);}
+            if(target!=null){target.hex=Math.max(target.hex,8f);hit(target,power*2.15f*(1+.15f*careerTalentRank(0)),false);signal("careerSkill",target.x,target.y,1);}
             for(Enemy e:enemies)if(e.hp>0&&e!=target&&len(e.x-x,e.y-y)<300)e.hex=Math.max(e.hex,3f);
             notice="猎人：追踪锁定 · 猎物已标记";
         }else if(j==ASSASSIN){
             aimAtNearest(600);float ox=x,oy=y;invulnerable=Math.max(invulnerable,.85f);
-            for(int i=0;i<44;i++){if(!free(x+faceX*5,y+faceY*5,PLAYER_RADIUS))break;movePlayer(faceX*5,faceY*5);}
+            for(int i=0;i<Math.min(64,44+careerTalentRank(0)*5);i++){if(!free(x+faceX*5,y+faceY*5,PLAYER_RADIUS))break;movePlayer(faceX*5,faceY*5);}
             for(Enemy e:enemies)if(e.hp>0&&segmentDistance(e.x,e.y,ox,oy,x,y)<e.radius()+35){hit(e,power*1.65f,false);affected++;}
             addTalentShield(18+affected*8);signal("careerSkill",x,y,2);notice="刺客：影袭 · 突进并获得影盾";
         }else if(j==DETECTIVE){
-            for(Enemy e:enemies)if(e.hp>0){e.hex=Math.max(e.hex,4.5f);e.stun=Math.max(e.stun,.3f);affected++;}
+            for(Enemy e:enemies)if(e.hp>0){e.hex=Math.max(e.hex,4.5f+.5f*careerTalentRank(0));e.stun=Math.max(e.stun,.3f);affected++;}
             addTalentShield(24);signal("careerSkill",x,y,3);notice="警探：现场重构 · "+affected+" 个目标进入调查";
         }else{
             Enemy headline=null;float best=-1;for(Enemy e:enemies)if(e.hp>best&&e.hp>0){best=e.hp;headline=e;}
             if(headline!=null){hit(headline,power*1.8f,false);headline.hex=Math.max(headline.hex,5f);Enemy relay=null;float near=300;
                 for(Enemy e:enemies)if(e!=headline&&e.hp>0){float d=len(e.x-headline.x,e.y-headline.y);if(d<near){near=d;relay=e;}}
-                if(relay!=null){hit(relay,power*.55f,false);relay.hex=Math.max(relay.hex,3f);}
+                if(relay!=null){hit(relay,power*(.55f+.05f*careerTalentRank(0)),false);relay.hex=Math.max(relay.hex,3f);}
             }
             signal("careerSkill",x,y,4);notice="记者：头条发布 · 伤害向邻近目标传播";
         }
@@ -712,19 +712,19 @@ public final class ActionGame {
             if(isSpec(DETECTIVE,2)&&e.stun>0)value*=1.20f;
             if(isSpec(REPORTER,1)&&e.type==3)value*=1.15f;
             // Career identities shape every deliberate hit, not only the active skill.
-            if(job()==HUNTER&&len(e.x-x,e.y-y)>240)value*=1.12f;
+            if(job()==HUNTER&&e.hex>0)value*=1.18f;
         }
         if(echoEligible&&relicEcho>0&&hasRelic(3)){value*=1.35f;relicEcho=0;signal("echo",e.x,e.y,65);}
         value*=e.hex>0?1.15f*(hasRelic(6)?1.1f:1)*(1+.12f*tacticRanks[4]):1;if(echoEligible&&coreRank(2)>0&&e.stun>0)value*=1+.12f*coreRank(2);if(echoEligible&&job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0)value*=1+.10f*careerTalentRank(1);float beforeGuard=e.guard;float guardFactor=e.guardType==2?.65f:1f;float guardDamage=value*guardFactor;float absorbed=Math.min(e.guard,guardDamage);e.guard=Math.max(0,e.guard-absorbed);float healthLeak=Math.min(value,absorbed/guardFactor);value-=healthLeak;if(absorbed>0){e.guardDelay=2.5f;signal("enemyShield",e.x,e.y,(int)absorbed);}if(beforeGuard>0&&e.guard<=.0001f)breakEnemyGuard(e);float dealt=Math.min(e.hp,value);e.hp=Math.max(0,e.hp-value);
         e.flash=.12f;if(absorbed==0)e.stun=Math.max(e.stun,e.type==3?.03f:e.type==2||e.type==4?.06f:.12f);signal("hit",e.x,e.y,(int)value);
-        if(dealt>0&&job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0)heal(dealt*.20f);
+        if(dealt>0&&job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0)heal(dealt*.12f);
         if(dealt>0&&echoEligible){
             if(job()==ASSASSIN&&len(e.x-x,e.y-y)<150)addTalentShield(2f);
-            if(job()==DETECTIVE){e.hex=Math.max(e.hex,2.5f);skillCd=Math.max(0,skillCd-.08f);}
+            if(job()==DETECTIVE){e.hex=Math.max(e.hex,3.5f);skillCd=Math.max(0,skillCd-.05f);}
             if(job()==REPORTER){
-                Enemy relay=null;float nearest=260f;
+                Enemy relay=null;float nearest=240f;
                 for(Enemy candidate:enemies){if(candidate!=e&&candidate.hp>0){float d=len(candidate.x-e.x,candidate.y-e.y);if(d<nearest){nearest=d;relay=candidate;}}}
-                if(relay!=null){hit(relay,dealt*.15f,false,false);signal("careerRelay",relay.x,relay.y,(int)(dealt*.15f));}
+                if(relay!=null){hit(relay,dealt*(.20f+.05f*careerTalentRank(0)),false,false);signal("careerRelay",relay.x,relay.y,(int)(dealt*(.20f+.05f*careerTalentRank(0))));}
             }
         }
         if(job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0&&dealt>0){addTalentShield(3+8*careerTalentRank(2));if(e.hp<=0){activeSkillCd=0;heal(maxHp()*.03f);}}
