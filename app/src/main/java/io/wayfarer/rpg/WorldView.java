@@ -134,8 +134,8 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             text(c,CareerSystem.name(career[0],career[1])+" / "+CareerSystem.BACKGROUNDS[career[2]],bx+20,327,10,muted,false);
         }
         text(c,"携行："+game.relicLoadout(),40,354,13,gold,false);
-        button(c,40,365,280,57,"磨刃 +2  ·  "+(game.power>=20?"MAX":game.upgradeCost(game.power)+" 票券"),false);
-        button(c,340,365,280,57,"护火 +10 HP  ·  "+(game.vitality>=20?"MAX":game.upgradeCost(game.vitality)+" 票券"),false);
+        button(c,40,365,280,57,"磨刃 Lv."+game.power+" · "+game.upgradeCost(game.power)+" 储备",false);
+        button(c,340,365,280,57,"护火 Lv."+game.vitality+" · "+game.upgradeCost(game.vitality)+" 储备",false);
         text(c,"永久攻击 "+game.power+"/20     永久生命 "+game.vitality+"/20",40,445,13,muted,false);
         button(c,660,365,260,80,"剧情远征  →",true);
         button(c,660,448,260,27,"无尽远征 · 最深 "+game.bestDepth+"层",false);
@@ -159,7 +159,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     private void coreTalentTree(Canvas c){
         box(c,0,0,960,540,0xFF12282D);glow(c,480,270,370,0x224F8B76);
         text(c,game.heroName()+" · 五大天赋",40,83,25,cream,false);
-        text(c,"独立点数 "+game.availableCorePoints()+" / "+BuildSystem.points(game.heroXp())+" · 与旧天赋分开计算",40,108,13,gold,false);treeTabs(c);
+        text(c,"独立点数 "+game.availableCorePoints()+" / "+BuildSystem.corePoints(game.heroXp())+" · 五大分支完整成长池",40,108,13,gold,false);treeTabs(c);
         for(int branch=0;branch<5;branch++)text(c,BuildSystem.CORE_BRANCHES[branch],111+branch*188,126,13,gold,true);
         for(int id=0;id<15;id++){float[] a=coreNodeRect(id);BuildSystem.Node n=BuildSystem.CORE_NODES[id];int rank=game.coreRank(id);String lock=BuildSystem.coreLockReason(game.coreTalents[game.buildId()],game.heroXp(),id);rounded(c,a[0],a[1],a[2],a[3],9,rank>0?0xFF36554F:lock.isEmpty()&&game.availableCorePoints()>0?0xFF2F4148:0xFF1D3037);text(c,n.name+"  "+rank+"/"+n.maxRank,a[0]+a[2]/2,a[1]+25,14,rank>0?gold:cream,true);text(c,n.description,a[0]+a[2]/2,a[1]+49,10,muted,true);text(c,lock.isEmpty()?"可学习":lock,a[0]+a[2]/2,a[1]+78,9,rank>0?gold:muted,true);}
         text(c,"五类点数独立于基础天赋；每个终阶需前置节点达到2级。",40,487,13,muted,false);button(c,700,475,210,42,"免费重置全部成长",false);
@@ -209,27 +209,27 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     private void specialtyTree(Canvas c){
         box(c,0,0,960,540,0xFF12282D);glow(c,480,270,370,0x224F8B76);
         text(c,game.heroName()+" · 专精星图",40,48,27,cream,false);
-        text(c,"与原天赋共享点数 · 可用 "+game.availablePoints()+" / 总点数 "+BuildSystem.points(game.heroXp()),40,82,15,gold,false);
+        text(c,"专精独立点数 · 可用 "+game.availableSpecialtyPoints()+" / 总点数 "+BuildSystem.specialtyPoints(game.heroXp()),40,82,15,gold,false);
         treeTabs(c);
         for(int b=0;b<2;b++){int tint=b==0?0xFF9BC9D4:0xFFE0A875;text(c,BuildSystem.SPECIALTY_BRANCHES[b],55+b*430,125,19,tint,true);}
-        for(int id=0;id<8;id++){int x=55+(id%2)*430,y=145+(id/2)*82;BuildSystem.Node n=BuildSystem.SPECIALTIES[id];int rank=game.specialties[game.buildId()][id];String lock=BuildSystem.specialtyLockReason(game.specialties[game.buildId()],game.heroXp(),id);rounded(c,x,y,390,68,10,rank>0?0xFF36554F:lock.isEmpty()&&game.availablePoints()>0?0xFF2F4148:0xFF1D3037);text(c,n.name+"  "+rank+" / "+n.maxRank,x+18,y+27,18,rank>0?tintForSpecialty(id):cream,false);text(c,n.description,x+18,y+51,12,muted,false);}
+        for(int id=0;id<8;id++){int x=55+(id%2)*430,y=145+(id/2)*82;BuildSystem.Node n=BuildSystem.SPECIALTIES[id];int rank=game.specialties[game.buildId()][id];String lock=BuildSystem.specialtyLockReason(game.specialties[game.buildId()],game.heroXp(),id);rounded(c,x,y,390,68,10,rank>0?0xFF36554F:lock.isEmpty()&&game.availableSpecialtyPoints()>0?0xFF2F4148:0xFF1D3037);text(c,n.name+"  "+rank+" / "+n.maxRank,x+18,y+27,18,rank>0?tintForSpecialty(id):cream,false);text(c,n.description,x+18,y+51,12,muted,false);}
         text(c,"灵契终阶：魂盾 / 回响汲取二选一；猎场终阶：终结追击 / 战术布置二选一。",55,493,13,gold,false);button(c,700,475,210,42,"免费重置全部成长",false);
     }
     private int tintForSpecialty(int id){return id<4?0xFF9BC9D4:0xFFE0A875;}
     private void trainingTree(Canvas c){
         box(c,0,0,960,540,0xFF12282D);glow(c,480,270,370,0x224F8B76);
         text(c,game.heroName()+" · 局外成长",40,83,25,cream,false);
-        text(c,"共享票券 "+game.bank+"  ·  四条独立路线，每条最多10级；不同角色分别培养",40,108,13,gold,false);
+        text(c,"营地储备 "+game.bank+" · 四条独立路线可重复强化；不同角色分别培养",40,108,13,gold,false);
         treeTabs(c);button(c,740,62,180,34,"远征许可",false);
         String[] names={"武器训练","生存训练","战术训练","灵魂研究"};
-        String[] desc={"每级伤害 +2.5%，攻击间隔缩短 1.2%。","每级最大生命 +4。","每级闪避冷却 -0.045秒，技能冷却 -0.35秒。","每级初始魂能 +3，魂技冷却 -0.3秒。"};
+        String[] desc={"每级伤害成长递减增加，攻击间隔持续缩短。","每级最大生命 +4。","每级闪避冷却 -0.045秒，技能冷却 -0.35秒。","每级初始魂能 +3，魂技冷却 -0.3秒。"};
         int[] ranks=game.training[game.buildId()];
         for(int i=0;i<4;i++){int x=55+(i%2)*430,y=135+(i/2)*165;
             rounded(c,x,y,390,135,12,0xFF293F42);text(c,names[i],x+22,y+35,22,gold,false);
-            text(c,desc[i],x+22,y+67,14,cream,false);text(c,"等级 "+ranks[i]+" / 10",x+22,y+102,15,muted,false);
-            button(c,x+250,y+83,115,38,ranks[i]>=10?"已满级":"训练 · "+game.trainingCost(ranks[i]),ranks[i]<10&&game.bank>=game.trainingCost(ranks[i]));
+            text(c,desc[i],x+22,y+67,14,cream,false);text(c,"等级 "+ranks[i]+" · 下级成本 "+game.trainingCost(ranks[i]),x+22,y+102,15,muted,false);
+            button(c,x+250,y+83,115,38,ranks[i]>=999999?"安全上限":"强化 · "+game.trainingCost(ranks[i]),ranks[i]<999999&&game.bank>=game.trainingCost(ranks[i]));
         }
-        text(c,"训练消耗营地共享票券；效果只作用于当前角色，永久保存。",55,493,14,muted,false);
+        text(c,"消耗局外营地储备，可反复购买；效果只作用于当前角色，永久保存。",55,493,14,muted,false);
     }
     private void dungeon(Canvas c){
         cameraX=Math.max(0,Math.min(ActionGame.WIDTH-960,game.x-480));cameraY=Math.max(0,Math.min(ActionGame.HEIGHT-540,game.y-275));
@@ -398,14 +398,14 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     }
     private void tacticDraft(Canvas c){
         text(c,"战 技 刻 印",480,116,30,cream,true);
-        text(c,"本层刻印必须先领取；每层一项，最多叠加三级",480,151,16,gold,true);
+        text(c,"战斗已暂停。先选中一张，再按确认领取；确认前不会改变等级。",480,151,16,gold,true);
         for(int i=0;i<3;i++){
             int id=game.tacticOffers[i],x=45+i*300;
-            rounded(c,x,205,270,190,12,id>=0?0xFF2D4545:0xFF1B292E);
-            if(id>=0){text(c,ActionGame.TACTIC_NAMES[id],x+135,252,22,gold,true);String[] desc=ActionGame.TACTIC_DESCRIPTIONS[id].split("；");text(c,desc[0],x+135,302,12,cream,true);if(desc.length>1)text(c,desc[1],x+135,324,12,cream,true);text(c,"当前等级 "+game.tacticRanks[id]+" / 3",x+135,356,14,muted,true);text(c,"点此领取刻印",x+135,378,12,gold,true);}
+            rounded(c,x,205,270,190,12,id>=0?(game.tacticSelected==i?0xFF52634C:0xFF2D4545):0xFF1B292E);
+            if(id>=0){text(c,ActionGame.TACTIC_NAMES[id],x+135,252,22,gold,true);String[] desc=ActionGame.TACTIC_DESCRIPTIONS[id].split("；");text(c,desc[0],x+135,302,12,cream,true);if(desc.length>1)text(c,desc[1],x+135,324,12,cream,true);text(c,"当前等级 "+game.tacticRanks[id]+" / 3",x+135,356,14,muted,true);text(c,game.tacticSelected==i?"✓ 已选中 · 等待确认":"点此选中，不会立即领取",x+135,378,12,gold,true);}
             else{text(c,"已全部强化",x+135,290,19,muted,true);}
         }
-        text(c,"选择一张刻印卡后，系统将自动返回补给选择。",480,460,14,muted,true);
+        button(c,260,425,440,48,game.tacticSelected>=0?"确认领取 · "+ActionGame.TACTIC_NAMES[game.tacticOffers[game.tacticSelected]]:"先选中一张刻印卡",game.tacticSelected>=0);text(c,"误触其他卡片只会更改选中项；战斗在此界面完全暂停。",480,493,13,muted,true);
     }
     private void shop(Canvas c){
         text(c,"前 线 补 给 站",480,94,28,cream,true);text(c,"消耗本轮票券补充战斗资源；即时补给在购买时生效",480,124,14,muted,true);
@@ -469,7 +469,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             else if(inside(x,y,280,480,155,42))host.editCharacter();else if(inside(x,y,450,480,175,42)){showTalents=true;showTraining=false;resetInput();}
             else if(inside(x,y,650,480,270,42))host.souls();
         }else if(game.mode==ActionGame.Mode.REWARD){
-            if(game.tacticDraftOpen){for(int i=0;i<3;i++)if(inside(x,y,45+i*300,205,270,190)){if(game.chooseTactic(i))host.save();return;}}
+            if(game.tacticDraftOpen){for(int i=0;i<3;i++)if(inside(x,y,45+i*300,205,270,190)){if(game.selectTactic(i))invalidate();return;}if(inside(x,y,260,425,440,48)&&game.confirmTactic()){host.save();invalidate();return;}}
             else if(game.shopOpen){for(int i=0;i<6;i++){int col=i%3,row=i/3,x0=25+col*305,y0=150+row*145;if(inside(x,y,x0+55,y0+88,180,30)){game.buyShopItem(i);host.save();return;}}if(inside(x,y,365,478,230,38)){game.closeShop();host.save();return;}}
             else if(inside(x,y,260,382,440,40)){host.story();return;}
             else if(inside(x,y,260,430,440,40)){game.openShop();host.save();return;}
