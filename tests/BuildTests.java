@@ -97,6 +97,17 @@ public final class BuildTests {
         }
         System.out.println("PASS 18000 simulation steps with six maxed custom builds and periodic save/restore");
     }
+    private static void expandedCoreEffects(){
+        ActionGame g=new ActionGame();points(g);g.coreTalents[0][10]=2;g.start(91);g.shield=0;g.addTalentShield(10);near(g.shield,13,"shield efficiency increases every shield source");
+        g=new ActionGame();points(g);g.coreTalents[0][5]=1;arena(g);ActionGame.Enemy e=mob(g,610,600);g.dodge(0,-1);check(e.hp<500,"five-branch dodge counter works without legacy dodge pulse");
+        g=new ActionGame();points(g);g.coreTalents[0][7]=2;arena(g);g.activeSkill();near(g.shield,20,"general active skill shield talent adds ten per rank");
+        g=new ActionGame();points(g);g.coreTalents[0][8]=1;arena(g);e=mob(g,610,600);g.activeSkill();float boosted=500-e.hp;
+        ActionGame base=new ActionGame();points(base);arena(base);ActionGame.Enemy b=mob(base,610,600);base.activeSkill();check(boosted>500-b.hp,"overload talent raises general active skill damage");
+        g=new ActionGame();points(g);g.coreTalents[0][2]=1;arena(g);e=mob(g,610,600);e.stun=1;g.hitForTest(e,100);
+        base=new ActionGame();points(base);arena(base);b=mob(base,610,600);b.stun=1;base.hitForTest(b,100);check(500-e.hp>500-b.hp,"opening exploitation amplifies hits on staggered enemies");
+        g=new ActionGame();points(g);g.coreTalents[0][11]=1;arena(g);e=mob(g,600,600);e.state=1;e.timer=.001f;g.shield=5;g.invulnerable=0;tick(g,false,1);check(e.hp<500&&g.shield==0,"breaking player shield triggers area retaliation");
+        System.out.println("PASS five-branch shield efficiency, dodge counter, skill ward, overload, stagger bonus and break burst");
+    }
     private static void fiveBranchProgression()throws Exception{
         ActionGame g=new ActionGame();points(g);
         check(g.availableCorePoints()==17,"five-branch tree has independent XP point budget");
@@ -117,5 +128,5 @@ public final class BuildTests {
         check(roundtrip.fieldPermits[0][0]==1&&roundtrip.training[0][0]==0,"full respec preserves permits and does not alter training");
         System.out.println("PASS five talent branches, career skill upgrades, expedition permits and save v26");
     }
-    public static void main(String[] args)throws Exception{trainingRoutes();profiles();treeRules();effects();persistence();fiveBranchProgression();stress();System.out.println("BUILD CHECKS PASSED: "+count);}
+    public static void main(String[] args)throws Exception{trainingRoutes();profiles();treeRules();effects();expandedCoreEffects();persistence();fiveBranchProgression();stress();System.out.println("BUILD CHECKS PASSED: "+count);}
 }
