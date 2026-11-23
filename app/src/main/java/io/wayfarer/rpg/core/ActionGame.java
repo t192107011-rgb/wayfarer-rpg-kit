@@ -527,7 +527,7 @@ public final class ActionGame {
     private void triggerRupture(){if(corruption>=100&&!ruptureLatched){ruptureLatched=true;ruptureTime=5f;ruptureTick=1.5f;soulBuff=5f;signal("rupture",x,y,0);}}
     private void updateSoul(float dt){
         soulCd=dec(soulCd,dt);soulBuff=dec(soulBuff,dt);
-        if(soulKind()==2){float decay=enemies.stream().anyMatch(e->e.hp>0)?1f:4f;corruption=Math.max(0,corruption-dt*decay);}
+        if(soulKind()==2){float decay=enemies.stream().anyMatch(e->e.hp>0&&(e.state>0||len(e.x-x,e.y-y)<560))?1f:4f;corruption=Math.max(0,corruption-dt*decay);}
         triggerRupture();
         if(ruptureTime>0){float elapsed=Math.min(dt,ruptureTime);ruptureTime=dec(ruptureTime,elapsed);ruptureTick-=elapsed;
             if(ruptureTick<=.0001f){ruptureTick+=1.5f;float before=hp;hp=Math.max(Math.min(1,hp),hp-maxHp()*.03f);signal("sacrifice",x,y,(int)(before-hp));}
