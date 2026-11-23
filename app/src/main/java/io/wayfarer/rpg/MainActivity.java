@@ -80,7 +80,24 @@ public final class MainActivity extends Activity implements WorldView.Host {
             .setPositiveButton("学习 · 1点",(d,w)->{if(g.learnSpecialty(id)){save();world.invalidate();}}).setNegativeButton("返回",null).create();
         talentDialog.show();talentDialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(reason.isEmpty()&&g.availablePoints()>0);
     }
-    @Override public void resetTalents(){if(world.game.mode!=ActionGame.Mode.CAMP)return;new AlertDialog.Builder(this).setTitle("重置「"+world.game.heroName()+"」的天赋？").setMessage("免费返还全部天赋与专精点数，保留角色经验、外观和其他角色的成长。")
+    @Override public void coreTalent(int id){
+        ActionGame g=world.game;if(g.mode!=ActionGame.Mode.CAMP||id<0||id>=15)return;
+        BuildSystem.Node node=BuildSystem.CORE_NODES[id];String reason=BuildSystem.lockReason(g.coreTalents[g.buildId()],g.heroXp(),id);if(reason.isEmpty()&&g.availableCorePoints()<=0)reason="五大天赋点数不足";
+        String requirements="需要角色 Lv."+node.minLevel+(node.parent<0?" · 无前置":" · 前置「"+BuildSystem.CORE_NODES[node.parent].name+"」"+(id%3==2?2:1)+"级");
+        talentDialog=new AlertDialog.Builder(this).setTitle(node.name+"  "+g.coreRank(id)+" / "+node.maxRank)
+            .setMessage(node.description+"\\n\\n"+requirements+"\\n独立可用点数："+g.availableCorePoints()+"\\n"+(reason.isEmpty()?"消耗1点学习。":reason))
+            .setPositiveButton("学习 · 1点",(d,w)->{if(g.learnCoreTalent(id)){save();world.invalidate();}}).setNegativeButton("返回",null).create();
+        talentDialog.show();talentDialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(reason.isEmpty());
+    }
+    @Override public void careerTalent(int local){
+        ActionGame g=world.game;if(g.mode!=ActionGame.Mode.CAMP||local<0||local>=3)return;
+        int id=g.job()*3+local,rank=g.careerTalentRank(local),max=BuildSystem.careerTalentMax(id);String reason=rank>=max?"已学满":g.availableCareerPoints()<=0?"职业技能点数不足":local==2&&g.careerTalentRank(1)<=0?"需要先学习中阶职业技能强化":"";
+        talentDialog=new AlertDialog.Builder(this).setTitle(BuildSystem.CAREER_TALENT_NAMES[id]+"  "+rank+" / "+max)
+            .setMessage(BuildSystem.CAREER_TALENT_DESCRIPTIONS[id]+"\\n\\n职业："+g.careerName()+"\\n可用职业技能点："+g.availableCareerPoints()+"\\n"+(reason.isEmpty()?"消耗1点学习。":reason))
+            .setPositiveButton("学习 · 1点",(d,w)->{if(g.learnCareerTalent(local)){save();world.invalidate();}}).setNegativeButton("返回",null).create();
+        talentDialog.show();talentDialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(reason.isEmpty());
+    }
+    @Override public void resetTalents(){if(world.game.mode!=ActionGame.Mode.CAMP)return;new AlertDialog.Builder(this).setTitle("重置「"+world.game.heroName()+"」的天赋？").setMessage("免费返还基础天赋、专精、五大天赋与职业技能树全部点数；保留训练、远征许可、角色经验和其他角色成长。")
         .setPositiveButton("重置",(d,w)->{world.game.resetTalents();save();world.invalidate();}).setNegativeButton("取消",null).show();}
     @Override public void sound(String event){if(audio!=null)audio.play(event);}
     @Override protected void onResume(){super.onResume();if(world!=null)world.startFrames();}
