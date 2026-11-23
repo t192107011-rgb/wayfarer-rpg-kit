@@ -308,7 +308,7 @@ public final class ActionTests {
         for(int i=0;i<3;i++)check(g.learnCareerTalent(0),"career root rank "+i);for(int i=0;i<3;i++)check(g.learnCareerTalent(1),"career middle rank "+i);for(int i=0;i<2;i++)check(g.learnCareerTalent(2),"career capstone rank "+i);
         check(g.availableCareerPoints()==0,"all 8 career skill points can be spent");
         ActionGame restored;try{restored=ActionSave.decode(ActionSave.encode(g));}catch(Exception e){throw new AssertionError("full talent save rejected: "+e.getMessage(),e);}
-        check(restored.availablePoints()==0&&restored.availableSpecialtyPoints()==0&&restored.availableCorePoints()==0&&restored.availableCareerPoints()==0,"all full talent trees persist and validate");
+        check(restored.availablePoints()==0&&restored.availableSpecialtyPoints()==0&&restored.availableCorePoints()==0&&restored.availableCareerPoints()==0,"all full talent trees persist and validate: base="+restored.availablePoints()+" specialty="+restored.availableSpecialtyPoints()+" core="+restored.availableCorePoints()+" career="+restored.availableCareerPoints()+" xp="+restored.heroXp()+" job="+restored.job());
         System.out.println("PASS full independent point budgets: base 18, specialties 9, five branches 29, career 8");
     }
     private static void threatCap(){
