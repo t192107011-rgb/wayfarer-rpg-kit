@@ -136,7 +136,8 @@ public final class ActionGame {
     public int specialtyRank(int node){return specialties[buildId()][node];}
     public int coreRank(int node){return coreTalents[buildId()][node];}
     public int careerTalentRank(int local){return careerTalents[buildId()][Math.max(0,Math.min(3,job()))*3+local];}
-    public int availableCorePoints(){return BuildSystem.points(heroXp())-BuildSystem.coreSpent(coreTalents[buildId()]);}
+    public int availableCorePoints(){return BuildSystem.corePoints(heroXp())-BuildSystem.coreSpent(coreTalents[buildId()]);}
+    public int availableSpecialtyPoints(){return BuildSystem.specialtyPoints(heroXp())-BuildSystem.spent(specialties[buildId()]);}
     public int availableCareerPoints(){return Math.min(8,1+heroXp()/200)-careerTalentSpent();}
     private int careerTalentSpent(){int n=0;for(int i=job()*3;i<job()*3+3;i++)n+=careerTalents[buildId()][i];return n;}
     public boolean learnCoreTalent(int id){if(mode!=Mode.CAMP||id<0||id>=15)return false;BuildSystem.Node n=BuildSystem.CORE_NODES[id];int[] ranks=coreTalents[buildId()];if(ranks[id]>=n.maxRank||1+Math.min(19,heroXp()/80)<n.minLevel||n.parent>=0&&ranks[n.parent]<(id%3==2?2:1)||availableCorePoints()<=0){notice="五大天赋的等级、前置或点数不足";return false;}ranks[id]++;hp=maxHp();notice="五大分支：习得「"+n.name+"」";return true;}
@@ -144,7 +145,7 @@ public final class ActionGame {
     public boolean buyFieldPermit(int id){if(mode!=Mode.CAMP||id<0||id>=5)return false;int[] ranks=fieldPermits[buildId()];int[] costs={80,120,160,200,250};if(ranks[id]>0){notice="该远征特许升级已购入";return false;}if(bank<costs[id]){notice="局外储备不足，还差"+(costs[id]-bank)+"枚";return false;}bank-=costs[id];ranks[id]=1;notice="永久解锁远征特许升级：「"+new String[]{"守备护盾","急救储备","先遣票券","魂能预充","武装开局"}[id]+"」";return true;}
     public int availablePoints(){return BuildSystem.points(heroXp())-BuildSystem.spent(talents[buildId()])-BuildSystem.spent(specialties[buildId()]);}
     public boolean learn(int node){if(mode!=Mode.CAMP)return false;String reason=BuildSystem.lockReason(talents[buildId()],heroXp(),node);if(!reason.isEmpty()){notice=reason;return false;}if(BuildSystem.spent(talents[buildId()])+BuildSystem.spent(specialties[buildId()])>=BuildSystem.points(heroXp())){notice="没有可用天赋点";return false;}talents[buildId()][node]++;hp=maxHp();notice="习得「"+BuildSystem.NODES[node].name+"」";return true;}
-    public boolean learnSpecialty(int node){if(mode!=Mode.CAMP)return false;String reason=BuildSystem.specialtyLockReason(specialties[buildId()],heroXp(),node);if(!reason.isEmpty()){notice=reason;return false;}if(BuildSystem.spent(talents[buildId()])+BuildSystem.spent(specialties[buildId()])>=BuildSystem.points(heroXp())){notice="没有可用天赋点";return false;}specialties[buildId()][node]++;hp=maxHp();notice="习得专精「"+BuildSystem.SPECIALTIES[node].name+"」";return true;}
+    public boolean learnSpecialty(int node){if(mode!=Mode.CAMP)return false;String reason=BuildSystem.specialtyLockReason(specialties[buildId()],heroXp(),node);if(!reason.isEmpty()){notice=reason;return false;}if(availableSpecialtyPoints()<=0){notice="没有可用专精点";return false;}specialties[buildId()][node]++;hp=maxHp();notice="习得专精「"+BuildSystem.SPECIALTIES[node].name+"」";return true;}
     public void resetTalents(){if(mode==Mode.CAMP){int id=buildId();Arrays.fill(talents[id],0);Arrays.fill(specialties[id],0);Arrays.fill(coreTalents[id],0);Arrays.fill(careerTalents[id],0);hp=maxHp();shield=0;dodgeCharge=0;notice="全部天赋与专精已重置；训练和远征特许保留。";}}
     public void selectCustom(int slot){if(mode==Mode.CAMP&&slot>=0&&slot<3){custom=slot;hero=profiles[slot].weapon;hp=maxHp();notice="已选择 "+heroName();}}
     public void customize(int slot,BuildSystem.Profile draft){
@@ -160,16 +161,18 @@ public final class ActionGame {
     public int room=0,loot=0,kills=0,potions=2,damageBonus=0,healthBonus=0,speedBonus=0,careerCooldownRank=0,combo=0;
     public int bombs=0,snares=0,tonics=0;public float battleTonicTime=0;public boolean shopOpen=false;
     public final int[] tacticRanks=new int[8],tacticOffers={0,1,2};
+    public int tacticSelected=-1;
     public boolean tacticChosen=false,tacticDraftOpen=false;
     public static final String[] TACTIC_NAMES={"专属技式","追击余势","魂流共鸣","迅捷循环","诅咒猎杀","护盾回路","战斗节拍","战地搜刮"};
     public static final String[] TACTIC_DESCRIPTIONS={"主动技能伤害 +12% / 级；范围或弹幕强化。","追击伤害 +12% / 级。","魂能获取 +15% / 级。","主动技能冷却 -1秒 / 级。","诅咒目标额外伤害 +12% / 级。","主动技能获得6点护盾 / 级。","攻击速度提高4% / 级。","票券拾取提高12% / 级。"};
     public boolean hasTacticDraft(){for(int id:tacticOffers)if(id>=0&&id<8&&tacticRanks[id]<3)return true;return false;}
     private int randomTactic(int a,int b){int[] pool=new int[8];int n=0;for(int i=0;i<8;i++)if(i!=a&&i!=b&&tacticRanks[i]<3)pool[n++]=i;return n==0?-1:pool[random(n)];}
-    private void prepareTacticDraft(){tacticChosen=false;tacticDraftOpen=false;tacticOffers[0]=tacticRanks[0]<3?0:randomTactic(-1,-1);tacticOffers[1]=randomTactic(tacticOffers[0],-1);tacticOffers[2]=randomTactic(tacticOffers[0],tacticOffers[1]);}
-    private void clearTactics(){Arrays.fill(tacticRanks,0);tacticOffers[0]=0;tacticOffers[1]=1;tacticOffers[2]=2;tacticChosen=false;tacticDraftOpen=false;}
-    public void openTacticDraft(){if(mode==Mode.REWARD&&!shopOpen&&!tacticChosen&&hasTacticDraft())tacticDraftOpen=true;}
-    public void closeTacticDraft(){tacticDraftOpen=false;}
-    public boolean chooseTactic(int slot){if(mode!=Mode.REWARD||!tacticDraftOpen||tacticChosen||slot<0||slot>=3)return false;int id=tacticOffers[slot];if(id<0||id>=8||tacticRanks[id]>=3)return false;tacticRanks[id]++;tacticOffers[slot]=-1;tacticChosen=true;tacticDraftOpen=false;notice="战技刻印：「"+TACTIC_NAMES[id]+"」提升至 "+tacticRanks[id]+" 级";signal("tactic",x,y,id);return true;}
+    private void prepareTacticDraft(){tacticChosen=false;tacticSelected=-1;tacticDraftOpen=false;tacticOffers[0]=tacticRanks[0]<3?0:randomTactic(-1,-1);tacticOffers[1]=randomTactic(tacticOffers[0],-1);tacticOffers[2]=randomTactic(tacticOffers[0],tacticOffers[1]);}
+    private void clearTactics(){Arrays.fill(tacticRanks,0);tacticOffers[0]=0;tacticOffers[1]=1;tacticOffers[2]=2;tacticChosen=false;tacticSelected=-1;tacticDraftOpen=false;}
+    public void openTacticDraft(){if(mode==Mode.REWARD&&!shopOpen&&!tacticChosen&&hasTacticDraft()){tacticDraftOpen=true;tacticSelected=-1;}}
+    public void closeTacticDraft(){tacticDraftOpen=false;tacticSelected=-1;}
+    public boolean selectTactic(int slot){if(mode!=Mode.REWARD||!tacticDraftOpen||tacticChosen||slot<0||slot>=3)return false;int id=tacticOffers[slot];if(id<0||id>=8||tacticRanks[id]>=3)return false;tacticSelected=slot;notice="已选中「"+TACTIC_NAMES[id]+"」；确认前不会消耗刻印";return true;}
+    public boolean confirmTactic(){if(mode!=Mode.REWARD||!tacticDraftOpen||tacticChosen||tacticSelected<0||tacticSelected>=3)return false;int id=tacticOffers[tacticSelected];if(id<0||id>=8||tacticRanks[id]>=3)return false;tacticRanks[id]++;tacticOffers[tacticSelected]=-1;tacticChosen=true;tacticSelected=-1;tacticDraftOpen=false;notice="战技刻印：「"+TACTIC_NAMES[id]+"」提升至 "+tacticRanks[id]+" 级";signal("tactic",x,y,id);return true;}
 
     public float x=560,y=620,hp=110,faceX=0,faceY=-1,time=0;
     public float attackCd=0,attackAnim=0,rollTime=0,rollCd=0,skillCd=0,activeSkillCd=0,activeSkillDelay=0,activeSkillX=560,activeSkillY=380,invulnerable=0,comboWindow=0;
@@ -220,18 +223,18 @@ public final class ActionGame {
     private float baseMaxHp(){return (hero==0?110:hero==1?85:90)+vitality*10+(heroLevel()-1)*3+rank(8)*(soulKind()==1?10:8)+originHp()-(custom>=0&&profile().trait==2?8:0)+(hasRelic(1)?12:0)+(hasRelic(9)?18:0)+(hasRelic(1)&&hasRelic(9)?6:0)+characterTrait(1)*4;}
     public float maxHp(){return Math.min(99999,baseMaxHp()+healthBonus+training[buildId()][1]*4+coreRank(9)*12);}
     public float baseDamage(){return (hero==0?22:hero==1?18:15)+power*2+damageBonus+(heroLevel()-1)+rank(0)*2+(custom>=0&&profile().origin==2?2:0)+characterTrait(2);}
-    public float damage(){return baseDamage()*(1+coreRank(0)*.04f+specialtyRank(4)*.05f)*(hasRelic(10)?1.05f:1)*(hasRelic(3)&&hasRelic(10)?1.04f:1)*(1+training[buildId()][0]*.025f)*(rank(3)>0&&hp<maxHp()*.4f?1.55f:1)*(soulBuff>0?1.25f:1)*(battleTonicTime>0?1.30f:1)*(soulKind()==2?(ruptureTime>0?1.4f:corruption>=75?1.25f:corruption>=50?1.15f:1):1);}
+    public float damage(){return baseDamage()*(1+coreRank(0)*.04f+specialtyRank(4)*.05f)*(hasRelic(10)?1.05f:1)*(hasRelic(3)&&hasRelic(10)?1.04f:1)*(1+.025f*(float)Math.sqrt(training[buildId()][0]))*(rank(3)>0&&hp<maxHp()*.4f?1.55f:1)*(soulBuff>0?1.25f:1)*(battleTonicTime>0?1.30f:1)*(soulKind()==2?(ruptureTime>0?1.4f:corruption>=75?1.25f:corruption>=50?1.15f:1):1);}
     public float speed(){return (hero==2?240:hero==1?215:205)*(1+speedBonus*.08f+rank(4)*.03f)*(custom<0?1:profile().origin==0?.95f:profile().origin==1?1.07f:1)*(hasRelic(11)?1.03f:1)*(background()==2?1.03f:1)*(background()==3&&hp<maxHp()*.35f?1.12f:1)*(isSpec(HUNTER,2)?1.08f:1)*(job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0?1.45f:1);}
-    public float attackPeriod(){return (hero==0?.48f:hero==1?.4f:.12f)*(hero==0?1.1f:1)*(custom>=0&&profile().trait==0?1.06f:1)*(soulBuff>0?.8f:1)*(job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0?.62f:1)*(job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0?1.12f:1)*(job()==REPORTER&&careerSkillMode==4&&careerSkillTime>0?.62f:1)*(1-training[buildId()][0]*.012f)*(1-.03f*coreRank(1))*(1-.04f*tacticRanks[6])*(battleTonicTime>0?.8f:1);}
-    public int upgradeCost(int rank){return 30+rank*25;}
-    public int trainingCost(int rank){return 45+rank*35;}
-    public boolean train(int route){if(mode!=Mode.CAMP||route<0||route>=4)return false;int rank=training[buildId()][route];if(rank>=10){notice="该训练路线已达到上限。";return false;}int cost=trainingCost(rank);if(bank<cost){notice="训练还需要 "+(cost-bank)+" 枚票券。";return false;}bank-=cost;training[buildId()][route]++;hp=maxHp();notice=new String[]{"武器训练提升：伤害与攻速成长。","生存训练提升：最大生命成长。","战术训练提升：闪避与技能周转成长。","灵魂研究提升：初始魂能与魂技冷却成长。"}[route];return true;}
+    public float attackPeriod(){return (hero==0?.48f:hero==1?.4f:.12f)*(hero==0?1.1f:1)*(custom>=0&&profile().trait==0?1.06f:1)*(soulBuff>0?.8f:1)*(job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0?.62f:1)*(job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0?1.12f:1)*(job()==REPORTER&&careerSkillMode==4&&careerSkillTime>0?.62f:1)*(1f/(1f+training[buildId()][0]*.012f))*(1-.03f*coreRank(1))*(1-.04f*tacticRanks[6])*(battleTonicTime>0?.8f:1);}
+    public int upgradeCost(int rank){return (int)Math.min(999999L,30L+Math.max(0,rank)*25L);}
+    public int trainingCost(int rank){return (int)Math.min(999999L,45L+Math.max(0,rank)*35L);}
+    public boolean train(int route){if(mode!=Mode.CAMP||route<0||route>=4)return false;int rank=training[buildId()][route];if(rank>=999999){notice="该训练路线已达到安全等级上限。";return false;}int cost=trainingCost(rank);if(bank<cost){notice="训练还需要 "+(cost-bank)+" 枚营地储备。";return false;}bank-=cost;training[buildId()][route]++;hp=maxHp();notice=new String[]{"武器训练提升：伤害与攻速成长。","生存训练提升：最大生命成长。","战术训练提升：闪避与技能周转成长。","灵魂研究提升：初始魂能与魂技冷却成长。"}[route]+" · 等级 "+training[buildId()][route];return true;}
     public int random(int bound){rngState^=rngState<<13;rngState^=rngState>>>7;rngState^=rngState<<17;return (int)Long.remainderUnsigned(rngState,bound);}
     public void signal(String kind,float x,float y,int amount){if(signals.size()<64)signals.add(new Signal(kind,x,y,amount));}
     public void selectHero(int value){if(mode==Mode.CAMP && value>=0&&value<3){custom=-1;hero=value;hp=maxHp();}}
     public void upgrade(boolean health){
         if(mode!=Mode.CAMP)return;int rank=health?vitality:power;
-        if(rank>=20){notice="这项营地升级已满级。";return;}
+        if(rank>=999999){notice="这项营地升级已达到安全等级上限。";return;}
         int cost=upgradeCost(rank);if(bank<cost){notice="还需要 "+(cost-bank)+" 枚票券。";return;}
         bank-=cost;if(health)vitality++;else power++;hp=maxHp();notice="升级完成，所有角色共同受益。";
     }
