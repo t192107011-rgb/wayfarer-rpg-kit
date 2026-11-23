@@ -239,7 +239,7 @@ public final class ActionGame {
     public void startEndless(long seed){beginRun(seed,true);}
     private void beginRun(long seed,boolean infinite){
         if(mode!=Mode.CAMP)return;clearThreat();endless=infinite;endlessDepth=infinite?1:0;clearSoulRuntime();clearRelicRun();careerSkillTime=0;careerSkillDeathCd=0;careerSkillMode=0;careerCooldownRank=0;clearTactics();soulEnergy=soulKind()==0?0:Math.min(100,40+(hasRelic(5)?(soulKind()==1?30:15):0)+training[buildId()][3]*3+(hasRelic(12)?12:0)+(hasRelic(5)&&hasRelic(12)?10:0)+specialtyRank(0)*8);rngState=seed==0?1:seed;runs=Math.min(999999,runs+1);
-        loot=coreRank(14)*20+fieldPermits[buildId()][2]*30;kills=0;nextId=1;room=1;potions=2+fieldPermits[buildId()][1];bombs=0;snares=0;tonics=0;battleTonicTime=0;shopOpen=false;damageBonus=0;healthBonus=0;speedBonus=0;combo=0;time=0;won=false;hp=maxHp();shield=Math.min(talentShieldLimit(),40*fieldPermits[buildId()][0]);soulWard=0;careerWard=entryCareerWard();if(fieldPermits[buildId()][3]>0&&soulKind()!=0)soulEnergy=Math.min(100,soulEnergy+20);if(fieldPermits[buildId()][4]>0)damageBonus=4;
+        loot=coreRank(14)*20+fieldPermits[buildId()][2]*30;kills=0;nextId=1;room=1;potions=2+fieldPermits[buildId()][1];bombs=0;snares=0;tonics=0;battleTonicTime=0;shopOpen=false;damageBonus=0;healthBonus=0;speedBonus=0;combo=0;time=0;won=false;hp=maxHp();shield=0;addTalentShield(40*fieldPermits[buildId()][0]);soulWard=0;careerWard=entryCareerWard();if(fieldPermits[buildId()][3]>0&&soulKind()!=0)soulEnergy=Math.min(100,soulEnergy+20);if(fieldPermits[buildId()][4]>0)damageBonus=4;
         generateRoom();
     }
     public void generateRoom(){
@@ -332,7 +332,7 @@ public final class ActionGame {
         float len=len(dx,dy);if(len<.1f){dx=faceX;dy=faceY;len=1;}
         rollX=dx/len;rollY=dy/len;rollTime=.28f;rollCd=dodgePeriod();invulnerable=Math.max(invulnerable,.3f);attackAnim=0;
         dodgeCharge=rank(5)>0?3:0;float dodgeShield=12+coreRank(4)*8;addTalentShield(dodgeShield);
-        if(rank(6)>0){float pulseRadius=120+coreRank(5)*24;for(Enemy e:enemies)if(len(e.x-x,e.y-y)<pulseRadius){hit(e,damage()*1.05f*(1+.25f*coreRank(5)));e.stun=Math.max(e.stun,.45f);}signal("echo",x,y,(int)pulseRadius);}
+        if(rank(6)>0||coreRank(5)>0){float pulseRadius=120+coreRank(5)*24;for(Enemy e:enemies)if(len(e.x-x,e.y-y)<pulseRadius){hit(e,damage()*1.05f*(1+.25f*coreRank(5)));e.stun=Math.max(e.stun,.45f);}signal("echo",x,y,(int)pulseRadius);}
         if(rank(6)>0&&rank(11)>0)addTalentShield(6);
         if(rank(7)>0)skillCd=Math.max(0,skillCd-2.5f);
         if(hasRelic(3))relicEcho=3;
@@ -441,7 +441,7 @@ public final class ActionGame {
     }
     private void resolveThunderTrap(){
         float radius=(soulKind()==1?220:190)*(1+.08f*tacticRanks[0]);
-        for(Enemy e:enemies)if(e.hp>0&&len(e.x-activeSkillX,e.y-activeSkillY)<radius&&lineClear(activeSkillX,activeSkillY,e.x,e.y)){hit(e,damage()*(1+.12f*tacticRanks[0])*(soulKind()==2?1.5f:1.25f),false);e.stun=Math.max(e.stun,soulKind()==1?.65f:.25f);if(soulKind()==2)e.hex=Math.max(e.hex,4);}
+        for(Enemy e:enemies)if(e.hp>0&&len(e.x-activeSkillX,e.y-activeSkillY)<radius&&lineClear(activeSkillX,activeSkillY,e.x,e.y)){hit(e,damage()*(1+.20f*coreRank(8))*(1+.12f*tacticRanks[0])*(soulKind()==2?1.5f:1.25f),false);e.stun=Math.max(e.stun,soulKind()==1?.65f:.25f);if(soulKind()==2)e.hex=Math.max(e.hex,4);}
         if(soulKind()==1){cleanse(activeSkillX,activeSkillY,radius);soulWard=Math.min(99999,soulWard+6);}signal("thunder",activeSkillX,activeSkillY,(int)radius);
     }
     public void activeSkill(){
