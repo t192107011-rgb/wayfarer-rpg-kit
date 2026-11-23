@@ -5,7 +5,7 @@ public final class CareerSystem {
     private CareerSystem(){}
     public static final int SPECIALIZATION_XP=160;
     public static final int HUNTER=0,ASSASSIN=1,DETECTIVE=2,REPORTER=3;
-    public static final String[] CLASSES={"猎人","刺客","侦探","记者"};
+    public static final String[] CLASSES={"猎人","刺客","警探","记者"};
     public static final String[] SKILL_NAMES={"追踪猎杀","影袭","现场重构","头条传播"};
     public static final String[] CLASS_DETAILS={
         "猎人：追踪猎杀。职业技能锁定高威胁目标；标记目标受到额外伤害，击杀后追踪转移。",
