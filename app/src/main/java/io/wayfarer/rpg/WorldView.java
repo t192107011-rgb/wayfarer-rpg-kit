@@ -222,7 +222,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         text(c,"营地储备 "+game.bank+" · 四条独立路线可重复强化；不同角色分别培养",40,108,13,gold,false);
         treeTabs(c);button(c,740,62,180,34,"远征许可",false);
         String[] names={"武器训练","生存训练","战术训练","灵魂研究"};
-        String[] desc={"每级伤害成长递减增加，攻击间隔持续缩短。","每级最大生命 +4。","每级闪避冷却 -0.045秒，技能冷却 -0.35秒。","每级初始魂能 +3，魂技冷却 -0.3秒。"};
+        String[] desc={"每级伤害 +2.5%（10级后递减），攻击间隔持续缩短。","每级最大生命 +4。","每级闪避冷却 -0.045秒，技能冷却 -0.35秒。","每级初始魂能 +3，魂技冷却 -0.3秒。"};
         int[] ranks=game.training[game.buildId()];
         for(int i=0;i<4;i++){int x=55+(i%2)*430,y=135+(i/2)*165;
             rounded(c,x,y,390,135,12,0xFF293F42);text(c,names[i],x+22,y+35,22,gold,false);
