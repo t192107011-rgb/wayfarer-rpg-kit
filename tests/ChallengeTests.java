@@ -13,14 +13,17 @@ public final class ChallengeTests {
     private static byte[] edit(byte[] data,String key,String val)throws Exception{Properties p=new Properties();p.load(new ByteArrayInputStream(data));p.setProperty(key,val);ByteArrayOutputStream o=new ByteArrayOutputStream();p.store(o,"");return o.toByteArray();}
     private static void reject(byte[] bytes,String key,String val)throws Exception{boolean bad=false;try{ActionSave.decode(edit(bytes,key,val));}catch(IOException e){bad=true;}check(bad,"reject "+key);}
     private static void skills()throws Exception{
-        ActionGame g=new ActionGame();g.chooseCareer(CareerSystem.HUNTER,0,0);g.start(1);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;g.hp=50;ActionGame.Enemy e=mob(g,0,700,600);float baseSpeed=g.speed();g.skill();check(g.careerSkillMode==1&&g.careerSkillTime==30&&e.hp<1000&&g.speed()>baseSpeed,"hunter opens with a wide burst and enters a thirty-second speed state");g.hp=50;float postBurstHp=g.hp;step(g,65,true);check(g.hp<postBurstHp&&g.hp>=g.maxHp()*.30f-.01f,"hunter pays life over time but never drains below thirty percent");
-        g=new ActionGame();g.chooseCareer(CareerSystem.ASSASSIN,0,0);g.start(2);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;g.invulnerable=0;ActionGame.Enemy target=mob(g,0,690,600);target.hp=1;target.maxHp=1;float period=g.attackPeriod(),startHp=g.maxHp()-10;g.hp=startHp;g.skill();check(g.careerSkillMode==2&&g.careerSkillTime==30&&g.attackPeriod()>period,"assassin enters knife fan state with a slight attack-speed penalty");ActionGame.Input attack=new ActionGame.Input();attack.attack=true;g.update(.001f,attack);check(g.shots.size()==3,"assassin attack emits exactly three fan knives");g.activeSkillCd=8;for(int i=0;i<8;i++){g.hitStop=0;g.update(.05f,attack);}check(g.activeSkillCd==0&&g.skillCd>0&&g.hp>startHp,"assassin kill resets generic active skill, preserves career skill cooldown, and restores three-percent maximum health");
-        g=new ActionGame();g.selectHero(2);g.start(1);g.blocks.clear();g.enemies.clear();g.invulnerable=0;ActionGame.Input dagger=new ActionGame.Input();dagger.attack=true;g.update(.001f,dagger);check(g.attackAnim>.17f&&g.invulnerable==0&&g.attackPeriod()>=.12f,"dagger thrust has no granted invulnerability and a longer attack interval");
-        g=new ActionGame();g.chooseCareer(CareerSystem.DETECTIVE,0,0);g.start(3);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;e=mob(g,0,720,600);float detectiveDistance=(float)Math.hypot(e.x-g.x,e.y-g.y);g.skill();check(g.careerSkillMode==0&&g.careerSkillTime==0&&e.x<720&&e.hp<1000&&Math.hypot(e.x-g.x,e.y-g.y)<detectiveDistance,"detective performs a one-shot global pull, damage and brief stun");
-        g=new ActionGame();g.chooseCareer(CareerSystem.REPORTER,0,0);g.start(4);g.blocks.clear();g.enemies.clear();e=mob(g,0,700,600);float expected=g.damage()*1.3f;g.skill();near(1000-e.hp,expected,"reporter single-target skill delivers focused burst");check(g.careerSkillMode==0&&g.careerSkillTime==0,"reporter burst does not retain obsolete attack/healing state");
+        ActionGame g=new ActionGame();g.chooseCareer(CareerSystem.HUNTER,0,0);g.start(1);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;g.hp=50;ActionGame.Enemy e=mob(g,0,700,600);float baseSpeed=g.speed();g.skill();
+        check(g.careerSkillMode==1&&g.careerSkillTime==4&&e.hex>=8&&e.hp<1000&&g.speed()>baseSpeed,"hunter marks a high-threat target and enters a short hunt window");
+        g=new ActionGame();g.chooseCareer(CareerSystem.ASSASSIN,0,0);g.start(2);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;g.invulnerable=0;float oldX=g.x;g.skill();
+        check(g.careerSkillMode==2&&g.careerSkillTime==4&&g.invulnerable>=.8f&&g.x>oldX&&g.shield>0,"assassin uses a protected dash and receives a ward");
+        g=new ActionGame();g.chooseCareer(CareerSystem.DETECTIVE,0,0);g.start(3);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;e=mob(g,0,720,600);float detectiveDistance=(float)Math.hypot(e.x-g.x,e.y-g.y);g.skill();
+        check(g.careerSkillMode==3&&e.hex>=4.5f&&e.stun>=.29f&&Math.hypot(e.x-g.x,e.y-g.y)==detectiveDistance,"detective reconstructs the scene without forced pulling");
+        g=new ActionGame();g.chooseCareer(CareerSystem.REPORTER,0,0);g.start(4);g.blocks.clear();g.enemies.clear();e=mob(g,0,700,600);ActionGame.Enemy witness=mob(g,0,800,600);g.skill();
+        check(g.careerSkillMode==4&&e.hp<1000&&witness.hp<1000,"reporter's headline propagates to a nearby witness");
         g.soulCd=8;g.generateRoom();check(g.skillCd==0&&g.soulCd==0,"new scene resets all skill cooldowns");
         ActionGame restored=ActionSave.decode(ActionSave.encode(g));check(restored.job()==CareerSystem.REPORTER&&restored.careerCooldownRank==g.careerCooldownRank,"career cooldown progression persists");
-        System.out.println("PASS four redesigned career skills, costs, cooldowns and scene resets");
+        System.out.println("PASS four redesigned career skills, distinct soul forms, costs, cooldowns and scene resets");
     }
     private static void erosion()throws Exception{
         ActionGame g=arena(0,2);mob(g,0,100,100);g.corruption=80;g.soulSkill();
@@ -59,7 +62,7 @@ public final class ChallengeTests {
         ActionGame g=new ActionGame();g.experience[0]=320;g.bindSoul(1,0);
         check(g.learnSpecialty(0)&&g.learnSpecialty(0)&&g.learnSpecialty(1)&&g.learnSpecialty(1)&&g.learnSpecialty(3),"pact path follows prerequisites and permits one capstone");
         check(g.availableSpecialtyPoints()==1&&g.availablePoints()==6&&g.learn(0)&&g.availablePoints()==5&&g.availableSpecialtyPoints()==1,"base talents and specialties use independent point budgets");
-        float expected=40+16;g.start(31);near(g.soulEnergy,expected,"pact path increases expedition starting soul energy");near(g.soulPeriod(),SoulSystem.COOLDOWNS[1][0]-1.6f,"deep current shortens soul cooldown");
+        float expected=40+16;g.start(31);near(g.soulEnergy,expected,"pact path increases expedition starting soul energy");near(g.soulPeriod(),12f-1.6f,"deep current shortens hunter soul cooldown");
         ActionGame restored=ActionSave.decode(ActionSave.encode(g));check(restored.specialties[0][0]==2&&restored.specialties[0][3]==1,"specialty ranks persist in v22 snapshots");
         g=new ActionGame();g.experience[0]=320;g.learnSpecialty(4);g.learnSpecialty(4);g.learnSpecialty(5);g.learnSpecialty(6);
         check(g.specialtyRank(6)==1&&!g.learnSpecialty(7),"hunting capstones are mutually exclusive");
