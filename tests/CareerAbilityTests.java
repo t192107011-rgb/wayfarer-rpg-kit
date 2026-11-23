@@ -57,7 +57,7 @@ public final class CareerAbilityTests {
     }
     public static void main(String[] args)throws Exception{
         activeSkills();soulForms();careerTreeEffects();careerTreeBudgetAndReset();
-        ActionGame g=arena(HUNTER,0);ActionGame.Enemy distant=mob(g,g.x+300,g.y,1000);g.hitForTest(distant,100);check(distant.hp<900,"hunter's marked target passive is tested through a mark");
+        ActionGame g=arena(HUNTER,0);ActionGame.Enemy distant=mob(g,g.x+300,g.y,1000);distant.hex=5;g.hitForTest(distant,100);check(distant.hp<900,"hunter's marked target passive is tested through a mark");
         g=arena(ASSASSIN,0);ActionGame.Enemy close=mob(g,g.x+90,g.y,1000);float shield=g.shield;g.hitForTest(close,40);check(g.shield>shield,"assassin gains guard from close-quarters hits");
         g=arena(DETECTIVE,0);ActionGame.Enemy suspect=mob(g,g.x+90,g.y,1000);g.hitForTest(suspect,20);check(suspect.hex>=3.5f,"detective marks evidence targets on hit");
         g=arena(REPORTER,0);ActionGame.Enemy source=mob(g,g.x+90,g.y,1000),witness=mob(g,g.x+180,g.y,1000);float witnessHp=witness.hp;g.hitForTest(source,100);check(witness.hp<witnessHp&&witnessHp-witness.hp>=19.9f,"reporter relays twenty percent of hit damage to a nearby second target");
