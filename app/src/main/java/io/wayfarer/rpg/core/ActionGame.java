@@ -709,11 +709,22 @@ public final class ActionGame {
             if(isSpec(DETECTIVE,1)&&e.hex>0)value*=1.25f;
             if(isSpec(DETECTIVE,2)&&e.stun>0)value*=1.20f;
             if(isSpec(REPORTER,1)&&e.type==3)value*=1.15f;
+            // Career identities shape every deliberate hit, not only the active skill.
+            if(job()==HUNTER&&len(e.x-x,e.y-y)>240)value*=1.12f;
         }
         if(echoEligible&&relicEcho>0&&hasRelic(3)){value*=1.35f;relicEcho=0;signal("echo",e.x,e.y,65);}
         value*=e.hex>0?1.15f*(hasRelic(6)?1.1f:1)*(1+.12f*tacticRanks[4]):1;if(echoEligible&&coreRank(2)>0&&e.stun>0)value*=1+.12f*coreRank(2);if(echoEligible&&job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0)value*=1+.10f*careerTalentRank(1);float beforeGuard=e.guard;float guardFactor=e.guardType==2?.65f:1f;float guardDamage=value*guardFactor;float absorbed=Math.min(e.guard,guardDamage);e.guard=Math.max(0,e.guard-absorbed);float healthLeak=Math.min(value,absorbed/guardFactor);value-=healthLeak;if(absorbed>0){e.guardDelay=2.5f;signal("enemyShield",e.x,e.y,(int)absorbed);}if(beforeGuard>0&&e.guard<=.0001f)breakEnemyGuard(e);float dealt=Math.min(e.hp,value);e.hp=Math.max(0,e.hp-value);
         e.flash=.12f;if(absorbed==0)e.stun=Math.max(e.stun,e.type==3?.03f:e.type==2||e.type==4?.06f:.12f);signal("hit",e.x,e.y,(int)value);
         if(dealt>0&&job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0)heal(dealt*.20f);
+        if(dealt>0&&echoEligible){
+            if(job()==ASSASSIN&&len(e.x-x,e.y-y)<150)addTalentShield(2f);
+            if(job()==DETECTIVE){e.hex=Math.max(e.hex,2.5f);skillCd=Math.max(0,skillCd-.08f);}
+            if(job()==REPORTER){
+                Enemy relay=null;float nearest=260f;
+                for(Enemy candidate:enemies){if(candidate!=e&&candidate.hp>0){float d=len(candidate.x-e.x,candidate.y-e.y);if(d<nearest){nearest=d;relay=candidate;}}}
+                if(relay!=null){hit(relay,dealt*.15f,false,false);signal("careerRelay",relay.x,relay.y,(int)(dealt*.15f));}
+            }
+        }
         if(job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0&&dealt>0){addTalentShield(3+8*careerTalentRank(2));if(e.hp<=0){activeSkillCd=0;heal(maxHp()*.03f);}}
         if(charge&&dealt>0){gainSoul(Math.min(4,dealt*.08f));if(soulBuff>0)heal(Math.min(maxHp()*.015f,dealt*.08f));}
     }
