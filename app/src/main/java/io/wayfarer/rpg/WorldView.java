@@ -345,6 +345,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             text(c,game.soulKind()==2?"侵蚀 "+(int)game.corruption+" · 受伤+"+(int)(game.corruption*.4f)+"% / 治疗"+String.format(java.util.Locale.ROOT,"%+.0f%%",(game.healingFactor()-1)*100):"辉盾 "+(int)game.soulWard+" · 治疗 "+String.format(java.util.Locale.ROOT,"%+.0f%%",(game.healingFactor()-1)*100),30,134,12,tint,false);
             if(game.soulKind()==2){box(c,30,143,275,4,0xFF3D454E);box(c,30,143,275*game.corruption/100,4,game.ruptureTime>0?0xFFE66D87:tint);}
             text(c,game.soulArtName(),855,248,12,tint,true);
+            text(c,"满能自动：优先缩短魂技冷却；冷却就绪后转为护盾",30,157,10,muted,false);
         }
         int shieldY=game.soulKind()>0?170:98;if(game.shield>0||game.dodgeCharge>0)text(c,"天赋护盾 "+(int)game.shield+(game.dodgeCharge>0?"  · 借势就绪":""),30,shieldY,13,gold,false);text(c,game.shieldSourceSummary(),30,shieldY+46,9,muted,false);
         if(game.relics[game.buildId()][0]!=0||game.relics[game.buildId()][1]!=0){
@@ -368,9 +369,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         text(c,"移动",117,519,12,muted,true);
         control(c,850,420,58,"攻击",0,input.attack);control(c,737,456,37,"闪避",game.rollCd,false);control(c,855,210,34,"职业技",game.skillCd,false);control(c,855,298,38,game.followUpWindow>0?"追击":"主动技",game.activeSkillCd,false);
         control(c,648,456,29,"药×"+game.potions,0,false);control(c,550,456,27,"爆×"+game.bombs,0,false);control(c,575,390,27,"缚×"+game.snares,0,false);control(c,648,390,27,"剂×"+game.tonics,game.battleTonicTime,false);
-        if(game.soulKind()>0){control(c,735,240,38,game.soulEnergy<40?"蓄能":"魂技",game.soulCd,false);ring(c,735,240,42,game.soulKind()==1?0xFFE8D493:0xFFBE8FDC,2);text(c,game.soulArtName(),735,287,11,game.soulKind()==1?gold:0xFFCAA9E2,true);
-            control(c,690,370,27,"魂盾",game.soulEnergy<25?0:0,false);control(c,780,370,27,"调律",game.soulEnergy<30?0:0,false);control(c,870,370,27,"共鸣",game.soulEnergy<35?0:0,false);
-        }
+        if(game.soulKind()>0){control(c,735,240,38,game.soulEnergy<40?"蓄能":"魂技",game.soulCd,false);ring(c,735,240,42,game.soulKind()==1?0xFFE8D493:0xFFBE8FDC,2);text(c,game.soulArtName(),735,287,11,game.soulKind()==1?gold:0xFFCAA9E2,true);}
     }
     private void shade(Canvas c){box(c,0,0,960,540,0xD50C1820);}
     private void rewards(Canvas c){
@@ -511,9 +510,6 @@ public final class WorldView extends View implements Choreographer.FrameCallback
             else if(ActionGame.len(x-648,y-456)<35)game.potion();
             else if(ActionGame.len(x-550,y-456)<33)game.useBomb();
             else if(ActionGame.len(x-575,y-390)<33)game.useSnare();
-            else if(game.soulKind()>0&&ActionGame.len(x-690,y-370)<31)game.soulWardAction();
-            else if(game.soulKind()>0&&ActionGame.len(x-780,y-370)<31)game.soulTuneAction();
-            else if(game.soulKind()>0&&ActionGame.len(x-870,y-370)<31)game.soulResonanceAction();
             else if(ActionGame.len(x-648,y-390)<33)game.useTonic();
             else if(game.soulKind()>0&&ActionGame.len(x-735,y-240)<45)game.soulSkill();
         }else if(action==MotionEvent.ACTION_MOVE){
