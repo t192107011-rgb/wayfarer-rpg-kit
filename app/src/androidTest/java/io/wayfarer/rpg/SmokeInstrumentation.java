@@ -29,6 +29,7 @@ public final class SmokeInstrumentation extends Instrumentation {
             ui(()->activity.world.replace(new ActionGame()));
             ui(()->activity.world.replace(new ActionGame()));
             careerFlow();
+            growthTreesFlow();
             ui(()->activity.world.replace(new ActionGame()));
             relicFlow();
             ui(()->activity.world.replace(new ActionGame()));
@@ -89,7 +90,23 @@ public final class SmokeInstrumentation extends Instrumentation {
         screenshot("29-potion-pickup-fixture.png");tap(648,456);
         ui(()->{ActionGame g=activity.world.game;check(g.potions==4,"actual potion button drinks");g.hitStop=0;g.update(.016f,new ActionGame.Input());check(g.potions==5&&g.drops.isEmpty(),"open slot collects bottle once");g.pause();try{SaveStore store=new SaveStore(activity);store.write(3,g);ActionGame a=store.read(3);check(a.endless&&a.endlessDepth==6&&a.bestDepth==5&&a.potions==5&&a.threat==g.threat&&a.rank(2)==1&&a.rank(6)==1&&a.rank(11)==1,"v10 AtomicFile restores complete endless build");}catch(IOException e){throw new RuntimeException(e);}});
     }
-    private void journalItem(int index){ui(()->{ListView list=activity.storyDialog.getListView();list.performItemClick(null,index,index);});waitForIdleSync();}
+    private void growthTreesFlow(){
+        ui(()->{activity.world.stopFrames();ActionGame g=activity.world.game;g.experience[g.hero]=800;g.bank=1000;});
+        tap(537,501);waitForIdleSync();ui(()->check(activity.world.showTalents,"growth hub opens from camp"));
+        tap(432,35);waitForIdleSync();ui(()->check(activity.world.showCoreTalents,"five-branch tab opens"));
+        tap(110,180);waitForIdleSync();ui(()->{check(activity.talentDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled(),"root five-branch node is purchasable");activity.talentDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();});waitForIdleSync();
+        ui(()->check(activity.world.game.coreRank(0)==1,"five-branch node purchase persists"));
+        tap(257,35);waitForIdleSync();ui(()->check(activity.world.showCareerTalents,"career skill tab opens"));
+        tap(450,185);waitForIdleSync();ui(()->{check(activity.talentDialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled(),"root career node is purchasable");activity.talentDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();});waitForIdleSync();
+        ui(()->check(activity.world.game.careerTalentRank(0)==1,"career node purchase persists"));
+        tap(805,496);waitForIdleSync();ui(()->{check(activity.resetDialog!=null&&activity.resetDialog.isShowing(),"full reset confirmation opens");activity.resetDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();});waitForIdleSync();
+        ui(()->check(activity.world.game.coreRank(0)==0&&activity.world.game.careerTalentRank(0)==0,"full reset refunds five-branch and career nodes"));
+        tap(770,35);waitForIdleSync();ui(()->check(activity.world.showTraining,"camp training tab opens"));
+        tap(830,79);waitForIdleSync();ui(()->check(activity.world.showPermits,"expedition permit shop opens"));
+        tap(365,211);waitForIdleSync();ui(()->check(activity.world.game.fieldPermits[activity.world.game.buildId()][0]==1&&activity.world.game.bank==920,"permit purchase debits camp bank and unlocks start shield"));
+        tap(770,35);tap(900,35);waitForIdleSync();ui(()->check(!activity.world.showTalents,"growth hub returns to camp"));
+    }
+    private void journalItem(int index){ui(()->{AlertDialog dialog=activity.storyDialog;ListView list=dialog==null?null:dialog.getListView();if(list==null){if(dialog!=null)dialog.dismiss();StoryJournal.show(activity);dialog=activity.storyDialog;list=dialog.getListView();}check(list!=null,"story journal list is present");list.performItemClick(null,index,index);});waitForIdleSync();}
     private void storyButton(int which){ui(()->activity.storyDialog.getButton(which).performClick());waitForIdleSync();}
     private void challengeFlow(){
         ui(()->{activity.world.stopFrames();ActionGame g=activity.world.game;g.chooseCareer(CareerSystem.HUNTER,0,0);});
