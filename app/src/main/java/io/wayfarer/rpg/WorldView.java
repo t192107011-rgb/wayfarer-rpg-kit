@@ -161,7 +161,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         text(c,game.heroName()+" · 五大天赋",40,83,25,cream,false);
         text(c,"独立点数 "+game.availableCorePoints()+" / "+BuildSystem.points(game.heroXp())+" · 与旧天赋分开计算",40,108,13,gold,false);treeTabs(c);
         for(int branch=0;branch<5;branch++)text(c,BuildSystem.CORE_BRANCHES[branch],111+branch*188,126,13,gold,true);
-        for(int id=0;id<15;id++){float[] a=coreNodeRect(id);BuildSystem.Node n=BuildSystem.CORE_NODES[id];int rank=game.coreRank(id);String lock=BuildSystem.lockReason(game.coreTalents[game.buildId()],game.heroXp(),id);rounded(c,a[0],a[1],a[2],a[3],9,rank>0?0xFF36554F:lock.isEmpty()&&game.availableCorePoints()>0?0xFF2F4148:0xFF1D3037);text(c,n.name+"  "+rank+"/"+n.maxRank,a[0]+a[2]/2,a[1]+25,14,rank>0?gold:cream,true);text(c,n.description,a[0]+a[2]/2,a[1]+49,10,muted,true);text(c,lock.isEmpty()?"可学习":lock,a[0]+a[2]/2,a[1]+78,9,rank>0?gold:muted,true);}
+        for(int id=0;id<15;id++){float[] a=coreNodeRect(id);BuildSystem.Node n=BuildSystem.CORE_NODES[id];int rank=game.coreRank(id);String lock=BuildSystem.coreLockReason(game.coreTalents[game.buildId()],game.heroXp(),id);rounded(c,a[0],a[1],a[2],a[3],9,rank>0?0xFF36554F:lock.isEmpty()&&game.availableCorePoints()>0?0xFF2F4148:0xFF1D3037);text(c,n.name+"  "+rank+"/"+n.maxRank,a[0]+a[2]/2,a[1]+25,14,rank>0?gold:cream,true);text(c,n.description,a[0]+a[2]/2,a[1]+49,10,muted,true);text(c,lock.isEmpty()?"可学习":lock,a[0]+a[2]/2,a[1]+78,9,rank>0?gold:muted,true);}
         text(c,"五类点数独立于基础天赋；每个终阶需前置节点达到2级。",40,487,13,muted,false);button(c,700,475,210,42,"免费重置全部成长",false);
     }
     private void careerTalentTree(Canvas c){
