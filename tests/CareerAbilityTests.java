@@ -54,6 +54,10 @@ public final class CareerAbilityTests {
         g=arena(DETECTIVE);g.careers[g.buildId()][1]=2;marked=new ActionGame.Enemy(g.nextId++,0,600,600,100);marked.stun=1;g.enemies.add(marked);g.hitForTest(marked,20);check(100-marked.hp>20,"detective analyst exploits stunned targets");
         g=arena(ASSASSIN);g.careers[g.buildId()][1]=2;check(g.careerKnifeCount()==5,"assassin phantom specialization adds two knives to each volley");
         g.soulCd=5;g.generateRoom();check(g.skillCd==0&&g.soulCd==0,"room transition resets both skill cooldowns");
+        g=arena(HUNTER);ActionGame.Enemy distant=new ActionGame.Enemy(g.nextId++,0,g.x+300,g.y,1000);g.enemies.add(distant);g.hitForTest(distant,100);check(1000-distant.hp>112,"hunter gains a reliable long-range tracking damage bonus");
+        g=arena(ASSASSIN);ActionGame.Enemy close=new ActionGame.Enemy(g.nextId++,0,g.x+90,g.y,1000);g.enemies.add(close);float shieldBefore=g.shield;g.hitForTest(close,40);check(g.shield>shieldBefore,"assassin gains guard from close-quarters hits");
+        g=arena(DETECTIVE);ActionGame.Enemy suspect=new ActionGame.Enemy(g.nextId++,0,g.x+90,g.y,1000);g.enemies.add(suspect);g.hitForTest(suspect,20);check(suspect.hex>=2.5f,"detective marks evidence targets on hit");
+        g=arena(REPORTER);ActionGame.Enemy source=new ActionGame.Enemy(g.nextId++,0,g.x+90,g.y,1000),witness=new ActionGame.Enemy(g.nextId++,0,g.x+180,g.y,1000);g.enemies.add(source);g.enemies.add(witness);float witnessHp=witness.hp;g.hitForTest(source,100);check(witness.hp<witnessHp&&Math.abs((witnessHp-witness.hp)-15)<.1f,"reporter relays fifteen percent of hit damage to a nearby second target");
         System.out.println("CAREER ABILITY CHECKS PASSED: "+checks);
     }
 }
