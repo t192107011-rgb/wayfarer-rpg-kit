@@ -19,6 +19,21 @@ public final class ActionTests {
         in.mx=Float.NaN;in.my=Float.POSITIVE_INFINITY;ticks(a,in,1);check(Float.isFinite(a.x)&&Float.isFinite(a.y),"nonfinite input rejected");
         System.out.println("PASS normalized movement, collisions, pause and invalid input");
     }
+    private static void rejectSavedValue(byte[] source,String key,String value,String reason)throws Exception{
+        Properties p=new Properties();p.load(new ByteArrayInputStream(source));p.setProperty(key,value);
+        ByteArrayOutputStream out=new ByteArrayOutputStream();p.store(out,"");
+        boolean rejected=false;try{ActionSave.decode(out.toByteArray());}catch(IOException expected){rejected=true;}
+        check(rejected,reason+" must reject "+key+"="+value);
+    }
+    private static void shieldSaveValidation()throws Exception{
+        ActionGame g=game(0);g.shield=99999;byte[] valid=ActionSave.encode(g);
+        ActionGame restored=ActionSave.decode(valid);near(restored.shield,99999,"maximum legal player shield round-trips");
+        rejectSavedValue(valid,"shield","100000","shield above hard cap");
+        rejectSavedValue(valid,"shield","NaN","NaN shield");
+        rejectSavedValue(valid,"shield","Infinity","infinite shield");
+        rejectSavedValue(valid,"shield","-1","negative shield");
+        System.out.println("PASS strict player shield save bounds, finite checks and max-value roundtrip");
+    }
     private static void enemyShieldTypes()throws Exception{
         ActionGame g=game(0);ActionGame.Enemy ward=mob(g,0,700,600,500);ward.guardType=1;ward.guard=20;
         g.hitForTest(ward,10);near(ward.guard,10f,"ward shield has standard durability");near(ward.hp,500,"ward shield absorbs before health");
@@ -276,5 +291,5 @@ public final class ActionTests {
         ActionGame g=new ActionGame();g.start(12);g.pause();float cd=g.activeSkillCd;for(int i=0;i<30;i++)g.update(1f/60f,new ActionGame.Input());near(g.activeSkillCd,cd,"pause freezes active cooldown");
         System.out.println("PASS five active skills, independent career cooldown, follow-ups, trap persistence and pause");
     }
-    public static void main(String[] args)throws Exception{movement();enemyShieldTypes();combat();shopAndItems();currencySeparation();fullPermitFlow();expandedEconomy();careerSoulResonance();careerActiveSoulResonance();careerFollowUpAndSoulSynergy();skillChainReactions();permanentEconomy();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
+    public static void main(String[] args)throws Exception{movement();shieldSaveValidation();enemyShieldTypes();combat();shopAndItems();currencySeparation();fullPermitFlow();expandedEconomy();careerSoulResonance();careerActiveSoulResonance();careerFollowUpAndSoulSynergy();skillChainReactions();permanentEconomy();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
 }
