@@ -187,8 +187,9 @@ public final class ActionGame {
     public static final class Enemy {
         public int id,type,state=0; // 0 approach, 1 windup, 2 recovery/rush
         public float x,y,hp,maxHp,timer=0,aimX=0,aimY=1,stun=0,flash=0;
-        public float hex=0,guard=0,targetX=560,targetY=380;
-        public int pattern=0;
+        public float hex=0,guard=0,targetX=560,targetY=380,guardBreak=0,guardDelay=0;
+        /** 0 none, 1 ward (weak), 2 plated (resistant), 3 regenerative. */
+        public int guardType=0,pattern=0;
         public boolean struck=false;
         public Enemy(int id,int type,float x,float y,float hp){this.id=id;this.type=type;this.x=x;this.y=y;this.hp=hp;maxHp=hp;}
         public float radius(){return type==3?30:16;}
@@ -254,7 +255,7 @@ public final class ActionGame {
             do{ex=120+random(880);ey=130+random(300);tries++;}while((!free(ex,ey,type==3?32:24)||len(ex-x,ey-y)<230)&&tries<100);
             if(!free(ex,ey,type==3?32:24)){ex=560;ey=130+i*40;}
             float life=type==3?(room==2?900:room==4?1500:2200):55+room*12+(type==1?10:type==2?24:type==5?15:type==6?25:0);
-            enemies.add(new Enemy(nextId++,type,ex,ey,Math.max(life*threat,encounterHpFloor)));
+            Enemy spawned=new Enemy(nextId++,type,ex,ey,Math.max(life*threat,encounterHpFloor));if(type==3){spawned.guardType=3;spawned.guard=18+room*3;}else if(type==4){spawned.guardType=2;spawned.guard=14;}else if(type==6){spawned.guardType=1;spawned.guard=24;}enemies.add(spawned);
         }
         notice=ROOM_NAMES[room-1]+" · 清除敌人开启出口";signal("enter",x,y,room);
     }
@@ -376,7 +377,7 @@ public final class ActionGame {
         if(style==0||style==1||style==2){
             if(style==2){invulnerable=Math.max(invulnerable,.35f);for(int i=0;i<Math.min(42,(int)(range/5));i++)movePlayer(faceX*5,faceY*5);endX=x;endY=y;}
             for(Enemy e:enemies)if(e.hp>0&&segmentDistance(e.x,e.y,ox,oy,endX,endY)<(style==0?42:style==1?22:34)+e.radius()&&lineClear(ox,oy,e.x,e.y)){
-                if(style==1)e.guard=0;float before=e.hp;hit(e,followPower*(specialtyRank(6)>0?1.15f:1)*(style==0?(e.stun>0?2.15f:1.55f):style==1?2.05f:1.8f));connected|=e.hp<before;
+                if(style==1)breakEnemyGuard(e);float before=e.hp;hit(e,followPower*(specialtyRank(6)>0?1.15f:1)*(style==0?(e.stun>0?2.15f:1.55f):style==1?2.05f:1.8f));connected|=e.hp<before;
             }
         }else if(style==3){
             for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<range&&lineClear(x,y,e.x,e.y)&&(e.hex>0||e.stun>0)){float before=e.hp;hit(e,damage()*2.2f);connected|=e.hp<before;if(soulKind()==2&&e.hex>0){e.hex=0;heal(maxHp()*.025f);}if(soulKind()==1){e.stun=Math.max(e.stun,.35f);soulWard=Math.min(99999,soulWard+3);}}
@@ -651,7 +652,7 @@ public final class ActionGame {
     }
     private void fan(Enemy e,int half,float spread,float speed,float power){double base=Math.atan2(e.aimY,e.aimX);for(int i=-half;i<=half;i++)enemyShot(e,(float)Math.cos(base+i*spread),(float)Math.sin(base+i*spread),speed,power);}
     private void updateEnemy(Enemy e,float dt){
-        e.hex=dec(e.hex,dt);e.flash=dec(e.flash,dt);
+        e.hex=dec(e.hex,dt);e.flash=dec(e.flash,dt);e.guardBreak=dec(e.guardBreak,dt);e.guardDelay=dec(e.guardDelay,dt);
         if(e.stun>0){e.stun=dec(e.stun,dt);return;}
         float dx=x-e.x,dy=y-e.y,distance=Math.max(.01f,len(dx,dy));boolean enraged=e.type==3&&e.hp<e.maxHp*.5f;
         if(e.state==0){
@@ -675,7 +676,7 @@ public final class ActionGame {
                 else if(e.type==1){e.timer=1.05f;fan(e,1,.15f,310,12+room*2);}
                 else if(e.type==2||e.type==4)e.timer=e.type==2?.5f:.34f;
                 else if(e.type==5){e.timer=1.5f;addHazard(0,e.targetX,e.targetY,100,1.05f,2.3f,enemyPower(e,12+room*2));addHazard(0,e.targetX-e.aimY*135,e.targetY+e.aimX*135,85,1.4f,1.8f,enemyPower(e,10+room*2));}
-                else if(e.type==6){e.timer=2;for(Enemy other:enemies)if(other!=e&&other.hp>0&&len(other.x-e.x,other.y-e.y)<260&&lineClear(e.x,e.y,other.x,other.y))other.guard=Math.min(40,other.guard+24);fan(e,2,.3f,240,12);signal("enemyWard",e.x,e.y,260);}
+                else if(e.type==6){e.timer=2;for(Enemy other:enemies)if(other!=e&&other.hp>0&&len(other.x-e.x,other.y-e.y)<260&&lineClear(e.x,e.y,other.x,other.y)){if(other.guardType==0)other.guardType=1;other.guard=Math.min(60,other.guard+24);other.guardDelay=2.5f;}fan(e,2,.3f,240,12);signal("enemyWard",e.x,e.y,260);
                 else {
                     e.timer=enraged?.62f:room>=4?.88f:1.08f;
                     if(e.pattern==0){float radius=room>=4?250:220;addHazard(1,e.x,e.y,radius,.3f,.1f,enemyPower(e,room>=4?34:28));int count=enraged?(room>=4?20:16):(room>=4?16:12);for(int i=0;i<count;i++){double a=i*Math.PI*2/count+time*.1;enemyShot(e,(float)Math.cos(a),(float)Math.sin(a),enraged?300:room>=4?255:220,room>=4?22:18);}}
@@ -684,7 +685,7 @@ public final class ActionGame {
                     signal("slam",e.x,e.y,e.pattern);
                 }
             }
-        }else if(e.state==3){e.timer-=dt;if(e.type==3){e.hp=Math.min(e.maxHp,e.hp+e.maxHp*(enraged?.012f:.006f)*dt);e.guard=Math.min(enraged?90:55,e.guard+(enraged?7.5f:4.5f)*dt);}if(e.timer<=0)e.state=0;}
+        }else if(e.state==3){e.timer-=dt;if(e.type==3){e.hp=Math.min(e.maxHp,e.hp+e.maxHp*(enraged?.012f:.006f)*dt);if(e.guardType==3&&e.guardBreak<=0&&e.guardDelay<=0)e.guard=Math.min(enraged?90:55,e.guard+(enraged?7.5f:4.5f)*dt);}if(e.timer<=0)e.state=0;}
         else {
             e.timer-=dt;
             if(e.type==2||e.type==4){float speed=enemySpeed(e.type==2?440:520);moveEnemy(e,e.aimX*speed*dt,e.aimY*speed*dt);if(!e.struck&&len(x-e.x,y-e.y)<e.radius()+PLAYER_RADIUS+7){e.struck=true;hurt(enemyPower(e,18+room*2));}}
@@ -707,6 +708,7 @@ public final class ActionGame {
             p.x=nx;p.y=ny;if(gone)it.remove();
         }
     }
+    private void breakEnemyGuard(Enemy e){if(e.guard<=0)return;e.guard=0;e.guardBreak=e.guardType==1?.75f:e.guardType==2?1.65f:2.4f;e.guardDelay=Math.max(e.guardDelay,3f);e.stun=Math.max(e.stun,e.guardType==2?.45f:.7f);signal("shieldBreak",e.x,e.y,e.guardType);}
     public void hitForTest(Enemy e,float value){hit(e,value,true);}
     private void hit(Enemy e,float value){hit(e,value,true);}
     private void hit(Enemy e,float value,boolean charge){hit(e,value,charge,charge);}
@@ -722,7 +724,7 @@ public final class ActionGame {
             if(isSpec(REPORTER,1)&&e.type==3)value*=1.15f;
         }
         if(echoEligible&&relicEcho>0&&hasRelic(3)){value*=1.35f;relicEcho=0;signal("echo",e.x,e.y,65);}
-        value*=e.hex>0?1.15f*(hasRelic(6)?1.1f:1)*(1+.12f*tacticRanks[4]):1;float absorbed=Math.min(e.guard,value);e.guard-=absorbed;value-=absorbed;if(absorbed>0)signal("enemyShield",e.x,e.y,(int)absorbed);float dealt=Math.min(e.hp,value);e.hp=Math.max(0,e.hp-value);
+        value*=e.hex>0?1.15f*(hasRelic(6)?1.1f:1)*(1+.12f*tacticRanks[4]):1;float beforeGuard=e.guard;float guardFactor=e.guardType==1?1.35f:e.guardType==2?.65f:1f;float guardDamage=value*guardFactor;float absorbed=Math.min(e.guard,guardDamage);e.guard=Math.max(0,e.guard-absorbed);float healthLeak=Math.min(value,absorbed/guardFactor);value-=healthLeak;if(absorbed>0){e.guardDelay=2.5f;signal("enemyShield",e.x,e.y,(int)absorbed);}if(beforeGuard>0&&e.guard<=.0001f)breakEnemyGuard(e);float dealt=Math.min(e.hp,value);e.hp=Math.max(0,e.hp-value);
         e.flash=.12f;if(absorbed==0)e.stun=Math.max(e.stun,e.type==3?.03f:e.type==2||e.type==4?.06f:.12f);signal("hit",e.x,e.y,(int)value);
         if(dealt>0&&job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0)heal(dealt*.20f);
         if(e.hp<=0&&job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0){activeSkillCd=0;heal(maxHp()*.03f);}
