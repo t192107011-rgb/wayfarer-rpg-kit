@@ -31,9 +31,9 @@ public final class CharacterWorkshop {
         Spinner[] soulArtPicker={null};
         choose(a,body,"灵魂归属 · 祭坛可查看完整效果",SoulSystem.NAMES,draft.soul,"profile-soul",v->{
             if(draft.soul!=v){draft.soul=v;draft.soulArt=0;if(soulArtPicker[0]!=null){ArrayAdapter<String> ad=new ArrayAdapter<>(a,android.R.layout.simple_spinner_item,SoulSystem.ARTS[v]);ad.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);soulArtPicker[0].setAdapter(ad);soulArtPicker[0].setSelection(0);}}
-            if(soulArtPicker[0]!=null)soulArtPicker[0].setEnabled(v!=0);refresh.run();
+            if(soulArtPicker[0]!=null)soulArtPicker[0].setEnabled(false);refresh.run();
         });
-        soulArtPicker[0]=choose(a,body,"专属技能",SoulSystem.ARTS[draft.soul],draft.soulArt,"profile-soul-art",v->{draft.soulArt=draft.soul==0?0:v;refresh.run();});soulArtPicker[0].setEnabled(draft.soul!=0);
+        soulArtPicker[0]=choose(a,body,"旧版魂技配置（仅兼容存档；实际技能由职业决定）",SoulSystem.ARTS[draft.soul],draft.soulArt,"profile-soul-art",v->{draft.soulArt=draft.soul==0?0:v;refresh.run();});soulArtPicker[0].setEnabled(false);
         choose(a,body,"出身",BuildSystem.ORIGINS,draft.origin,"profile-origin",v->{draft.origin=v;refresh.run();});
         choose(a,body,"特质",BuildSystem.TRAITS,draft.trait,"profile-trait",v->{draft.trait=v;refresh.run();});
         choose(a,body,"衣装颜色",BuildSystem.COLORS,draft.color,"profile-color",v->{draft.color=v;refresh.run();});
