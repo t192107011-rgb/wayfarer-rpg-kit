@@ -342,7 +342,7 @@ public final class ActionGame {
         }else if(j==DETECTIVE){
             addTalentShield(24+20*careerTalentRank(2));
             for(Enemy e:enemies)if(e.hp>0){e.hex=Math.max(e.hex,4.5f+.5f*careerTalentRank(0));e.stun=Math.max(e.stun,.3f);affected++;}
-            addTalentShield(24);signal("careerSkill",x,y,3);notice="警探：现场重构 · "+affected+" 个目标进入调查";
+            signal("careerSkill",x,y,3);notice="警探：现场重构 · "+affected+" 个目标进入调查";
         }else{
             Enemy headline=null;float best=-1;for(Enemy e:enemies)if(e.hp>best&&e.hp>0){best=e.hp;headline=e;}
             if(headline!=null){hit(headline,power*1.8f,false);headline.hex=Math.max(headline.hex,5f);Enemy relay=null;float near=300;
