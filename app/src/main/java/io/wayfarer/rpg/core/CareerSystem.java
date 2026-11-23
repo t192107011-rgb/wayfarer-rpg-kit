@@ -6,12 +6,12 @@ public final class CareerSystem {
     public static final int SPECIALIZATION_XP=160;
     public static final int HUNTER=0,ASSASSIN=1,DETECTIVE=2,REPORTER=3;
     public static final String[] CLASSES={"猎人","刺客","侦探","记者"};
-    public static final String[] SKILL_NAMES={"瞬时猎杀","刀尖之舞","灯中之影","静默之声"};
+    public static final String[] SKILL_NAMES={"追踪猎杀","影袭","现场重构","头条传播"};
     public static final String[] CLASS_DETAILS={
-        "猎人：瞬时猎杀。远距离命中伤害提高12%；发动时造成大范围猎杀伤害，随后30秒内攻速与移速大幅提高并获得吸血；期间每秒损失1%最大生命，生命降至30%时停止损失。",
-        "刺客：刀尖之舞。近身命中可积累护盾；发动后持续30秒，攻击额外扇形发射3把小刀；击杀立即重置通用主动技能冷却并恢复3%最大生命，攻速小幅降低。",
-        "侦探：灯中之影。命中会给目标留下2.5秒诅咒标记，并略微推进职业技能冷却；发动时全场归拢、造成高额伤害与短暂硬直。",
-        "记者：静默之声。命中会将15%伤害传导给260距离内最近的另一名敌人（传导不再连锁）；职业技能可对全场造成伤害并在多目标间传导。"
+        "猎人：追踪猎杀。职业技能锁定高威胁目标；标记目标受到额外伤害，击杀后追踪转移。",
+        "刺客：影袭。近身攻击获得影盾；职业技能突进并短暂无敌，命中目标越多获得越多护盾。",
+        "警探：现场重构。命中收集线索，职业技能扫描全场并短暂中断敌人；线索目标更容易被识破和破防。",
+        "记者：头条传播。命中向附近目标传导伤害；职业技能选择头条目标并向最近敌人传播。"
     };
     public static final String[][] SPECS={{"无专精","狙猎","游击"},{"无专精","处决者","幽步"},{"无专精","审讯官","鉴证员"},{"无专精","战地采访","调查报道"}};
     public static final String[][] SPEC_DETAILS={
