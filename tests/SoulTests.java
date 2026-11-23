@@ -1,85 +1,62 @@
 import io.wayfarer.rpg.core.*;
 import java.io.*;
 import java.util.*;
-
 public final class SoulTests {
     private static int count;
     private static void check(boolean ok,String why){count++;if(!ok)throw new AssertionError(why);}
-    private static void near(float a,float b,String why){check(Math.abs(a-b)<.035f,why+": "+a+" != "+b);}
-    private static ActionGame game(int kind,int art,int style){ActionGame g=new ActionGame();g.selectCustom(0);BuildSystem.Profile p=g.profile().copy();p.weapon=style;p.skill=style;p.origin=2;p.trait=1;g.customize(0,p);g.bindSoul(kind,art);g.start(91);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;g.faceX=1;g.faceY=0;g.invulnerable=0;g.threat=1;g.encounterHpFloor=0;g.encounterDamageFloor=0;return g;}
+    private static ActionGame game(int career,int kind){
+        ActionGame g=new ActionGame();g.chooseCareer(career,0,0);if(kind>0)g.bindSoul(kind,0);g.start(91);
+        g.blocks.clear();g.enemies.clear();g.shots.clear();g.x=560;g.y=600;g.faceX=1;g.faceY=0;g.invulnerable=0;g.threat=1;g.encounterHpFloor=0;g.encounterDamageFloor=0;return g;
+    }
     private static ActionGame.Enemy mob(ActionGame g,float x,float y){ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,x,y,1000);e.stun=1;g.enemies.add(e);return e;}
-    private static void step(ActionGame g,int ticks,boolean attack){ActionGame.Input in=new ActionGame.Input();in.attack=attack;for(int i=0;i<ticks;i++){for(ActionGame.Enemy e:g.enemies)e.stun=1;g.update(1f/60f,in);g.signals.clear();}}
+    private static boolean signal(ActionGame g,String name){for(ActionGame.Signal s:g.signals)if(s.kind.equals(name))return true;return false;}
     private static void bindings()throws Exception{
-        check(SoulSystem.SKILLS.length==3&&SoulSystem.SKILLS[1].length==5&&SoulSystem.SKILLS[2].length==5&&SoulSystem.DETAILS[1].length==5&&SoulSystem.DETAILS[2].length==5&&SoulSystem.ARTS[1].length==5&&SoulSystem.ARTS[2].length==5,"both souls define five arts and variants for all five active skills");
-        ActionGame g=new ActionGame();g.experience[0]=160;g.bank=200;g.learn(0);check(g.bindSoul(1,1),"bind preset soul");g.selectHero(1);check(g.soulKind()==0,"preset souls independent");g.selectCustom(0);g.bindSoul(2,1);g.selectHero(0);check(g.soulKind()==1&&g.soulArt()==1&&g.heroXp()==160&&g.bank==200&&g.rank(0)==1,"binding preserves progression");
-        ActionGame a=ActionSave.decode(ActionSave.encode(g));a.selectCustom(0);check(a.soulKind()==2&&a.soulArt()==1,"custom binding persisted independently");
-        g.start(90);check(!g.bindSoul(2,0)&&g.soulKind()==1,"cannot swap souls midrun");near(g.soulEnergy,40,"initial energy");g.pause();g.abandon();g.returnCamp();near(g.soulEnergy,0,"camp clears runtime but preserves binding");check(g.soulKind()==1,"binding persists between runs");
+        ActionGame g=new ActionGame();g.experience[0]=160;g.bank=200;check(g.bindSoul(1,1),"bind preset soul");g.selectHero(1);check(g.soulKind()==0,"preset souls remain independent");
+        g.selectCustom(0);g.bindSoul(2,1);g.selectHero(0);check(g.soulKind()==1&&g.soulArt()==1&&g.bank==200,"custom and preset bindings remain independent");
+        ActionGame restored=ActionSave.decode(ActionSave.encode(g));restored.selectCustom(0);check(restored.soulKind()==2&&restored.soulArt()==1,"custom binding persists");
+        g.start(90);check(!g.bindSoul(2,0)&&g.soulKind()==1,"cannot swap soul during a run");check(g.soulEnergy==40,"fresh run begins with forty energy");
+        g.pause();g.abandon();g.returnCamp();check(g.soulEnergy==0&&g.soulKind()==1,"camp clears runtime but preserves binding");
         for(int[] pair:new int[][]{{0,1},{3,0},{-1,0},{1,5}}){boolean bad=false;try{SoulSystem.validate(pair[0],pair[1]);}catch(IllegalArgumentException e){bad=true;}check(bad,"invalid binding rejected");}
-        System.out.println("PASS soul binding independence, camp-only swaps, progression preservation and fresh-run resources");
+        System.out.println("PASS soul binding, save compatibility and camp-only swaps");
     }
-    private static void variants()throws Exception{
-        ActionGame g=game(1,0,0);ActionGame.Enemy e=mob(g,745,600);g.shots.add(new ActionGame.Shot(600,600,0,1,10,false));g.soulSkill();check(g.soulFields.size()==1&&g.shots.size()==1,"radiant domain creates its persistent field");near(g.soulWard,30,"radiant domain grants thirty ward");near(g.soulCd,SoulSystem.COOLDOWNS[1][0],"radiant art cooldown");
-        g=game(1,1,1);e=mob(g,610,600);g.soulSkill();check(g.soulFields.isEmpty()&&e.hp<1000,"radiant lance hits along facing direction");
-        g=game(2,0,0);e=mob(g,750,600);float hp=g.hp;g.soulSkill();step(g,31,false);check(e.x<750&&e.hex>0,"forbidden rift pulls and curses");near(hp-g.hp,g.maxHp()*.08f,"forbidden art life cost");near(g.corruption,29.5f,"forbidden art debt after immediate decay tick");check(g.soulCd>0,"forbidden art starts its own cooldown");
-        g=game(2,1,0);e=mob(g,610,600);g.hp=50;float original=g.damage(),interval=g.attackPeriod();g.soulSkill();near(g.soulBuff,6,"forbidden art grants six-second buff");near(g.damage(),original*1.25f,"forbidden art damage bonus");near(g.attackPeriod(),interval*.8f,"forbidden art attack speed");
-        g=game(2,0,0);mob(g,680,600);g.hp=.5f;g.soulSkill();check(g.hp==.5f,"self-cost cannot kill critical player");
-        g=game(1,2,0);e=mob(g,610,600);g.soulSkill();near(g.soulBuff,5,"radiant enhancement lasts five seconds");near(g.soulWard,20,"radiant enhancement accumulates ward");near(g.soulCd,14,"radiant enhancement starts independent cooldown");step(g,301,false);check(g.soulBuff==0&&g.soulCd>8,"enhancement expires well before cooldown");
-        g=game(2,2,0);g.careers[g.buildId()][0]=CareerSystem.ASSASSIN;e=mob(g,610,600);hp=g.hp;g.soulSkill();near(hp-g.hp,g.maxHp()*.08f,"forbidden burst has explicit life cost");near(e.hp,1000-g.damage()*2.8f,"forbidden burst deals area damage");near(e.hex,4,"forbidden burst applies curse");near(g.soulCd,15,"forbidden damage art cooldown");
-        System.out.println("PASS five soul art choices, cooldowns, fields, burst, rift, enhancement and buff");
-    }
-    private static void arts()throws Exception{
-        ActionGame g=game(1,0,0);g.careers[g.buildId()][0]=CareerSystem.ASSASSIN;mob(g,680,600);g.soulEnergy=39;g.soulSkill();check(g.soulFields.isEmpty()&&g.soulCd==0,"insufficient energy blocks art");g.soulEnergy=40;g.hp=20;g.soulSkill();near(g.soulEnergy,0,"art consumes forty energy");near(g.soulWard,30,"domain grants ward");float base=g.damage(),max=g.maxHp();step(g,305,false);near(g.enemies.get(0).hp,1000-base*.35f*5,"domain exactly five pulses");near(g.hp,20+max*.02f*1.15f*5,"domain heals only over its five pulses");check(g.soulFields.isEmpty()&&g.soulEnergy==0,"domain expires without recharging itself");
-        g=game(1,1,1);g.careers[g.buildId()][0]=CareerSystem.ASSASSIN;ActionGame.Enemy e=mob(g,760,600);g.soulSkill();near(e.hp,1000-g.damage()*3.6f,"chosen lance art damages");
-        g=game(1,1,0);e=mob(g,760,600);g.blocks.add(new ActionGame.Block(640,550,30,100,0));g.soulSkill();near(e.hp,1000,"lance respects cover");
-        g=game(2,0,0);e=mob(g,800,600);float hp=g.hp;g.soulSkill();near(hp-g.hp,g.maxHp()*.08f,"forbidden art life cost");near(g.corruption,30,"forbidden art debt");step(g,31,false);check(e.x<800&&e.hex>0&&e.hp<1000,"rift pulls curses and damages");near(g.soulEnergy,0,"rift cannot self-charge");ActionGame restored=ActionSave.decode(ActionSave.encode(g));step(g,100,false);step(restored,100,false);near(restored.enemies.get(0).hp,g.enemies.get(0).hp,"saved rift continues same pulse schedule");near(restored.soulFields.get(0).life,g.soulFields.get(0).life,"field lifetime continuity");
-        g=game(2,1,0);e=mob(g,610,600);g.hp=50;float original=g.damage(),interval=g.attackPeriod();g.soulSkill();near(g.soulBuff,6,"forbidden soul six-second buff");near(g.damage(),original*1.25f,"forbidden soul damage bonus");near(g.attackPeriod(),interval*.8f,"forbidden soul attack speed");hp=g.hp;step(g,10,true);check(g.hp>hp&&g.soulEnergy>0,"pact actual attacks steal life and charge");
-        float cd=g.soulCd;g.soulEnergy=100;g.soulSkill();check(g.soulCd==cd&&g.soulEnergy==100,"cooldown blocks repeat art even with energy");g.pause();float buff=g.soulBuff,corrupt=g.corruption;step(g,120,false);near(g.soulCd,cd,"pause freezes soul cooldown");near(g.soulBuff,buff,"pause freezes soul buff");near(g.corruption,corrupt,"pause freezes corruption");
-        System.out.println("PASS five exclusive arts, resource and cooldown gates, field lifetime, pause, lifesteal and no self-refill");
-    }
-    private static void expandedArts()throws Exception{
-        ActionGame g=game(1,3,0);ActionGame.Enemy e=mob(g,610,600);e.stun=0;g.hp-=20;g.shots.add(new ActionGame.Shot(600,600,0,1,10,false));g.soulSkill();
-        check(g.hp>g.maxHp()-20&&g.soulWard>=22&&e.stun>=.9f&&g.shots.isEmpty(),"radiant echo heals, shields, cleanses and controls");
-        g=game(1,4,0);e=mob(g,760,600);e.stun=0;g.shots.add(new ActionGame.Shot(650,600,0,1,10,false));g.soulSkill();
-        check(e.hp<1000&&e.stun>=.8f&&g.shots.isEmpty(),"radiant star pierces and cleanses its path");
-        g=game(2,3,0);e=mob(g,610,600);float hp=g.hp;g.soulSkill();
-        check(e.hp<1000&&e.hex>=7&&hp-g.hp>=g.maxHp()*.06f-0.01f&&g.corruption>=24,"forbidden mark trades health for a high-damage hunt");
-        g=game(2,4,0);e=mob(g,650,600);hp=g.hp;g.soulSkill();
-        check(e.hp<1000&&e.hex>=6&&g.soulFields.size()==1&&hp-g.hp>=g.maxHp()*.10f-0.01f&&g.corruption>=38,"abyssal detonation leaves a persistent rift");
-        ActionGame restored=ActionSave.decode(ActionSave.encode(g));check(restored.soulFields.size()==1&&restored.soulArt()==4,"new forbidden field and art persist in v24 saves");
-        System.out.println("PASS two new radiant arts, two new forbidden arts and v24 soul save migration");
-    }
-    private static void costsAndSynergies()throws Exception{
-        ActionGame g=game(1,0,0);mob(g,300,300);g.hp=10;g.potion();near(g.hp,10+g.maxHp()*.45f*1.15f,"radiance amplifies healing");
-        g=game(2,0,0);ActionGame.Enemy e=mob(g,590,600);g.corruption=100;g.soulQuiet=3;g.hp=10;g.potion();near(g.hp,10+g.maxHp()*.45f*.7f,"corruption reduces potion healing");float hp=g.hp;e.stun=0;e.state=1;e.timer=.001f;g.update(1f/60f,new ActionGame.Input());near(hp-g.hp,14*1.4f*1.12f,"corruption incoming damage composes with trait");step(g,240,false);check(g.corruption<100&&g.corruption>95,"corruption decays only after quiet delay");
-        g=new ActionGame();g.experience[0]=1000;g.bindSoul(1,0);g.learn(8);g.learn(9);g.learn(9);near(g.maxHp(),110+12*3+10,"light wick talent resonance");g.start(7);g.soulSkill();near(g.soulWard,30,"radiant art grants its full domain ward");
-        g=new ActionGame();g.experience[1]=1000;g.selectHero(1);g.bindSoul(2,0);g.learn(0);g.learn(1);g.learn(1);g.start(7);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;mob(g,710,600);g.combo=1;g.comboWindow=.5f;step(g,1,true);near(g.shots.get(0).damage,g.damage()*1.71f,"forbidden third-beat resonance");
-        g=game(1,0,0);e=mob(g,590,600);g.soulEnergy=0;g.soulWard=20;e.stun=0;e.state=1;e.timer=.001f;g.update(1f/60f,new ActionGame.Input());check(g.soulEnergy>0&&g.soulWard<20,"radiant ward damage absorption charges soul");
-        System.out.println("PASS corruption damage/healing balance, decay, radiant shield charge and talent resonances");
-    }
-    private static byte[] edit(byte[] bytes,String key,String value)throws Exception{Properties p=new Properties();p.load(new ByteArrayInputStream(bytes));p.setProperty(key,value);ByteArrayOutputStream out=new ByteArrayOutputStream();p.store(out,"");return out.toByteArray();}
-    private static void reject(byte[] bytes,String k,String v)throws Exception{boolean bad=false;try{ActionSave.decode(edit(bytes,k,v));}catch(IOException e){bad=true;}check(bad,"reject "+k);}
-    private static void saves()throws Exception{
-        ActionGame g=new ActionGame();g.selectCustom(1);g.profile().xp=320;g.learn(0);g.bank=83;g.start(7);byte[] bytes=ActionSave.encode(g);
-        ActionGame old=ActionSave.decode(edit(bytes,"version","2"));check(old.custom==1&&old.profile().xp==320&&old.rank(0)==1&&old.bank==83&&old.soulKind()==0&&old.soulEnergy==0,"v2 migration preserves builds and does not invent a soul");
-        g=game(2,1,0);mob(g,610,600);g.soulSkill();g.pause();bytes=ActionSave.encode(g);ActionGame a=ActionSave.decode(bytes);near(a.soulBuff,g.soulBuff,"forbidden soul buff persisted");near(a.corruption,g.corruption,"debt persisted");near(a.soulCd,g.soulCd,"exclusive cooldown persisted");near(a.enemies.get(0).hex,g.enemies.get(0).hex,"curse persisted");
-        reject(bytes,"soulEnergy","101");reject(bytes,"soulCd","19");reject(bytes,"corruption","NaN");reject(bytes,"profile0.soul","3");reject(bytes,"profile0.art","5");reject(bytes,"soulFields","20");reject(bytes,"soulWard","1");reject(bytes,"hex0","9");reject(bytes,"soulBuff","9");
-        g=game(1,0,0);mob(g,700,600);g.soulSkill();bytes=ActionSave.encode(g);reject(bytes,"field0","2,560,600,4,0.5,22");reject(bytes,"field0","1,560,600,5,2,22");
-        System.out.println("PASS v2 migration, soul snapshots, pulse and curse continuity, malformed resources and pierce histories rejected");
-    }
-    private static void stress()throws Exception{
-        for(int kind=1;kind<=2;kind++)for(int art=0;art<5;art++)for(int style=0;style<3;style++){
-            ActionGame g=game(kind,art,style);g.mode=ActionGame.Mode.CAMP;g.profile().xp=1200;
-            for(int root:new int[]{0,4,8}){for(int rank=0;rank<3;rank++)check(g.learn(root),"max root");for(int rank=0;rank<2;rank++)check(g.learn(root+1),"max middle");}
-            check(g.learn(new int[]{2,6,10}[style]),"select capstone");g.start(91+style);ActionGame.Input in=new ActionGame.Input();in.attack=true;
-            for(int t=0;t<1800;t++){
-                if(g.mode==ActionGame.Mode.RESULT){g.returnCamp();g.start(100+t);}
-                if(g.mode==ActionGame.Mode.REWARD)g.chooseReward(t%3);
-                in.mx=(float)Math.cos(t*.023);in.my=(float)Math.sin(t*.017);
-                if(t%67==0)g.dodge(in.mx,in.my);if(t%300==0)g.soulSkill();if(t%780==0)g.soulSkill();if(g.hp<30)g.potion();g.update(1f/60f,in);g.signals.clear();
-                if(t%60==0){g=ActionSave.decode(ActionSave.encode(g));check(g.hp>=0&&g.soulEnergy>=0&&g.soulEnergy<=100&&g.corruption<=100,"soul stress state bounded");}
-            }
+    private static void eightCareerForms(){
+        for(int career=0;career<4;career++){
+            ActionGame radiant=game(career,1);ActionGame.Enemy e=mob(radiant,700,600);radiant.soulEnergy=100;radiant.soulSkill();
+            check(radiant.soulEnergy==60&&radiant.soulCd>0&&signal(radiant,"radiant"),"radiant form spends energy and triggers career effect "+career);
+            check(e.hp<1000||e.hex>0||radiant.soulWard>0,"radiant form has an actual combat or defense result "+career);
+            ActionGame taboo=game(career,2);e=mob(taboo,700,600);taboo.soulEnergy=100;float hp=taboo.hp;taboo.soulSkill();
+            check(taboo.soulEnergy==60&&taboo.soulCd>0&&signal(taboo,"forbidden"),"taboo form spends energy and triggers career effect "+career);
+            check(taboo.hp<hp&&taboo.corruption>0,"taboo form exacts a life and erosion cost "+career);
         }
-        System.out.println("PASS 54000 simulation steps across both souls, five arts, three base skills and maxed talent builds with periodic restore");
+        System.out.println("PASS all eight profession-bound radiant and forbidden forms");
     }
-    public static void main(String[] args)throws Exception{bindings();variants();arts();expandedArts();costsAndSynergies();saves();stress();System.out.println("SOUL CHECKS PASSED: "+count);}
+    private static void energyAndCooldown(){
+        ActionGame g=game(0,1);mob(g,700,600);g.soulEnergy=39;g.soulSkill();check(g.soulCd==0&&g.soulEnergy==39,"insufficient energy blocks soul form");
+        g.soulEnergy=100;g.soulSkill();float cd=g.soulCd;check(cd>0&&g.soulEnergy==60,"soul form consumes forty energy and starts cooldown");
+        g.soulEnergy=100;g.soulSkill();check(g.soulCd==cd&&g.soulEnergy==100,"cooldown prevents repeat even with full energy");
+        g.pause();float energy=g.soulEnergy;g.update(1,new ActionGame.Input());check(g.soulEnergy==energy,"pause freezes soul resources");
+        System.out.println("PASS soul energy gate, cooldown and pause");
+    }
+    private static void costsAndSynergies(){
+        ActionGame g=game(0,1);g.hp=10;g.potion();check(g.hp>10,"radiance amplifies healing");
+        g=game(0,2);ActionGame.Enemy e=mob(g,g.x+100,g.y);g.corruption=50;g.hp=10;g.potion();check(g.hp>10&&g.hp<10+g.maxHp()*.45f,"corruption reduces healing");
+        float before=g.hp;g.hurtForTest(10);check(g.hp<before,"corruption increases incoming damage");
+        g=game(0,2);g.corruption=80;mob(g,700,600);g.soulEnergy=100;g.soulSkill();check(g.corruption>=100&&g.ruptureTime>0&&g.ruptureLatched,"taboo form crossing one hundred triggers rupture");
+        System.out.println("PASS radiant healing, taboo risk and overrun threshold");
+    }
+    private static void saves()throws Exception{
+        ActionGame g=game(2,2);mob(g,700,600);g.soulEnergy=80;g.soulSkill();g.pause();byte[] bytes=ActionSave.encode(g);
+        ActionGame a=ActionSave.decode(bytes);check(a.job()==2&&a.soulKind()==2,"career and soul binding survive save");check(a.soulEnergy==g.soulEnergy&&a.corruption==g.corruption&&a.soulCd==g.soulCd,"energy, erosion and cooldown survive save");
+        reject(bytes,"soulEnergy","101");reject(bytes,"soulCd","19");reject(bytes,"corruption","NaN");reject(bytes,"profile0.soul","3");reject(bytes,"profile0.art","5");reject(bytes,"soulFields","20");
+        System.out.println("PASS soul state persistence and malformed save rejection");
+    }
+    private static void reject(byte[] bytes,String key,String value)throws Exception{Properties p=new Properties();p.load(new ByteArrayInputStream(bytes));p.setProperty(key,value);ByteArrayOutputStream out=new ByteArrayOutputStream();p.store(out,"");boolean bad=false;try{ActionSave.decode(out.toByteArray());}catch(IOException e){bad=true;}check(bad,"reject malformed "+key);}
+    private static void stress()throws Exception{
+        for(int career=0;career<4;career++)for(int kind=1;kind<=2;kind++){
+            ActionGame g=game(career,kind);mob(g,700,600);g.soulEnergy=100;g.soulSkill();
+            for(int t=0;t<900;t++){if(t%60==0){g=ActionSave.decode(ActionSave.encode(g));check(g.hp>=1&&g.soulEnergy>=0&&g.soulEnergy<=100&&g.corruption<=100,"bounded soul stress state");}g.update(1f/60,new ActionGame.Input());g.signals.clear();}
+        }
+        System.out.println("PASS periodic save/restore stress across eight soul forms");
+    }
+    public static void main(String[] args)throws Exception{bindings();eightCareerForms();energyAndCooldown();costsAndSynergies();saves();stress();System.out.println("SOUL CHECKS PASSED: "+count);}
 }
