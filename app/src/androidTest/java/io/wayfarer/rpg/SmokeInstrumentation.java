@@ -113,7 +113,7 @@ public final class SmokeInstrumentation extends Instrumentation {
         ui(()->{activity.world.stopFrames();ActionGame g=new ActionGame();g.start(8821);g.enemies.clear();g.update(.016f,new ActionGame.Input());check(g.mode==ActionGame.Mode.REWARD&&g.hasTacticDraft(),"combat clear opens inscription reward");g.openTacticDraft();activity.world.replace(g);});
         waitForIdleSync();screenshot("30-inscription-selection.png");
         tap(180,290);ui(()->{ActionGame g=activity.world.game;check(g.tacticSelected==0&&g.tacticRanks[g.tacticOffers[0]]==0&&!g.tacticChosen,"first card tap only previews and cannot spend inscription");});
-        tap(480,449);ui(()->{ActionGame g=activity.world.game;check(g.tacticChosen&&!g.tacticDraftOpen&&g.tacticRanks[0]==1,"separate confirm button commits selected inscription");});
+        tap(480,449);ui(()->{ActionGame g=activity.world.game;check(g.tacticChosen&&!g.tacticDraftOpen&&g.tacticRanks[0]==1,"separate confirm button commits selected inscription");activity.world.startFrames();});
     }
     private void journalItem(int index){ui(()->{AlertDialog dialog=activity.storyDialog;ListView list=dialog==null?null:dialog.getListView();if(list==null){if(dialog!=null)dialog.dismiss();StoryJournal.show(activity);dialog=activity.storyDialog;list=dialog.getListView();}check(list!=null,"story journal list is present");list.performItemClick(null,index,index);});waitForIdleSync();}
     private void storyButton(int which){ui(()->activity.storyDialog.getButton(which).performClick());waitForIdleSync();}
