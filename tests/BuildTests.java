@@ -105,7 +105,7 @@ public final class BuildTests {
         ActionGame base=new ActionGame();points(base);arena(base);ActionGame.Enemy b=mob(base,610,600);base.activeSkill();check(boosted>500-b.hp,"overload talent raises general active skill damage");
         g=new ActionGame();points(g);g.coreTalents[0][2]=1;arena(g);e=mob(g,610,600);e.stun=1;g.hitForTest(e,100);
         base=new ActionGame();points(base);arena(base);b=mob(base,610,600);b.stun=1;base.hitForTest(b,100);check(500-e.hp>500-b.hp,"opening exploitation amplifies hits on staggered enemies");
-        g=new ActionGame();points(g);g.coreTalents[0][11]=1;arena(g);e=mob(g,600,600);e.state=1;e.timer=.001f;g.shield=5;g.invulnerable=0;tick(g,false,1);check(e.hp<500&&g.shield==0,"breaking player shield triggers area retaliation");
+        g=new ActionGame();points(g);g.coreTalents[0][11]=1;arena(g);e=mob(g,600,600);e.stun=0;e.state=1;e.timer=.001f;g.shield=5;g.invulnerable=0;tick(g,false,1);check(e.hp<500&&g.shield==0,"breaking player shield triggers area retaliation");
         System.out.println("PASS five-branch shield efficiency, dodge counter, skill ward, overload, stagger bonus and break burst");
     }
     private static void fiveBranchProgression()throws Exception{
