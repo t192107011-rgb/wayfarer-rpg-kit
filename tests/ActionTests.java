@@ -263,10 +263,12 @@ public final class ActionTests {
         System.out.println("PASS strict separation of expedition tickets, camp bank, settlement and permit purchases");
     }
     private static void fullPermitFlow()throws Exception{
-        ActionGame g=new ActionGame();g.bank=1000;g.bindSoul(1,0);
+        ActionGame g=new ActionGame();g.bank=79;check(!g.buyFieldPermit(0)&&g.bank==79,"insufficient camp funds reject permit without debit");g.bank=1000;g.bindSoul(1,0);
         for(int i=0;i<5;i++)check(g.buyFieldPermit(i),"permit purchase "+i);
         check(g.bank==190,"all five permit prices debit camp bank exactly once");
-        g.start(703);check(g.shield==40&&g.potions==3&&g.loot==30&&g.damageBonus==4&&g.soulEnergy>=20,"all five permits apply their correct run-start effects");
+        check(!g.buyFieldPermit(0)&&g.bank==190,"duplicate permanent permit purchase is rejected without debit");
+        g.start(703);check(!g.buyFieldPermit(0)&&g.bank==190,"permit purchases are camp-only during an expedition");
+        check(g.shield==40&&g.potions==3&&g.loot==30&&g.damageBonus==4&&g.soulEnergy>=20,"all five permits apply their correct run-start effects");
         ActionGame saved=ActionSave.decode(ActionSave.encode(g));check(saved.bank==190&&saved.shield==40&&saved.potions==3&&saved.loot==30&&saved.damageBonus==4,"all permit effects and ledgers persist");
         System.out.println("PASS all five permanent permit purchases, costs, start effects and persistence");
     }
