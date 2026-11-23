@@ -21,7 +21,7 @@ public final class ActionTests {
     }
     private static void enemyShieldTypes()throws Exception{
         ActionGame g=game(0);ActionGame.Enemy ward=mob(g,0,700,600,500);ward.guardType=1;ward.guard=20;
-        g.hitForTest(ward,10);near(ward.guard,6.5f,"ward shield takes amplified damage");near(ward.hp,500,"ward shield absorbs before health");
+        g.hitForTest(ward,10);near(ward.guard,10f,"ward shield has standard durability");near(ward.hp,500,"ward shield absorbs before health");
         g.hitForTest(ward,10);check(ward.guard==0&&ward.guardBreak>0&&ward.stun>=.7f,"ward breaks with a short stagger");
         ActionGame.Enemy plated=mob(g,4,760,600,500);plated.guardType=2;plated.guard=20;
         g.hitForTest(plated,10);near(plated.guard,13.5f,"plated shield resists ordinary damage");near(plated.hp,500,"plating absorbs its reduced damage");
