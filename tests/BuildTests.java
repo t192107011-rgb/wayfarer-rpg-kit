@@ -110,7 +110,7 @@ public final class BuildTests {
     }
     private static void fiveBranchProgression()throws Exception{
         ActionGame g=new ActionGame();points(g);
-        check(g.availableCorePoints()==17,"five-branch tree has independent XP point budget");
+        check(g.availableCorePoints()==23,"five-branch tree has independent XP point budget");
         check(g.learnCoreTalent(0)&&g.learnCoreTalent(1),"basic attack branch learns in order");
         check(!g.learnCoreTalent(2),"attack capstone requires two ranks in its parent");
         check(g.learnCoreTalent(1)&&g.learnCoreTalent(2),"attack capstone unlocks at parent rank two");
