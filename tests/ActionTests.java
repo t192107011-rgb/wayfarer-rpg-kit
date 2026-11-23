@@ -34,6 +34,17 @@ public final class ActionTests {
         rejectSavedValue(valid,"shield","-1","negative shield");
         System.out.println("PASS strict player shield save bounds, finite checks and max-value roundtrip");
     }
+    private static void shieldSourceSummary(){
+        ActionGame g=game(0);String base=g.shieldSourceSummary();
+        check(base.contains("闪避+12")&&base.contains("击杀+2"),"baseline shield sources are visible");
+        g.coreTalents[0][4]=1;g.coreTalents[0][7]=1;g.coreTalents[0][10]=2;g.coreTalents[0][11]=1;
+        g.fieldPermits[0][0]=1;g.careers[0][0]=CareerSystem.HUNTER;
+        String summary=g.shieldSourceSummary();
+        check(summary.contains("闪避+20")&&summary.contains("远征许可开局+40"),"dodge and permit shield sources are accurate");
+        check(summary.contains("职业技触发+60")&&summary.contains("通用主动技触发+10"),"active skill shield sources are labeled as triggers");
+        check(summary.contains("镜火反震")&&summary.contains("护盾获取效率+30%"),"shield reflection and efficiency upgrades are visible");
+        System.out.println("PASS accurate player shield source summary and trigger labels");
+    }
     private static void enemyShieldTypes()throws Exception{
         ActionGame g=game(0);ActionGame.Enemy ward=mob(g,0,700,600,500);ward.guardType=1;ward.guard=20;
         g.hitForTest(ward,10);near(ward.guard,10f,"ward shield has standard durability");near(ward.hp,500,"ward shield absorbs before health");
@@ -291,5 +302,5 @@ public final class ActionTests {
         ActionGame g=new ActionGame();g.start(12);g.pause();float cd=g.activeSkillCd;for(int i=0;i<30;i++)g.update(1f/60f,new ActionGame.Input());near(g.activeSkillCd,cd,"pause freezes active cooldown");
         System.out.println("PASS five active skills, independent career cooldown, follow-ups, trap persistence and pause");
     }
-    public static void main(String[] args)throws Exception{movement();shieldSaveValidation();enemyShieldTypes();combat();shopAndItems();currencySeparation();fullPermitFlow();expandedEconomy();careerSoulResonance();careerActiveSoulResonance();careerFollowUpAndSoulSynergy();skillChainReactions();permanentEconomy();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
+    public static void main(String[] args)throws Exception{movement();shieldSaveValidation();shieldSourceSummary();enemyShieldTypes();combat();shopAndItems();currencySeparation();fullPermitFlow();expandedEconomy();careerSoulResonance();careerActiveSoulResonance();careerFollowUpAndSoulSynergy();skillChainReactions();permanentEconomy();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
 }
