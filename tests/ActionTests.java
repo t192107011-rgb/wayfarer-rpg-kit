@@ -282,10 +282,18 @@ public final class ActionTests {
         check(g.power==20&&g.vitality==20,"permanent camp upgrades reach level 20");
         for(int route=0;route<4;route++)check(g.training[0][route]==10,"permanent training route reaches level 10");
         int bank=g.bank;int nextCost=g.upgradeCost(g.power);g.upgrade(false);check(g.power==21&&g.bank==bank-nextCost,"shared camp upgrade remains purchasable beyond former level-20 cap");
-        int trainCost=g.trainingCost(g.training[0][0]);check(g.train(0)&&g.training[0][0]==11&&g.bank==bank-nextCost-trainCost,"character training remains purchasable beyond former level-10 cap");
-        ActionGame restored=ActionSave.decode(ActionSave.encode(g));check(restored.power==21&&restored.vitality==20,"repeatable permanent upgrade levels persist");
-        check(restored.training[0][0]==11&&restored.training[0][1]==10&&restored.training[0][2]==10&&restored.training[0][3]==10,"repeatable training levels persist");
-        System.out.println("PASS repeatable bank-funded camp upgrades and character training beyond former caps");
+        int vitalityCost=g.upgradeCost(g.vitality);g.upgrade(true);check(g.vitality==21&&g.bank==bank-nextCost-vitalityCost,"health camp upgrade also remains repeatable");
+        for(int route=0;route<4;route++){int cost=g.trainingCost(g.training[0][route]);check(g.train(route)&&g.training[0][route]==11,"training route "+route+" remains purchasable beyond former level-10 cap");}
+        ActionGame restored=ActionSave.decode(ActionSave.encode(g));check(restored.power==21&&restored.vitality==21,"repeatable permanent upgrade levels persist");
+        for(int route=0;route<4;route++)check(restored.training[0][route]==11,"repeatable training route "+route+" persists");
+        System.out.println("PASS repeatable bank-funded camp upgrades and all four training routes beyond former caps");
+    }
+    private static void legacyTalentBudgetMigration()throws Exception{
+        ActionGame legacy=game(0);legacy.experience[0]=400;legacy.talents[0][0]=3;legacy.specialties[0][0]=2;legacy.specialties[0][1]=2;
+        byte[] bytes=mutate(ActionSave.encode(legacy),"version","27");
+        ActionGame restored=ActionSave.decode(bytes);
+        check(BuildSystem.spent(restored.talents[0])==3&&BuildSystem.spent(restored.specialties[0])==4,"legacy v27 shared-point build still loads before migration");
+        System.out.println("PASS legacy v27 shared talent-point save migration");
     }
     private static void completeTalentBudgets()throws Exception{
         ActionGame g=game(0);g.experience[0]=1540;
@@ -324,5 +332,5 @@ public final class ActionTests {
         ActionGame g=new ActionGame();g.start(12);g.pause();float cd=g.activeSkillCd;for(int i=0;i<30;i++)g.update(1f/60f,new ActionGame.Input());near(g.activeSkillCd,cd,"pause freezes active cooldown");
         System.out.println("PASS five active skills, independent career cooldown, follow-ups, trap persistence and pause");
     }
-    public static void main(String[] args)throws Exception{movement();shieldSaveValidation();shieldSourceSummary();enemyShieldTypes();combat();shopAndItems();currencySeparation();fullPermitFlow();expandedEconomy();careerSoulResonance();careerActiveSoulResonance();careerFollowUpAndSoulSynergy();skillChainReactions();permanentEconomy();completeTalentBudgets();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
+    public static void main(String[] args)throws Exception{movement();shieldSaveValidation();shieldSourceSummary();enemyShieldTypes();combat();shopAndItems();currencySeparation();fullPermitFlow();expandedEconomy();careerSoulResonance();careerActiveSoulResonance();careerFollowUpAndSoulSynergy();skillChainReactions();permanentEconomy();legacyTalentBudgetMigration();completeTalentBudgets();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
 }
