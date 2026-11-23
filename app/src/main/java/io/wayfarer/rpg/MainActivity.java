@@ -73,12 +73,12 @@ public final class MainActivity extends Activity implements WorldView.Host {
     }
     @Override public void specialty(int id){
         ActionGame g=world.game;if(g.mode!=ActionGame.Mode.CAMP||id<0||id>=8)return;
-        BuildSystem.Node node=BuildSystem.SPECIALTIES[id];String reason=BuildSystem.specialtyLockReason(g.specialties[g.buildId()],g.heroXp(),id);if(reason.isEmpty()&&g.availablePoints()<=0)reason="没有可用天赋点";
+        BuildSystem.Node node=BuildSystem.SPECIALTIES[id];String reason=BuildSystem.specialtyLockReason(g.specialties[g.buildId()],g.heroXp(),id);if(reason.isEmpty()&&g.availableSpecialtyPoints()<=0)reason="没有可用专精点";
         String requirements="需要角色 Lv."+node.minLevel+(node.parent<0?" · 无前置":" · 前置「"+BuildSystem.SPECIALTIES[node.parent].name+"」"+BuildSystem.specialtyPrerequisite(id)+"级");
         talentDialog=new AlertDialog.Builder(this).setTitle(node.name+"  "+g.specialtyRank(id)+" / "+node.maxRank)
-            .setMessage(node.description+"\n\n"+requirements+"\n"+(BuildSystem.specialtyUltimate(id)?"本分支终阶二选一。\n":"")+"可用天赋点："+g.availablePoints()+"\n"+(reason.isEmpty()?"消耗1点学习。":reason))
+            .setMessage(node.description+"\n\n"+requirements+"\n"+(BuildSystem.specialtyUltimate(id)?"本分支终阶二选一。\n":"")+"可用专精点："+g.availableSpecialtyPoints()+"\n"+(reason.isEmpty()?"消耗1点学习。":reason))
             .setPositiveButton("学习 · 1点",(d,w)->{if(g.learnSpecialty(id)){save();world.invalidate();}}).setNegativeButton("返回",null).create();
-        talentDialog.show();talentDialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(reason.isEmpty()&&g.availablePoints()>0);
+        talentDialog.show();talentDialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(reason.isEmpty()&&g.availableSpecialtyPoints()>0);
     }
     @Override public void coreTalent(int id){
         ActionGame g=world.game;if(g.mode!=ActionGame.Mode.CAMP||id<0||id>=15)return;
