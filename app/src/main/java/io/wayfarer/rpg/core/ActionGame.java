@@ -517,7 +517,7 @@ public final class ActionGame {
             }
         }
         if(kind==1&&specialtyRank(2)>0)soulWard=Math.min(99999,soulWard+12);
-        if(j==HUNTER&&careerSkillTime>0)careerSkillTime=Math.min(8,careerSkillTime+1.5f);
+        if(j==HUNTER){soulBuff=Math.max(soulBuff,1.5f);if(careerSkillTime>0)careerSkillTime=Math.min(8,careerSkillTime+1.5f);}
         if(j==ASSASSIN)activeSkillCd=Math.max(0,activeSkillCd-1.5f);
         if(j==DETECTIVE)for(Enemy e:enemies)if(e.hp>0&&e.hex>0)e.hex=Math.min(10,e.hex+1f);
         if(j==REPORTER&&kind==1)gainSoul(4);
