@@ -94,7 +94,7 @@ public final class BuildSystem {
     public static int careerTalentMax(int id){return id%3==2?2:3;}
     public static int coreSpent(int[] ranks){int n=0;for(int v:ranks)n+=v;return n;}
     public static int corePoints(int xp){return 2+Math.min(27,Math.max(0,xp)/55);}
-    public static int specialtyPoints(int xp){return 1+Math.min(8,Math.max(0,xp)/190);}
+    public static int specialtyPoints(int xp){return Math.min(9,points(xp));}
     public static String coreLockReason(int[] ranks,int xp,int id){
         if(id<0||id>=CORE_NODES.length)return "未知五大天赋";
         Node n=CORE_NODES[id];if(ranks[id]>=n.maxRank)return "已学满";
