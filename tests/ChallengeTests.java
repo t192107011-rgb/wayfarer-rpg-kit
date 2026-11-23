@@ -27,7 +27,7 @@ public final class ChallengeTests {
         check(g.corruption>=100&&g.ruptureTime>0&&g.ruptureLatched&&g.soulBuff>0,"soul skill crossing 100 immediately triggers five-second overrun");
         float hp=g.hp,rt=g.ruptureTime;g.pause();step(g,60,true);near(g.ruptureTime,rt,"paused overrun timer freezes");
         ActionGame a=ActionSave.decode(ActionSave.encode(g));a.resume();g.resume();step(g,100,true);step(a,100,true);check(g.hp<hp,"overrun causes periodic life loss");near(a.hp,g.hp,"restore preserves rupture pulse");near(a.ruptureTime,g.ruptureTime,"restore preserves remaining overrun");
-        g=arena(0,2);mob(g,0,100,100);g.corruption=40;step(g,60,true);check(g.corruption<40&&g.corruption>39,"erosion decays immediately");
+        g=arena(0,2);ActionGame.Enemy erosionEnemy=mob(g,0,100,100);erosionEnemy.x=g.x+100;erosionEnemy.y=g.y;g.corruption=40;step(g,60,true);check(g.corruption<40&&g.corruption>39,"erosion decays at the slower combat rate while an enemy is nearby");
         System.out.println("PASS erosion decay, threshold trigger, overrun timer and save continuity");
     }
     private static void enemies()throws Exception{
