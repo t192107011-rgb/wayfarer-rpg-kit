@@ -304,7 +304,7 @@ public final class ActionTests {
         for(int i=0;i<2;i++)check(g.learnSpecialty(4),"hunt specialty root");check(g.learnSpecialty(5),"hunt specialty middle");check(g.learnSpecialty(6),"hunt specialty capstone");
         check(g.availableSpecialtyPoints()==0,"all 9 specialty points can be spent independently");
         for(int branch=0;branch<5;branch++){int root=branch*3;for(int i=0;i<BuildSystem.CORE_NODES[root].maxRank;i++)check(g.learnCoreTalent(root),"core root "+root);for(int i=0;i<BuildSystem.CORE_NODES[root+1].maxRank;i++)check(g.learnCoreTalent(root+1),"core middle "+root);check(g.learnCoreTalent(root+2),"core capstone "+root);}
-        check(g.availableCorePoints()==0,"all 30 five-branch points can be spent");
+        check(g.availableCorePoints()==0,"all 29 five-branch points can be spent");
         for(int i=0;i<3;i++)check(g.learnCareerTalent(0),"career root rank "+i);for(int i=0;i<3;i++)check(g.learnCareerTalent(1),"career middle rank "+i);for(int i=0;i<2;i++)check(g.learnCareerTalent(2),"career capstone rank "+i);
         check(g.availableCareerPoints()==0,"all 8 career skill points can be spent");
         ActionGame restored=ActionSave.decode(ActionSave.encode(g));
