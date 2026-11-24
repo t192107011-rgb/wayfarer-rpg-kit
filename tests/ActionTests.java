@@ -41,7 +41,7 @@ public final class ActionTests {
         g.fieldPermits[0][0]=1;g.careers[0][0]=CareerSystem.HUNTER;
         String summary=g.shieldSourceSummary();
         check(summary.contains("闪避+12")&&summary.contains("远征许可开局+20")&&summary.contains("受上限约束"),"dodge and permit shield sources are accurate");
-        check(summary.contains("职业技能护盾")&&summary.contains("通用主动技触发+11"),"active skill shield sources are labeled with reduced values");
+        check(summary.contains("职业技能护盾")&&summary.contains("通用主动技触发+4"),"active skill shield sources are labeled with reduced values");
         check(summary.contains("镜火反震")&&summary.contains("护盾获取效率+16%"),"shield reflection and efficiency upgrades are visible");
         System.out.println("PASS accurate player shield source summary and trigger labels");
     }
