@@ -36,7 +36,7 @@ public final class ActionTests {
     }
     private static void shieldSourceSummary(){
         ActionGame g=game(0);String base=g.shieldSourceSummary();
-        check(base.contains("闪避+8")&&base.contains("击杀+1")&&base.contains("最大生命的60%"),"reduced baseline shield sources and cap are visible");
+        check(base.contains("闪避+8")&&base.contains("击杀+1")&&base.contains("最大生命的60%"),"expanded baseline shield sources and cap are visible");
         g.coreTalents[0][4]=1;g.coreTalents[0][7]=1;g.coreTalents[0][10]=2;g.talents[0][11]=1;
         g.fieldPermits[0][0]=1;g.careers[0][0]=CareerSystem.HUNTER;
         String summary=g.shieldSourceSummary();
@@ -318,6 +318,8 @@ public final class ActionTests {
         ActionGame reporter=new ActionGame();reporter.careers[reporter.buildId()][0]=CareerSystem.REPORTER;reporter.start(735);reporter.blocks.clear();reporter.enemies.clear();reporter.x=500;reporter.y=500;
         ActionGame.Enemy first=new ActionGame.Enemy(reporter.nextId++,0,620,500,1000),second=new ActionGame.Enemy(reporter.nextId++,0,650,540,1000),third=new ActionGame.Enemy(reporter.nextId++,0,680,580,1000);reporter.enemies.add(first);reporter.enemies.add(second);reporter.enemies.add(third);float pulse=reporter.damage();reporter.skill();
         check(1000-first.hp>=pulse*1.79f-.1f&&1000-second.hp>=pulse*.54f-.1f&&third.hp<1000,"reporter headline relays damage to every enemy");
+        ActionGame reflection=new ActionGame();reflection.start(7351);reflection.blocks.clear();reflection.enemies.clear();reflection.talents[reflection.buildId()][11]=1;reflection.shield=40;reflection.invulnerable=0;ActionGame.Enemy attacker=new ActionGame.Enemy(reflection.nextId++,0,reflection.x+80,reflection.y,1000);reflection.enemies.add(attacker);reflection.hurtForTest(10);check(Math.abs(attacker.hp-990)<.05f,"mirror-fire shield reflects one hundred percent of absorbed damage");check(reflection.talentShieldLimit()>=reflection.maxHp()*.59f&&reflection.soulWardLimit()>=reflection.maxHp()*.39f,"talent and soul shields have expanded independent caps");
+        ActionGame bossHit=new ActionGame();bossHit.start(7352);bossHit.blocks.clear();bossHit.enemies.clear();ActionGame.Enemy bossTarget=new ActionGame.Enemy(bossHit.nextId++,3,620,500,1000);bossHit.enemies.add(bossTarget);bossHit.hitForTest(bossTarget,100);check(bossTarget.hp<=860.1f,"all player damage sources receive a forty percent boss damage bonus");
         ActionGame curse=new ActionGame();curse.start(736);curse.blocks.clear();curse.enemies.clear();ActionGame.Enemy marked=new ActionGame.Enemy(curse.nextId++,0,620,500,1000);marked.hex=10;marked.stun=40;curse.enemies.add(marked);for(int i=0;i<1200;i++)curse.update(1f/60f,new ActionGame.Input());
         check(marked.hex>0,"enemy curse persists for over twenty seconds");
         ActionGame playerCurse=new ActionGame();playerCurse.bindSoul(2,0);playerCurse.start(738);playerCurse.enemies.clear();playerCurse.corruption=50;ActionGame.Enemy pressure=new ActionGame.Enemy(playerCurse.nextId++,0,playerCurse.x+100,playerCurse.y,1000);pressure.stun=100;playerCurse.enemies.add(pressure);for(int i=0;i<60;i++)playerCurse.update(1f/60f,new ActionGame.Input());float combatCorruption=playerCurse.corruption;
@@ -354,7 +356,8 @@ public final class ActionTests {
         ActionGame g=new ActionGame();g.startEndless(91);g.endlessDepth=2;float early=ThreatSystem.rating(g);
         g.endlessDepth=80;float late=ThreatSystem.rating(g);check(late>early,"endless enemy threat grows with depth");
         g.endlessDepth=10000;near(ThreatSystem.rating(g),99,"enemy threat reaches the new level-99 cap");
-        System.out.println("PASS endless enemy growth scales progressively and caps at 99");
+        ActionGame adaptive=new ActionGame();adaptive.start(92);adaptive.roomElapsed=30;adaptive.roomDamage=0;ThreatSystem.clear(adaptive);float first=adaptive.pressure;check(first>.17f,"fast clean clears raise adaptive difficulty");adaptive.roomElapsed=90;adaptive.roomDamage=adaptive.maxHp();ThreatSystem.clear(adaptive);near(adaptive.pressure,first,"adaptive difficulty never decreases after a difficult room");adaptive.roomElapsed=60;adaptive.roomDamage=adaptive.maxHp()*.2f;ThreatSystem.clear(adaptive);check(adaptive.pressure>first,"moderately clean clears also ratchet difficulty upward");
+        System.out.println("PASS endless enemy growth and non-decreasing adaptive difficulty");
     }
     private static void fiveActiveSkills()throws Exception{
         for(int style=0;style<5;style++){
