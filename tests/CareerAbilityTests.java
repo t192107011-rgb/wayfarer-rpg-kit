@@ -23,7 +23,7 @@ public final class CareerAbilityTests {
         g=arena(REPORTER,0);target=mob(g,700,600,1000);float soloBase=g.damage();g.hitForTest(target,100);check(Math.abs((1000-target.hp)-150)<.05f,"reporter solo bonus applies to ordinary damage, not only the headline skill");
         g=arena(HUNTER,0);ActionGame.Enemy ordinary=mob(g,610,700,5000),boss=mob(g,900,600,100);g.skill();check(boss.hex>=8&&boss.hp<100&&ordinary.hp==5000,"hunter career skill prioritizes the boss even when an ordinary enemy has more health");
         g=arena(HUNTER,0);ordinary=mob(g,610,700,5000);boss=mob(g,900,600,100);g.soulEnergy=100;g.soulSkill();check(boss.hp<100&&ordinary.hp==5000,"hunter soul tracking prioritizes the boss");
-        g=arena(HUNTER,0);g.selectHero(1);g.start(912);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;g.skill();ordinary=mob(g,610,700,5000);boss=mob(g,900,600,100);g.blocks.add(new ActionGame.Block(700,570,50,60,0));ActionGame.Input fire=new ActionGame.Input();fire.attack=true;for(int i=0;i<10;i++)g.update(.05f,fire);check(boss.hp<100&&ordinary.hp==5000,"hunter arrows pierce obstacles during the career hunt window and remain boss-locked");
+        g=new ActionGame();g.selectHero(1);g.chooseCareer(HUNTER,0,0);g.start(912);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;g.skill();ordinary=mob(g,610,700,5000);boss=mob(g,900,600,100);g.blocks.add(new ActionGame.Block(700,570,50,60,0));ActionGame.Input fire=new ActionGame.Input();fire.attack=true;for(int i=0;i<10;i++)g.update(.05f,fire);check(boss.hp<100&&ordinary.hp==5000,"hunter arrows pierce obstacles during the career hunt window and remain boss-locked");
         System.out.println("PASS four distinct career active loops");
     }
     private static void soulForms(){
