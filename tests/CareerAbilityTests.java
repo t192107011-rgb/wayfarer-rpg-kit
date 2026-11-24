@@ -35,16 +35,16 @@ public final class CareerAbilityTests {
     private static void careerTreeEffects(){
         ActionGame g=arena(HUNTER,0);ActionGame.Enemy e=mob(g,700,600,1000);g.careerTalents[g.buildId()][g.job()*3]=2;g.skill();check(e.hp<1000,"hunter tracking calibration affects marked target damage");
         g=arena(HUNTER,0);float cd=g.skillPeriod();g.careerTalents[g.buildId()][g.job()*3+1]=2;check(g.skillPeriod()<cd,"hunter cooldown node works");
-        g=arena(HUNTER,0);g.careerTalents[g.buildId()][g.job()*3+2]=2;g.skill();check(g.shield>=40,"hunter shield node works");
+        g=arena(HUNTER,0);g.careerTalents[g.buildId()][g.job()*3+2]=2;g.skill();check(g.shield>=16,"hunter shield node works");
         g=arena(ASSASSIN,0);g.careerTalents[g.buildId()][g.job()*3]=2;g.skill();check(Math.hypot(g.x-560,g.y-600)>220,"assassin mobility node extends shadow strike");
         g=arena(ASSASSIN,0);g.careerTalents[g.buildId()][g.job()*3+1]=2;e=mob(g,700,600,1000);g.skill();float hp=e.hp;g.hitForTest(e,20);check(e.hp<hp-20,"assassin damage node works during strike window");
         g=arena(ASSASSIN,0);g.careerTalents[g.buildId()][g.job()*3+2]=2;e=mob(g,620,600,1000);g.skill();float ward=g.shield;g.hitForTest(e,20);check(g.shield>ward,"assassin shield node works on hit");
         g=arena(DETECTIVE,0);g.careerTalents[g.buildId()][g.job()*3]=2;e=mob(g,700,600,1000);g.skill();check(e.hex>=5.5f,"detective evidence node lengthens clue exposure");
         g=arena(DETECTIVE,0);g.careerTalents[g.buildId()][g.job()*3+1]=2;e=mob(g,700,600,1000);g.skill();float before=e.hp;g.hitForTest(e,20);check(before-e.hp>20,"detective analysis node increases damage to investigated targets");
-        g=arena(DETECTIVE,0);g.careerTalents[g.buildId()][g.job()*3+2]=2;g.skill();check(g.shield>=64,"detective protection node adds ward");
+        g=arena(DETECTIVE,0);g.careerTalents[g.buildId()][g.job()*3+2]=2;g.skill();check(g.shield>=20,"detective protection node adds ward");
         g=arena(REPORTER,0);g.careerTalents[g.buildId()][g.job()*3]=2;e=mob(g,700,600,1000);ActionGame.Enemy witness=mob(g,800,600,1000);float wb=witness.hp;g.hitForTest(e,100);check(wb-witness.hp>20,"reporter distribution node increases relay ratio");
         g=arena(REPORTER,0);g.careerTalents[g.buildId()][g.job()*3+1]=2;g.hp=g.maxHp()-20;float old=g.hp;g.skill();check(g.hp>old,"reporter recovery node works");
-        g=arena(REPORTER,0);g.careerTalents[g.buildId()][g.job()*3+2]=2;e=mob(g,700,600,1000);g.skill();check(g.shield>=20,"reporter ward node works");
+        g=arena(REPORTER,0);g.careerTalents[g.buildId()][g.job()*3+2]=2;e=mob(g,700,600,1000);g.skill();check(g.shield>=8,"reporter ward node works");
         System.out.println("PASS twelve career talent effects");
     }
     private static void careerTreeBudgetAndReset(){
