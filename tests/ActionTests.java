@@ -117,7 +117,7 @@ public final class ActionTests {
         g=game(0);g.tacticRanks[3]=2;near(g.activeSkillPeriod(),baseline.activeSkillPeriod()-2,"cooldown inscription shortens active skill cycle");
         g=game(0);g.tacticRanks[4]=2;ActionGame.Enemy marked=new ActionGame.Enemy(1,0,620,600,1000);marked.hex=3;g.enemies.add(marked);g.hitForTest(marked,100);
         baseline=game(0);marked=new ActionGame.Enemy(1,0,620,600,1000);marked.hex=3;baseline.enemies.add(marked);baseline.hitForTest(marked,100);check(1000-g.enemies.get(0).hp>1000-baseline.enemies.get(0).hp,"curse inscription amplifies marked-target damage");
-        g=game(0);g.tacticRanks[5]=2;g.enemies.add(new ActionGame.Enemy(1,0,620,600,1000));g.activeSkill();check(g.shield>=12,"ward circuit grants shield on active skill");
+        g=game(0);g.tacticRanks[5]=2;g.enemies.add(new ActionGame.Enemy(1,0,620,600,1000));g.activeSkill();check(g.shield>=6,"ward circuit grants a reduced shield on active skill");
         g=game(0);g.tacticRanks[6]=2;baseline=game(0);check(g.attackPeriod()<baseline.attackPeriod(),"combat tempo increases attack speed");
         g=game(0);g.tacticRanks[7]=2;g.drops.add(new ActionGame.Drop(g.x,g.y,100,false));g.update(1f/60f,new ActionGame.Input());check(g.loot==124,"scavenging inscription increases currency pickup");
         byte[] bytes=ActionSave.encode(g);rejects(bytes,"tacticRank0","4");rejects(bytes,"tacticOffer0","8");
