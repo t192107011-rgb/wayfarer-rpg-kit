@@ -189,12 +189,12 @@ public final class SmokeInstrumentation extends Instrumentation {
         ui(()->check(activity.world.game.soulKind()==1&&activity.world.game.soulArt()==0,"radiant binding committed"));
         tap(780,500);waitForIdleSync();ui(()->((Spinner)activity.soulDialog.getWindow().getDecorView().findViewWithTag("soul-kind")).setSelection(2));waitForIdleSync();ui(()->activity.soulDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick());
         ui(()->check(activity.world.game.soulKind()==1,"cancel soul draft preserves binding"));
-        tap(785,405);tap(735,240);ui(()->check(activity.world.game.soulCd>0&&activity.world.game.soulFields.size()==1&&activity.world.game.soulWard==30,"dedicated soul button casts domain"));
-        SystemClock.sleep(150);screenshot("10-radiant-domain.png");tap(900,37);
-        float[] paused={0,0};ui(()->{paused[0]=activity.world.game.soulFields.get(0).life;paused[1]=activity.world.game.soulCd;});SystemClock.sleep(180);
-        ui(()->{check(activity.world.game.soulFields.get(0).life==paused[0]&&activity.world.game.soulCd==paused[1],"pause freezes domain and exclusive cooldown");
-            try{SaveStore store=new SaveStore(activity);store.write(3,activity.world.game);ActionGame loaded=store.read(3);check(loaded.soulKind()==1&&loaded.soulFields.size()==1&&loaded.soulEnergy==activity.world.game.soulEnergy,"soul snapshot restored");}catch(IOException e){throw new RuntimeException(e);}
-            ActionGame g=new ActionGame();g.selectCustom(1);check(g.chooseCareer(CareerSystem.HUNTER,0,0)&&g.job()==CareerSystem.HUNTER,"forbidden soul fixture binds an explicit hunter career");activity.world.replace(g);
+        tap(785,405);tap(735,240);ui(()->{ActionGame g=activity.world.game;check(g.soulCd>0&&(g.soulWard>0||g.soulBuff>0||g.enemies.stream().anyMatch(e->e.hex>0||e.hp<e.maxHp)),"dedicated soul button casts the selected career's radiant form");});
+        SystemClock.sleep(150);screenshot("10-radiant-career-form.png");tap(900,37);
+        float[] paused={0,0,0,0};ui(()->{ActionGame g=activity.world.game;paused[0]=g.soulCd;paused[1]=g.soulWard;paused[2]=g.soulBuff;paused[3]=g.enemies.stream().mapToDouble(e->e.hex).sum();});SystemClock.sleep(180);
+        ui(()->{ActionGame g=activity.world.game;check(g.soulCd==paused[0]&&g.soulWard==paused[1]&&g.soulBuff==paused[2]&&g.enemies.stream().mapToDouble(e->e.hex).sum()==paused[3],"pause freezes career soul effects and cooldown");
+            try{SaveStore store=new SaveStore(activity);store.write(3,g);ActionGame loaded=store.read(3);check(loaded.soulKind()==1&&loaded.soulEnergy==g.soulEnergy&&loaded.soulWard==g.soulWard&&loaded.soulBuff==g.soulBuff,"career soul snapshot restored");}catch(IOException e){throw new RuntimeException(e);}
+            ActionGame next=new ActionGame();next.selectCustom(1);check(next.chooseCareer(CareerSystem.HUNTER,0,0)&&next.job()==CareerSystem.HUNTER,"forbidden soul fixture binds an explicit hunter career");activity.world.replace(next);
         });
         tap(350,500);waitForIdleSync();ui(()->((Spinner)activity.workshopDialog.getWindow().getDecorView().findViewWithTag("profile-soul")).setSelection(2));waitForIdleSync();
         ui(()->((Spinner)activity.workshopDialog.getWindow().getDecorView().findViewWithTag("profile-soul-art")).setSelection(1));waitForIdleSync();
