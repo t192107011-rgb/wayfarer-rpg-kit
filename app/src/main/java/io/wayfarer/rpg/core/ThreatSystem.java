@@ -25,8 +25,9 @@ public final class ThreatSystem {
     }
     public static void clear(ActionGame g){
         float loss=g.roomDamage/Math.max(1,g.maxHp());
-        if(loss<=.12f&&g.roomElapsed<=45)g.pressure=Math.min(.6f,g.pressure+.12f);
-        else if(loss>=.55f)g.pressure=Math.max(0,g.pressure-.12f);
+        // Strong, clean clears ratchet the next encounter upward. Pressure never falls during a run.
+        if(loss<=.12f&&g.roomElapsed<=45)g.pressure=Math.min(2.4f,g.pressure+.18f);
+        else if(loss<=.25f&&g.roomElapsed<=75)g.pressure=Math.min(2.4f,g.pressure+.10f);
     }
     public static int potionChance(int type){return type==3?50:type>=4?18:12;}
 }
