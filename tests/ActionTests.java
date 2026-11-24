@@ -257,7 +257,7 @@ public final class ActionTests {
         g.mode=ActionGame.Mode.REWARD;g.openShop();check(g.buyShopItem(0)&&g.loot==56&&g.bank==500,"run shop spends only expedition tickets");
         g.closeShop();g.mode=ActionGame.Mode.PAUSED;g.abandon();check(g.bank==539&&g.loot==56,"defeat settlement transfers only seventy percent of remaining run tickets");
         g.returnCamp();int before=g.bank;check(g.buyFieldPermit(0)&&g.bank==before-80,"permanent expedition permit spends only camp bank");
-        g.start(702);check(Math.abs(g.shield-g.talentShieldLimit())<.01f&&g.loot==0,"guard permit grants a capped starting shield without adding ticket permit rewards");g.loot=30;g.enemies.clear();
+        g.start(702);check(Math.abs(g.shield-20f)<.01f&&g.shield<=g.talentShieldLimit()&&g.loot==0,"guard permit grants a capped starting shield without adding ticket permit rewards");g.loot=30;g.enemies.clear();
         g.mode=ActionGame.Mode.REWARD;g.openShop();check(g.buyShopItem(0)&&g.loot==6&&g.bank==before-80,"second run shop purchase leaves camp bank untouched");
         ActionGame restored=ActionSave.decode(ActionSave.encode(g));check(restored.bank==before-80&&restored.loot==6&&restored.fieldPermits[0][0]==1,"both currencies and permanent purchases persist independently");
         System.out.println("PASS strict separation of expedition tickets, camp bank, settlement and permit purchases");
@@ -268,8 +268,8 @@ public final class ActionTests {
         check(g.bank==190,"all five permit prices debit camp bank exactly once");
         check(!g.buyFieldPermit(0)&&g.bank==190,"duplicate permanent permit purchase is rejected without debit");
         g.start(703);check(!g.buyFieldPermit(0)&&g.bank==190,"permit purchases are camp-only during an expedition");
-        check(Math.abs(g.shield-g.talentShieldLimit())<.01f&&g.potions==3&&g.loot==30&&g.damageBonus==4&&g.soulEnergy>=20,"all five permits apply their correct run-start effects");
-        ActionGame saved=ActionSave.decode(ActionSave.encode(g));check(saved.bank==190&&Math.abs(saved.shield-saved.talentShieldLimit())<.01f&&saved.potions==3&&saved.loot==30&&saved.damageBonus==4,"all permit effects and ledgers persist");
+        check(Math.abs(g.shield-20f)<.01f&&g.shield<=g.talentShieldLimit()&&g.potions==3&&g.loot==30&&g.damageBonus==4&&g.soulEnergy>=20,"all five permits apply their correct run-start effects");
+        ActionGame saved=ActionSave.decode(ActionSave.encode(g));check(saved.bank==190&&Math.abs(saved.shield-20f)<.01f&&saved.shield<=saved.talentShieldLimit()&&saved.potions==3&&saved.loot==30&&saved.damageBonus==4,"all permit effects and ledgers persist");
         System.out.println("PASS all five permanent permit purchases, costs, start effects and persistence");
     }
     private static void permanentEconomy()throws Exception{
