@@ -621,7 +621,7 @@ public final class ActionGame {
         }
     }
     private void ignite(float duration,float damage){burnTime=Math.max(burnTime,duration);burnDamage=Math.max(burnDamage,damage);burnTick=Math.min(burnTick<=0?1f:burnTick,1f);signal("burn",x,y,(int)Math.ceil(burnTime));}
-    private void updateBurn(float dt){if(burnTime<=0)return;float step=Math.min(dt,burnTime);burnTime=Math.max(0,burnTime-step);burnTick-=step;if(burnTick<=.0001f&&burnTime>0){burnTick=1f;hurt(burnDamage);signal("burn",x,y,(int)Math.ceil(burnTime));}if(burnTime<=0){burnTick=0;burnDamage=0;}}
+    private void updateBurn(float dt){if(burnTime<=0)return;float step=Math.min(dt,burnTime);burnTime=Math.max(0,burnTime-step);burnTick-=step;if(burnTick<=.0001f&&burnTime>0){burnTick=1f;float protectedTime=invulnerable;invulnerable=0;hurt(burnDamage);invulnerable=Math.max(invulnerable,protectedTime);signal("burn",x,y,(int)Math.ceil(burnTime));}if(burnTime<=0){burnTick=0;burnDamage=0;}}
     private void updateBossReinforcements(float dt){
         Enemy boss=null;int support=0;for(Enemy e:enemies)if(e.hp>0){if(e.type==3)boss=e;else support++;}
         if(boss==null){bossSummonCd=0;return;}bossSummonCd=Math.max(0,bossSummonCd-dt);if(support>=3||bossSummonCd>0)return;
