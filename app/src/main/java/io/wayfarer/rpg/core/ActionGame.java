@@ -332,7 +332,7 @@ public final class ActionGame {
         int j=job();skillCd=skillPeriod();careerSkillMode=j+1;careerSkillTime=4f;float power=damage();int affected=0;
         if(j==HUNTER){
             if(careerTalentRank(2)>0)addTalentShield(8*careerTalentRank(2));
-            Enemy target=null;float best=-1;for(Enemy e:enemies)if(e.hp>0){float score=e.type==3?e.hp*1.4f:e.hp;if(score>best){best=score;target=e;}}
+            Enemy target=hunterTarget(Float.POSITIVE_INFINITY);
             if(target!=null){target.hex=Math.max(target.hex,8f);hit(target,power*2.15f*(1+.15f*careerTalentRank(0)),false);signal("careerSkill",target.x,target.y,1);}
             for(Enemy e:enemies)if(e.hp>0&&e!=target&&len(e.x-x,e.y-y)<300)e.hex=Math.max(e.hex,3f);
             notice="猎人：追踪锁定 · 猎物已标记";
@@ -347,8 +347,8 @@ public final class ActionGame {
             signal("careerSkill",x,y,3);notice="警探：现场重构 · "+affected+" 个目标进入调查";
         }else{
             Enemy headline=null;int living=0;for(Enemy e:enemies)if(e.hp>0){living++;if(e.hp>(headline==null?-1:headline.hp))headline=e;}
-            if(headline!=null){hit(headline,power*(living==1?2.7f:1.8f),false);headline.hex=Math.max(headline.hex,5f);
-                if(living>1)for(Enemy e:enemies)if(e!=headline&&e.hp>0){hit(e,power*(.55f+.05f*careerTalentRank(0)),false);e.hex=Math.max(e.hex,3f);}
+            if(headline!=null){hit(headline,power*1.8f,false);headline.hex=Math.max(headline.hex,5f);
+                if(living>1)for(Enemy e:enemies)if(e!=headline&&e.hp>0){hit(e,power*.9f,false);e.hex=Math.max(e.hex,3f);}
             }
             signal("careerSkill",x,y,4);if(careerTalentRank(1)>0)heal(maxHp()*.04f*careerTalentRank(1));if(careerTalentRank(2)>0)addTalentShield(4*careerTalentRank(2));notice="记者：头条发布 · 伤害传导至全体敌人";
         }
@@ -475,7 +475,7 @@ public final class ActionGame {
         int kind=soulKind(),j=job();soulEnergy-=40;soulCd=soulPeriod();aimAtNearest(600);float power=damage();int affected=0;
         if(kind==1){
             if(j==HUNTER){
-                Enemy target=null;float best=-1;for(Enemy e:enemies)if(e.hp>0){float score=e.type==3?e.hp*1.5f:e.hp;if(score>best){best=score;target=e;}}
+                Enemy target=hunterTarget(Float.POSITIVE_INFINITY);
                 addSoulWard(14);for(Enemy e:enemies)if(e.hp>0)e.hex=Math.max(e.hex,7f);
                 if(target!=null){hit(target,power*3.1f,false);target.stun=Math.max(target.stun,.45f);}
                 signal("radiant",x,y,1);notice="曙光猎令 · 全场标记，精准猎杀";
@@ -497,7 +497,7 @@ public final class ActionGame {
         }else{
             payForbidden(j==REPORTER?.10f:.08f,j==REPORTER?38:30);
             if(j==HUNTER){
-                Enemy target=null;float best=Float.MAX_VALUE;for(Enemy e:enemies)if(e.hp>0){float d=len(e.x-x,e.y-y);if(d<best){best=d;target=e;}}
+                Enemy target=hunterTarget(Float.POSITIVE_INFINITY);
                 if(target!=null){target.hex=Math.max(target.hex,9f);hit(target,power*(target.hp<target.maxHp*.35f?4.1f:3.3f),false);if(target.hp<=0)heal(maxHp()*.06f);}
                 signal("forbidden",x,y,1);notice="血猎追魂 · 献祭生命，追猎残血目标";
             }else if(j==ASSASSIN){
@@ -564,7 +564,21 @@ public final class ActionGame {
     private void fire(float dx,float dy,float value){fire(dx,dy,value,0,0);}
     private void fire(float dx,float dy,float value,int effect,int pierce){if(shots.size()<160){Shot s=new Shot(x+dx*20,y+dy*20,dx*640,dy*640,value,true);s.effect=effect;s.pierce=pierce;shots.add(s);}}
     private void throwKnife(float dx,float dy,float value){if(shots.size()<160){Shot s=new Shot(x+dx*18,y+dy*18,dx*760,dy*760,value,true);s.radius=3.5f;s.life=1.5f;shots.add(s);}}
+    /** Hunter targeting always chooses a living boss before ordinary enemies. */
+    private Enemy hunterTarget(float range){
+        Enemy boss=null,other=null;float bossDistance=range,otherScore=-1;
+        for(Enemy e:enemies)if(e.hp>0){float d=len(e.x-x,e.y-y);
+            if(e.type==3&&d<=bossDistance){bossDistance=d;boss=e;}
+            else if(e.type!=3&&e.hp>otherScore){otherScore=e.hp;other=e;}
+        }
+        return boss!=null?boss:other;
+    }
     private void aimAtNearest(float range){
+        if(job()==HUNTER){
+            Enemy boss=null;float nearestBoss=range;
+            for(Enemy e:enemies)if(e.hp>0&&e.type==3){float d=len(e.x-x,e.y-y);if(d<nearestBoss){nearestBoss=d;boss=e;}}
+            if(boss!=null&&nearestBoss>.01f){faceX=(boss.x-x)/nearestBoss;faceY=(boss.y-y)/nearestBoss;return;}
+        }
         Enemy nearest=null;float best=range;
         for(Enemy e:enemies){float distance=len(e.x-x,e.y-y);if(e.hp>0&&distance<best&&lineClear(x,y,e.x,e.y)){best=distance;nearest=e;}}
         if(nearest!=null&&best>.01f){faceX=(nearest.x-x)/best;faceY=(nearest.y-y)/best;}
@@ -708,7 +722,9 @@ public final class ActionGame {
     private void updateShots(float dt){
         Iterator<Shot> it=shots.iterator();while(it.hasNext()){
             Shot p=it.next();p.life-=dt;float ox=p.x,oy=p.y,nx=p.x+p.vx*dt,ny=p.y+p.vy*dt;
-            boolean gone=p.life<=0||!free(nx,ny,p.radius)||!lineClear(ox,oy,nx,ny);
+            boolean hunterPierce=p.friendly&&job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0;
+            boolean inArena=nx-p.radius>=48&&ny-p.radius>=48&&nx+p.radius<=WIDTH-48&&ny+p.radius<=HEIGHT-48;
+            boolean gone=p.life<=0||!(hunterPierce?inArena:free(nx,ny,p.radius)&&lineClear(ox,oy,nx,ny));
             if(!gone&&p.friendly){for(Enemy e:enemies)if(e.hp>0&&!p.hitIds.contains(e.id)&&segmentDistance(e.x,e.y,ox,oy,nx,ny)<e.radius()+p.radius){
                 p.hitIds.add(e.id);hit(e,p.damage);if(p.effect==2)e.hex=3;
                 if(p.pierce<=0){gone=true;break;}p.pierce--;
@@ -736,7 +752,7 @@ public final class ActionGame {
             // Career identities shape every deliberate hit, not only the active skill.
             if(job()==HUNTER&&e.hex>0)value*=1.18f;if(job()==DETECTIVE&&e.hex>0)value*=1+.15f*careerTalentRank(1);
         }
-        if(e.type==3)value*=1.40f;
+        if(job()==REPORTER){int living=0;for(Enemy candidate:enemies)if(candidate.hp>0)living++;if(living==1)value*=1.5f;}
         if(echoEligible&&relicEcho>0&&hasRelic(3)){value*=1.35f;relicEcho=0;signal("echo",e.x,e.y,65);}
         value*=e.hex>0?1.15f*(hasRelic(6)?1.1f:1)*(1+.12f*tacticRanks[4]):1;if(echoEligible&&coreRank(2)>0&&e.stun>0)value*=1+.12f*coreRank(2);if(echoEligible&&job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0)value*=1+.10f*careerTalentRank(1);float beforeGuard=e.guard;float guardFactor=e.guardType==2?.65f:1f;float guardDamage=value*guardFactor;float absorbed=Math.min(e.guard,guardDamage);e.guard=Math.max(0,e.guard-absorbed);float healthLeak=Math.min(value,absorbed/guardFactor);value-=healthLeak;if(absorbed>0){e.guardDelay=2.5f;signal("enemyShield",e.x,e.y,(int)absorbed);}if(beforeGuard>0&&e.guard<=.0001f)breakEnemyGuard(e);float dealt=Math.min(e.hp,value);e.hp=Math.max(0,e.hp-value);
         e.flash=.12f;if(absorbed==0)e.stun=Math.max(e.stun,e.type==3?.03f:e.type==2||e.type==4?.06f:.12f);signal("hit",e.x,e.y,(int)value);
@@ -745,7 +761,7 @@ public final class ActionGame {
             if(job()==ASSASSIN&&len(e.x-x,e.y-y)<150)addTalentShield(1f);
             if(job()==DETECTIVE){e.hex=Math.max(e.hex,3.5f);skillCd=Math.max(0,skillCd-.05f);}
             if(job()==REPORTER){
-                for(Enemy candidate:enemies)if(candidate!=e&&candidate.hp>0){float relayDamage=dealt*(.20f+.05f*careerTalentRank(0));hit(candidate,relayDamage,false,false);signal("careerRelay",candidate.x,candidate.y,(int)relayDamage);}
+                for(Enemy candidate:enemies)if(candidate!=e&&candidate.hp>0){float relayDamage=dealt*(.50f+.05f*careerTalentRank(0));hit(candidate,relayDamage,false,false);signal("careerRelay",candidate.x,candidate.y,(int)relayDamage);}
             }
         }
         if(job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0&&dealt>0){addTalentShield(1+2*careerTalentRank(2));if(e.hp<=0){activeSkillCd=0;heal(maxHp()*.03f);}}
