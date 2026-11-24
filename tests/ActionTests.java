@@ -330,7 +330,7 @@ public final class ActionTests {
     }
     private static void enemyBurnAndBossReinforcements()throws Exception{
         ActionGame burning=new ActionGame();burning.start(741);burning.blocks.clear();burning.enemies.clear();ActionGame.Enemy burnWitness=new ActionGame.Enemy(burning.nextId++,0,700,300,1000);burnWitness.stun=2.9f;burning.enemies.add(burnWitness);burning.invulnerable=0;
-        burning.hazards.add(new ActionGame.Hazard(1,burning.x,burning.y,120,0,.2f,20));
+        burning.hazards.add(new ActionGame.Hazard(1,burning.x,burning.y,120,0,.1f,20));
         burning.update(.05f,new ActionGame.Input());
         check(burning.burnTime>3.9f&&burning.burnDamage>=1.9f,"fire hazard applies a persistent burn");
         ActionGame burnSave=ActionSave.decode(ActionSave.encode(burning));
