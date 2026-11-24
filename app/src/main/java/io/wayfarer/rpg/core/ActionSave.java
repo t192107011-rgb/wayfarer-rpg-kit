@@ -7,8 +7,8 @@ import java.util.*;
 public final class ActionSave {
     private ActionSave(){}
     public static byte[] encode(ActionGame g) throws IOException {
-        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",29);
-        p.setProperty("endless",Boolean.toString(g.endless));put(p,"endlessDepth",g.endlessDepth);put(p,"bestDepth",g.bestDepth);put(p,"threat",g.threat);put(p,"pressure",g.pressure);put(p,"encounterHpFloor",g.encounterHpFloor);put(p,"encounterDamageFloor",g.encounterDamageFloor);put(p,"roomDamage",g.roomDamage);put(p,"roomElapsed",g.roomElapsed);
+        Properties p=new Properties();p.setProperty("format","wayfarer-action");put(p,"version",30);
+        p.setProperty("endless",Boolean.toString(g.endless));put(p,"endlessDepth",g.endlessDepth);put(p,"bestDepth",g.bestDepth);put(p,"threat",g.threat);put(p,"pressure",g.pressure);put(p,"encounterHpFloor",g.encounterHpFloor);put(p,"encounterDamageFloor",g.encounterDamageFloor);put(p,"roomDamage",g.roomDamage);put(p,"roomElapsed",g.roomElapsed);put(p,"bossSummonCd",g.bossSummonCd);put(p,"burnTime",g.burnTime);put(p,"burnTick",g.burnTick);put(p,"burnDamage",g.burnDamage);
         p.setProperty("mode",g.mode.name());p.setProperty("rng",Long.toString(g.rngState));p.setProperty("won",Boolean.toString(g.won));p.setProperty("cleared",Boolean.toString(g.roomCleared));
         String[] ik={"hero","bank","power","vitality","runs","wins","room","loot","kills","potions","damageBonus","healthBonus","speedBonus","combo","nextId"};
         int[] iv={g.hero,g.bank,g.power,g.vitality,g.runs,g.wins,g.room,g.loot,g.kills,g.potions,g.damageBonus,g.healthBonus,g.speedBonus,g.combo,g.nextId};
@@ -47,15 +47,15 @@ public final class ActionSave {
         if(data==null||data.length==0||data.length>131072)throw new IOException("存档大小不正确");
         try{
             Properties p=new Properties();p.load(new ByteArrayInputStream(data));
-            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,29);
+            if(!"wayfarer-action".equals(p.getProperty("format")))throw new IllegalArgumentException("存档格式不兼容");int version=n(p,"version",1,30);
             ActionGame g=new ActionGame();g.mode=ActionGame.Mode.valueOf(required(p,"mode"));g.rngState=Long.parseLong(required(p,"rng"));if(g.rngState==0)throw new IllegalArgumentException("随机状态无效");
             g.won=bool(p,"won");g.roomCleared=bool(p,"cleared");g.hero=n(p,"hero",0,2);g.bank=n(p,"bank",0,999999);g.power=n(p,"power",0,version>=28?999999:version>=25?20:10);g.vitality=n(p,"vitality",0,version>=28?999999:version>=25?20:10);g.runs=n(p,"runs",0,999999);g.wins=n(p,"wins",0,g.runs);
             g.room=n(p,"room",0,5);g.loot=n(p,"loot",0,99999);g.kills=n(p,"kills",0,99999);g.potions=n(p,"potions",0,version>=10?ActionGame.MAX_POTIONS:2);if(version>=18){g.bombs=n(p,"bombs",0,3);g.snares=n(p,"snares",0,3);g.tonics=n(p,"tonics",0,3);g.battleTonicTime=f(p,"battleTonicTime",0,10);g.shopOpen=bool(p,"shopOpen");}if(version>=23){for(int i=0;i<8;i++)g.tacticRanks[i]=n(p,"tacticRank"+i,0,3);for(int i=0;i<3;i++)g.tacticOffers[i]=n(p,"tacticOffer"+i,-1,7);g.tacticChosen=bool(p,"tacticChosen");g.tacticDraftOpen=bool(p,"tacticDraftOpen");if(version>=28)g.tacticSelected=n(p,"tacticSelected",-1,2);}g.damageBonus=n(p,"damageBonus",0,version>=10?40:16);g.healthBonus=n(p,"healthBonus",0,version>=12?99999:version>=10?200:80);g.speedBonus=n(p,"speedBonus",0,version>=10?6:4);g.combo=n(p,"combo",0,2);g.nextId=n(p,"nextId",1,Integer.MAX_VALUE-1);
             if(version>=10){
                 g.endless=bool(p,"endless");g.endlessDepth=n(p,"endlessDepth",0,999999);g.bestDepth=n(p,"bestDepth",0,999999);
-                g.threat=f(p,"threat",1,version>=25?99:12);g.pressure=f(p,"pressure",0,.6f);g.encounterHpFloor=f(p,"encounterHpFloor",0,version>=25?300000:150000);g.encounterDamageFloor=f(p,"encounterDamageFloor",0,1000);g.roomDamage=f(p,"roomDamage",0,100000);g.roomElapsed=f(p,"roomElapsed",0,10000000);
+                g.threat=f(p,"threat",1,version>=25?99:12);g.pressure=f(p,"pressure",0,.6f);g.encounterHpFloor=f(p,"encounterHpFloor",0,version>=25?300000:150000);g.encounterDamageFloor=f(p,"encounterDamageFloor",0,1000);g.roomDamage=f(p,"roomDamage",0,100000);g.roomElapsed=f(p,"roomElapsed",0,10000000);if(version>=30){g.bossSummonCd=f(p,"bossSummonCd",0,5.5f);g.burnTime=f(p,"burnTime",0,4);g.burnTick=f(p,"burnTick",0,1);g.burnDamage=f(p,"burnDamage",0,10000);if((g.burnTime==0)!=(g.burnDamage==0)||g.burnTime==0&&g.burnTick>0)throw new IllegalArgumentException("灼烧状态无效");}
                 if(g.endless&&(g.endlessDepth<1||g.mode==ActionGame.Mode.CAMP||g.won||g.room!=(g.endlessDepth-1)%5+1)||!g.endless&&g.endlessDepth!=0||(g.encounterHpFloor==0)!=(g.encounterDamageFloor==0))throw new IllegalArgumentException("无尽或敌势来源无效");
-                if(g.mode==ActionGame.Mode.CAMP&&(g.threat!=1||g.pressure>0||g.encounterHpFloor>0||g.encounterDamageFloor>0||g.roomDamage>0||g.roomElapsed>0))throw new IllegalArgumentException("营地敌势状态无效");
+                if(g.mode==ActionGame.Mode.CAMP&&(g.threat!=1||g.pressure>0||g.encounterHpFloor>0||g.encounterDamageFloor>0||g.roomDamage>0||g.roomElapsed>0||g.bossSummonCd>0||g.burnTime>0||g.burnTick>0||g.burnDamage>0))throw new IllegalArgumentException("营地敌势状态无效");
             }
             for(int i=0;i<3;i++)g.experience[i]=n(p,"xp"+i,0,1000000);
             // v1 migration: preserve every original field; new profiles and empty trees use defaults.
@@ -151,7 +151,7 @@ public final class ActionSave {
             if(g.roomCleared&&!g.enemies.isEmpty())throw new IllegalArgumentException("房间状态矛盾");
             if(g.mode==ActionGame.Mode.REWARD&&(!g.enemies.isEmpty()||g.room==5&&!g.endless||g.roomCleared))throw new IllegalArgumentException("奖励状态矛盾");
             if(g.won&&(g.mode!=ActionGame.Mode.RESULT&&g.mode!=ActionGame.Mode.CAMP))throw new IllegalArgumentException("结算状态无效");
-            g.settleRestoredAttack();g.notice=version<11?"旧职业配置已重置为猎人；灵魂、背景与角色进度保留。":"存档已恢复";return g;
+            g.shield=Math.min(g.shield,g.talentShieldLimit());g.soulWard=Math.min(g.soulWard,g.soulWardLimit());g.settleRestoredAttack();g.notice=version<11?"旧职业配置已重置为猎人；灵魂、背景与角色进度保留。":"存档已恢复";return g;
         }catch(IllegalArgumentException|NullPointerException e){throw new IOException("存档校验失败："+e.getMessage(),e);}
     }
     private static String required(Properties p,String key){String s=p.getProperty(key);if(s==null)throw new IllegalArgumentException("缺少 "+key);return s;}
