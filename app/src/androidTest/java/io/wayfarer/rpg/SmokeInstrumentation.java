@@ -219,7 +219,7 @@ public final class SmokeInstrumentation extends Instrumentation {
         });waitForIdleSync();SystemClock.sleep(150);
         screenshotDialog("05-character-workshop.png");
         ui(()->activity.workshopDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick());waitForIdleSync();
-        ui(()->{ActionGame g=activity.world.game;check(g.heroName().equals("暮灯艾文")&&g.hero==1&&g.skillName().equals("瞬时猎杀")&&g.profile().color==4&&g.profile().hair==2,"native editor commits customization");});
+        ui(()->{ActionGame g=activity.world.game;check(g.heroName().equals("暮灯艾文")&&g.hero==1&&g.skillName().equals("追踪猎杀")&&g.profile().color==4&&g.profile().hair==2,"native editor commits customization");});
         tap(350,500);waitForIdleSync();ui(()->{View root=activity.workshopDialog.getWindow().getDecorView();((EditText)root.findViewWithTag("profile-name")).setText("取消的修改");activity.workshopDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();});
         ui(()->check(activity.world.game.heroName().equals("暮灯艾文"),"cancel preserves profile"));
         tap(530,500);ui(()->check(activity.world.showTalents,"tree opens"));tap(175,164);
