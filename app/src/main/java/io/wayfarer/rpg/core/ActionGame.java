@@ -625,11 +625,18 @@ public final class ActionGame {
     private void updateBossReinforcements(float dt){
         Enemy boss=null;int support=0;for(Enemy e:enemies)if(e.hp>0){if(e.type==3)boss=e;else support++;}
         if(boss==null){bossSummonCd=0;return;}bossSummonCd=Math.max(0,bossSummonCd-dt);if(support>=3||bossSummonCd>0)return;
-        int type=4+random(3);float ex=560,ey=145;int tries=0;do{ex=100+random(920);ey=100+random(330);tries++;}while((!free(ex,ey,type==6?22:18)||len(ex-x,ey-y)<230||len(ex-boss.x,ey-boss.y)<110)&&tries<80);
-        if(!free(ex,ey,type==6?22:18)){ex=Math.max(80,Math.min(WIDTH-80,boss.x+180));ey=Math.max(80,Math.min(HEIGHT-80,boss.y+120));}
-        float life=90+room*22+(type==4?35:type==5?25:45);Enemy add=new Enemy(nextId++,type,ex,ey,Math.max(encounterHpFloor*1.35f,life*threat*1.45f));add.pattern=random(2);add.stun=.35f;
-        if(type==4){add.guardType=2;add.guard=22+room*2;}else if(type==6){add.guardType=1;add.guard=30+room*2;}
-        enemies.add(add);bossSummonCd=5.5f;signal("bossSummon",ex,ey,type);notice="首领召援 · 强敌加入战场";
+        int missing=3-support;
+        for(int i=0;i<missing;i++){
+            int type=4+random(3);float ex=560,ey=145;int tries=0;
+            do{ex=100+random(920);ey=100+random(330);tries++;}
+            while((!free(ex,ey,type==6?22:18)||len(ex-x,ey-y)<230||len(ex-boss.x,ey-boss.y)<110)&&tries<80);
+            if(!free(ex,ey,type==6?22:18)){ex=Math.max(80,Math.min(WIDTH-80,boss.x+180+i*35));ey=Math.max(80,Math.min(HEIGHT-80,boss.y+120+i*30));}
+            float life=90+room*22+(type==4?35:type==5?25:45);
+            Enemy add=new Enemy(nextId++,type,ex,ey,Math.max(encounterHpFloor*1.35f,life*threat*1.45f));add.pattern=random(2);add.stun=.35f;
+            if(type==4){add.guardType=2;add.guard=22+room*2;}else if(type==6){add.guardType=1;add.guard=30+room*2;}
+            enemies.add(add);signal("bossSummon",ex,ey,type);
+        }
+        bossSummonCd=5.5f;notice="首领召援 · "+missing+" 名强敌加入战场";
     }
     private void addHazard(int type,float px,float py,float radius,float warning,float life,float power){
         if(hazards.size()<18)hazards.add(new Hazard(type,Math.max(64,Math.min(WIDTH-64,px)),Math.max(64,Math.min(HEIGHT-64,py)),enemyRange(radius),warning,life,power));
