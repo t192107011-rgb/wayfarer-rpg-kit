@@ -60,7 +60,7 @@ public final class CareerAbilityTests {
         ActionGame g=arena(HUNTER,0);ActionGame.Enemy distant=mob(g,g.x+300,g.y,1000);distant.hex=5;g.hitForTest(distant,100);check(distant.hp<900,"hunter's marked target passive is tested through a mark");
         g=arena(ASSASSIN,0);ActionGame.Enemy close=mob(g,g.x+90,g.y,1000);float shield=g.shield;g.hitForTest(close,40);check(g.shield>shield,"assassin gains guard from close-quarters hits");
         g=arena(DETECTIVE,0);ActionGame.Enemy suspect=mob(g,g.x+90,g.y,1000);g.hitForTest(suspect,20);check(suspect.hex>=3.5f,"detective marks evidence targets on hit");
-        g=arena(REPORTER,0);ActionGame.Enemy source=mob(g,g.x+90,g.y,1000),witness=mob(g,g.x+180,g.y,1000);float witnessHp=witness.hp;g.hitForTest(source,100);check(witness.hp<witnessHp&&witnessHp-witness.hp>=19.9f,"reporter relays twenty percent of hit damage to a nearby second target");
+        g=arena(REPORTER,0);ActionGame.Enemy source=mob(g,g.x+90,g.y,1000),witness=mob(g,g.x+180,g.y,1000),distant=mob(g,100,100,1000);float witnessHp=witness.hp,distantHp=distant.hp;g.hitForTest(source,100);check(witness.hp<witnessHp&&witnessHp-witness.hp>=19.9f&&distant.hp<distantHp,"reporter relays damage to every living enemy regardless of distance");
         g.soulCd=5;g.generateRoom();check(g.skillCd==0&&g.soulCd==0,"room transition resets both skill cooldowns");
         ActionGame restored=ActionSave.decode(ActionSave.encode(g));check(restored.job()==REPORTER,"career identity survives save restore");
         System.out.println("CAREER ABILITY CHECKS PASSED: "+checks);
