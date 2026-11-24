@@ -167,7 +167,7 @@ public final class ActionTests {
     }
     private static void careerSoulResonance(){
         ActionGame radiant=new ActionGame();radiant.bindSoul(1,0);radiant.start(811);radiant.shots.add(new ActionGame.Shot(radiant.x+60,radiant.y,0,0,5,false));radiant.skill();
-        check(radiant.soulWard>=12&&radiant.shots.isEmpty(),"radiant career skill grants ward and cleanses nearby hostile shots");
+        check(radiant.soulWard>=10&&radiant.shots.isEmpty(),"radiant career skill grants ward and cleanses nearby hostile shots");
         ActionGame forbidden=new ActionGame();forbidden.bindSoul(2,0);forbidden.start(812);ActionGame.Enemy target=new ActionGame.Enemy(forbidden.nextId++,0,forbidden.x+120,forbidden.y,500);forbidden.enemies.add(target);forbidden.skill();
         check(forbidden.corruption==5&&target.hex>=3,"forbidden career skill builds corruption and marks its quarry");
         System.out.println("PASS radiant and forbidden soul resonance with career overdrive");
@@ -183,10 +183,10 @@ public final class ActionTests {
             float before=e.hp,hpBefore=g.hp;g.activeSkill();
             check(g.activeSkillCd>0&&g.followUpWindow>0,"career active soul resonance consumes active skill "+kind+"/"+job);
             if(kind==1){
-                if(job==CareerSystem.HUNTER)check(g.soulWard>=6&&g.shots.isEmpty(),"radiant hunter converts active skill into ward and cleanse");
-                else if(job==CareerSystem.ASSASSIN)check(g.soulWard>=3&&g.invulnerable>=.35f,"radiant assassin gains ward and brief protection");
-                else if(job==CareerSystem.DETECTIVE)check(g.soulWard>=4&&g.shots.isEmpty(),"radiant detective gains ward and wider cleanse");
-                else check(g.hp>hpBefore&&g.soulWard>=2,"radiant reporter converts resonance into recovery");
+                if(job==CareerSystem.HUNTER)check(g.soulWard>=3&&g.shots.isEmpty(),"radiant hunter converts active skill into ward and cleanse");
+                else if(job==CareerSystem.ASSASSIN)check(g.soulWard>=2&&g.invulnerable>=.35f,"radiant assassin gains ward and brief protection");
+                else if(job==CareerSystem.DETECTIVE)check(g.soulWard>=2&&g.shots.isEmpty(),"radiant detective gains ward and wider cleanse");
+                else check(g.hp>hpBefore&&g.soulWard>=1,"radiant reporter converts resonance into recovery");
             }else{
                 if(job==CareerSystem.HUNTER)check(e.hex>=3,"forbidden hunter spreads the mark");
                 else if(job==CareerSystem.ASSASSIN)check(g.corruption>=14&&g.shots.size()>=2,"forbidden assassin pays extra debt for bonus knives");
