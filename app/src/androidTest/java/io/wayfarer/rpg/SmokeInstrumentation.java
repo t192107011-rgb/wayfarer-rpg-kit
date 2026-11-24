@@ -90,7 +90,7 @@ public final class SmokeInstrumentation extends Instrumentation {
         ui(()->{ActionGame g=activity.world.game;g.blocks.clear();g.enemies.clear();g.shots.clear();g.drops.clear();g.hp=g.maxHp()-50;g.potions=5;ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,800,250,500);e.stun=1;g.enemies.add(e);
             // Pickup fixture isolates bag capacity; seeded death probability is tested in EndlessTests.
             ActionGame.Drop bottle=new ActionGame.Drop(g.x+12,g.y+12,1,false);bottle.potion=true;g.drops.add(bottle);g.hitStop=0;g.update(.016f,new ActionGame.Input());g.mode=ActionGame.Mode.PLAY;g.potions=5;g.hp=g.maxHp()-50;check(g.potions==5&&g.drops.size()==1,"full bag bottle stays visible");});
-        screenshot("29-potion-pickup-fixture.png");tap(648,456);
+        screenshot("29-potion-pickup-fixture.png");ui(()->{if(activity.world.game.mode==ActionGame.Mode.PAUSED)activity.world.game.resume();});tap(648,456);
         ui(()->{ActionGame g=activity.world.game;check(g.potions==4,"actual potion button drinks: mode="+g.mode+" potions="+g.potions+" hp="+g.hp+" maxHp="+g.maxHp()+" position="+g.x+","+g.y);g.hitStop=0;g.update(.016f,new ActionGame.Input());check(g.potions==5&&g.drops.isEmpty(),"open slot collects bottle once");g.pause();try{SaveStore store=new SaveStore(activity);store.write(3,g);ActionGame a=store.read(3);check(a.endless&&a.endlessDepth==6&&a.bestDepth==5&&a.potions==5&&a.threat==g.threat&&a.rank(2)==1&&a.rank(6)==1&&a.rank(11)==1,"v10 AtomicFile restores complete endless build");}catch(IOException e){throw new RuntimeException(e);}});
     }
     private void growthTreesFlow(){
