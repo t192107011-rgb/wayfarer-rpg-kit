@@ -75,8 +75,8 @@ public final class BuildTests {
         g=ultimate(11);byte[] data=ActionSave.encode(g);reject(data,"custom","5");reject(data,"profile0.name","bad\nname");reject(data,"profile0.data","0,0,0,0,99,0,0,0");reject(data,"talent0.0","9");reject(data,"talent0.2","1");reject(data,"talent0.8","0");reject(data,"shield","NaN");reject(data,"dodgeCharge","2");
         g=new ActionGame();data=ActionSave.encode(g);reject(data,"talent0.0","3");reject(data,"shield","100000");reject(data,"shield","99999.01");reject(data,"shield","Infinity");reject(data,"shield","-1");
         // v13 saves predate the strict shield cap: migration clamps them; v14+ must reject.
-        byte[] legacyShield=altered(data,"version","13");legacyShield=altered(legacyShield,"shield","100000");ActionGame migratedShield=ActionSave.decode(legacyShield);near(migratedShield.shield,99999,"legacy shield is clamped during migration");
-        data=altered(data,"shield","99999");near(ActionSave.decode(data).shield,99999,"exact shield cap remains valid");g.selectCustom(0);data=ActionSave.encode(g);reject(data,"hero","2");
+        byte[] legacyShield=altered(data,"version","13");legacyShield=altered(legacyShield,"shield","100000");ActionGame migratedShield=ActionSave.decode(legacyShield);near(migratedShield.shield,migratedShield.talentShieldLimit(),"legacy shield is clamped to the health-based limit during migration");
+        data=altered(data,"shield","99999");near(ActionSave.decode(data).shield,ActionSave.decode(data).talentShieldLimit(),"legacy maximum shield value is normalized to the health-based cap");g.selectCustom(0);data=ActionSave.encode(g);reject(data,"hero","2");
         // Armed dodge charge survives restart but a partially executed attack cannot re-arm it.
         g=new ActionGame();points(g);learn(g,4,1);learn(g,5,1);arena(g);mob(g,610,600);g.dodge(0,-1);a=ActionSave.decode(ActionSave.encode(g));near(a.dodgeCharge,3,"armed charge preserved");g.rollTime=0;tick(g,true,1);a=ActionSave.decode(ActionSave.encode(g));check(a.dodgeCharge==0&&a.attackAnim==0,"restoring cannot refund consumed charge or replay swing");
         System.out.println("PASS v1-to-v2 migration, new snapshots, corrupt-tree rejection and no duplicate charge on restore");
@@ -100,7 +100,7 @@ public final class BuildTests {
     private static void expandedCoreEffects(){
         ActionGame g=new ActionGame();points(g);g.coreTalents[0][10]=2;g.start(91);g.shield=0;g.addTalentShield(10);near(g.shield,11.6f,"reduced shield efficiency still increases every shield source");
         g=new ActionGame();points(g);g.coreTalents[0][5]=1;arena(g);ActionGame.Enemy e=mob(g,610,600);g.dodge(0,-1);check(e.hp<500,"five-branch dodge counter works without legacy dodge pulse");
-        g=new ActionGame();points(g);g.coreTalents[0][7]=2;arena(g);g.activeSkill();near(g.shield,20,"general active skill shield talent adds ten per rank");
+        g=new ActionGame();points(g);g.coreTalents[0][7]=2;arena(g);g.activeSkill();near(g.shield,8,"general active skill shield talent adds four per rank");
         g=new ActionGame();points(g);g.coreTalents[0][8]=1;arena(g);e=mob(g,610,600);g.activeSkill();float boosted=500-e.hp;
         ActionGame base=new ActionGame();points(base);arena(base);ActionGame.Enemy b=mob(base,610,600);base.activeSkill();check(boosted>500-b.hp,"overload talent raises general active skill damage");
         g=new ActionGame();points(g);g.coreTalents[0][2]=1;arena(g);e=mob(g,610,600);e.stun=1;g.hitForTest(e,100);
@@ -117,7 +117,7 @@ public final class BuildTests {
         float before=g.damage();check(before>0,"core attack bonuses contribute to damage");
         g.resetTalents();check(g.availableCorePoints()==23&&g.coreRank(0)==0&&g.coreRank(1)==0,"full respec refunds five-branch points: available="+g.availableCorePoints()+" core0="+g.coreRank(0)+" core1="+g.coreRank(1)+" mode="+g.mode+" xp="+g.heroXp());
         g.bank=1000;check(g.buyFieldPermit(0)&&g.buyFieldPermit(1)&&g.bank==800,"outside currency buys persistent expedition permits");
-        g.start(987);check(g.shield>=40&&g.potions==3,"shield and supply permits affect expedition start");
+        g.start(987);check(g.shield>=20&&g.potions==3,"reduced shield and supply permits affect expedition start");
         ActionGame restored=ActionSave.decode(ActionSave.encode(g));
         check(restored.fieldPermits[0][0]==1&&restored.fieldPermits[0][1]==1,"field permits persist through save");
         restored.pause();restored.abandon();restored.returnCamp();restored.experience[0]=1200;
