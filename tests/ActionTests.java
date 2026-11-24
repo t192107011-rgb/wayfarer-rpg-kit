@@ -339,7 +339,7 @@ public final class ActionTests {
         check(burnSave.hp<hp&&burnSave.burnTime<4f,"burn periodically damages through normal defensive layers");
 
         ActionGame boss=new ActionGame();boss.start(742);boss.room=5;boss.generateRoom();ActionGame.Enemy leader=null;
-        for(ActionGame.Enemy e:boss.enemies)if(e.type==3){leader=e;e.stun=100;}else e.hp=0;
+        for(ActionGame.Enemy e:boss.enemies)if(e.type==3){leader=e;e.stun=2.9f;}else e.hp=0;
         check(leader!=null,"boss room has a commander");
         boss.bossSummonCd=0;boss.update(.016f,new ActionGame.Input());
         long reinforcements=boss.enemies.stream().filter(e->e.hp>0&&e.type!=3).count();
