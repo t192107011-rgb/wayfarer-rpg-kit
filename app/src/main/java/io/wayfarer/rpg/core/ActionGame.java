@@ -20,13 +20,13 @@ public final class ActionGame {
     public float meleeReach(){return (hero==0?120:100)*reachFactor();}
     public float activeRadius(){int k=soulKind();return (skillStyle()==0?(k==1?235:k==2?260:200):(k==1?180:k==2?190:160))*reachFactor()*(specialtyRank(7)>0?1.10f:1); }
     public float followUpDuration(){return rank(7)>0?3:2;}
-    /** Persistent shields are deliberately bounded to a modest fraction of maximum health. */
-    public float talentShieldLimit(){return Math.max(8f,maxHp()*.28f);}
-    public float soulWardLimit(){return Math.max(6f,maxHp()*.18f);}
+    /** Persistent shields remain bounded, but can now support sustained boss encounters. */
+    public float talentShieldLimit(){return Math.max(12f,maxHp()*.60f);}
+    public float soulWardLimit(){return Math.max(8f,maxHp()*.40f);}
     public float shieldEfficiency(){return 1f+coreRank(10)*.08f;}
     public float addTalentShield(float base){if(base<=0)return 0;float before=shield;shield=Math.min(talentShieldLimit(),shield+base*shieldEfficiency());float gained=shield-before;if(gained>0)signal("shield",x,y,Math.round(gained));return gained;}
     public float addSoulWard(float base){if(base<=0)return 0;float before=soulWard;float raised=Math.min(soulWardLimit(),soulWard+base);soulWard=Math.max(before,raised);float gained=soulWard-before;if(gained>0)signal("shield",x,y,Math.round(gained));return gained;}
-    public String shieldSourceSummary(){List<String> sources=new ArrayList<>();sources.add("闪避+"+(8+coreRank(4)*4));sources.add("击杀+1");if(fieldPermits[buildId()][0]>0)sources.add("远征许可开局+20（受上限约束）");sources.add("职业技能护盾（按职业变化，受上限约束）");if(tacticRanks[5]>0||coreRank(7)>0)sources.add("通用主动技触发+"+(3*tacticRanks[5]+4*coreRank(7)));if(rank(11)>0)sources.add("镜火反震");if(coreRank(10)>0)sources.add("护盾获取效率+"+(coreRank(10)*8)+"%");sources.add("护盾上限 "+Math.round(talentShieldLimit())+"（最大生命的28%）");return String.join(" · ",sources);}
+    public String shieldSourceSummary(){List<String> sources=new ArrayList<>();sources.add("闪避+"+(8+coreRank(4)*4));sources.add("击杀+1");if(fieldPermits[buildId()][0]>0)sources.add("远征许可开局+20（受上限约束）");sources.add("职业技能护盾（按职业变化，受上限约束）");if(tacticRanks[5]>0||coreRank(7)>0)sources.add("通用主动技触发+"+(3*tacticRanks[5]+4*coreRank(7)));if(rank(11)>0)sources.add("镜火反震");if(coreRank(10)>0)sources.add("护盾获取效率+"+(coreRank(10)*8)+"%");sources.add("护盾上限 "+Math.round(talentShieldLimit())+"（最大生命的60%）");return String.join(" · ",sources);}
     public String threatLabel(){return String.format(java.util.Locale.ROOT,"敌势 ×%.2f",threat);}
     private void clearThreat(){threat=1;pressure=0;encounterHpFloor=0;encounterDamageFloor=0;roomDamage=0;roomElapsed=0;bossSummonCd=0;burnTime=0;burnTick=0;burnDamage=0;endless=false;endlessDepth=0;}
     private boolean collectDrop(Drop d){if(d.potion){if(potions>=MAX_POTIONS)return false;potions++;signal("potion",d.x,d.y,potions);notice="拾取药瓶 · "+potions+" / "+MAX_POTIONS;}else if(d.heal)heal(d.amount);else{int gain=Math.round(d.amount*(1+.12f*tacticRanks[7]));gain=Math.round(gain*(1+coreRank(12)*.08f));loot=Math.min(99999,loot+gain);signal("coin",d.x,d.y,gain);}return true;}
@@ -346,12 +346,11 @@ public final class ActionGame {
             for(Enemy e:enemies)if(e.hp>0){e.hex=Math.max(e.hex,4.5f+.5f*careerTalentRank(0));e.stun=Math.max(e.stun,.3f);affected++;}
             signal("careerSkill",x,y,3);notice="警探：现场重构 · "+affected+" 个目标进入调查";
         }else{
-            Enemy headline=null;float best=-1;for(Enemy e:enemies)if(e.hp>best&&e.hp>0){best=e.hp;headline=e;}
-            if(headline!=null){hit(headline,power*1.8f,false);headline.hex=Math.max(headline.hex,5f);Enemy relay=null;float near=300;
-                for(Enemy e:enemies)if(e!=headline&&e.hp>0){float d=len(e.x-headline.x,e.y-headline.y);if(d<near){near=d;relay=e;}}
-                if(relay!=null){hit(relay,power*(.55f+.05f*careerTalentRank(0)),false);relay.hex=Math.max(relay.hex,3f);}
+            Enemy headline=null;int living=0;for(Enemy e:enemies)if(e.hp>0){living++;if(e.hp>(headline==null?-1:headline.hp))headline=e;}
+            if(headline!=null){hit(headline,power*(living==1?2.7f:1.8f),false);headline.hex=Math.max(headline.hex,5f);
+                if(living>1)for(Enemy e:enemies)if(e!=headline&&e.hp>0){hit(e,power*(.55f+.05f*careerTalentRank(0)),false);e.hex=Math.max(e.hex,3f);}
             }
-            signal("careerSkill",x,y,4);if(careerTalentRank(1)>0)heal(maxHp()*.04f*careerTalentRank(1));if(careerTalentRank(2)>0)addTalentShield(4*careerTalentRank(2));notice="记者：头条发布 · 伤害向邻近目标传播";
+            signal("careerSkill",x,y,4);if(careerTalentRank(1)>0)heal(maxHp()*.04f*careerTalentRank(1));if(careerTalentRank(2)>0)addTalentShield(4*careerTalentRank(2));notice="记者：头条发布 · 伤害传导至全体敌人";
         }
         if(soulKind()==1){addSoulWard(10);cleanse(x,y,120);}
         else if(soulKind()==2){corruption=Math.min(100,corruption+5);triggerRupture();}
@@ -734,6 +733,7 @@ public final class ActionGame {
             if(isSpec(DETECTIVE,1)&&e.hex>0)value*=1.25f;
             if(isSpec(DETECTIVE,2)&&e.stun>0)value*=1.20f;
             if(isSpec(REPORTER,1)&&e.type==3)value*=1.15f;
+            if(e.type==3)value*=1.40f;
             // Career identities shape every deliberate hit, not only the active skill.
             if(job()==HUNTER&&e.hex>0)value*=1.18f;if(job()==DETECTIVE&&e.hex>0)value*=1+.15f*careerTalentRank(1);
         }
@@ -745,9 +745,7 @@ public final class ActionGame {
             if(job()==ASSASSIN&&len(e.x-x,e.y-y)<150)addTalentShield(1f);
             if(job()==DETECTIVE){e.hex=Math.max(e.hex,3.5f);skillCd=Math.max(0,skillCd-.05f);}
             if(job()==REPORTER){
-                Enemy relay=null;float nearest=240f;
-                for(Enemy candidate:enemies){if(candidate!=e&&candidate.hp>0){float d=len(candidate.x-e.x,candidate.y-e.y);if(d<nearest){nearest=d;relay=candidate;}}}
-                if(relay!=null){hit(relay,dealt*(.20f+.05f*careerTalentRank(0)),false,false);signal("careerRelay",relay.x,relay.y,(int)(dealt*(.20f+.05f*careerTalentRank(0))));}
+                for(Enemy candidate:enemies)if(candidate!=e&&candidate.hp>0){float relayDamage=dealt*(.20f+.05f*careerTalentRank(0));hit(candidate,relayDamage,false,false);signal("careerRelay",candidate.x,candidate.y,(int)relayDamage);}
             }
         }
         if(job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0&&dealt>0){addTalentShield(1+2*careerTalentRank(2));if(e.hp<=0){activeSkillCd=0;heal(maxHp()*.03f);}}
@@ -758,9 +756,9 @@ public final class ActionGame {
         value*= (custom>=0&&profile().trait==1?1.12f:1)*(job()==DETECTIVE&&careerSkillMode==3&&careerSkillTime>0?.90f:1)*(job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0?.75f:1)*(rank(3)>0?1.15f:1)*(soulKind()==2?1+corruption*.004f:1);
         float wardTaken=Math.min(soulWard,value);soulWard-=wardTaken;value-=wardTaken;
         float careerTaken=Math.min(careerWard,value);careerWard-=careerTaken;value-=careerTaken;
-        float shieldBefore=shield;float talentTaken=Math.min(shield,value);shield-=talentTaken;value-=talentTaken;float absorbed=talentTaken+wardTaken+careerTaken;if(shieldBefore>0&&shield<=.0001f&&coreRank(11)>0){for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<145)hit(e,talentTaken*.35f*coreRank(11),false);signal("shieldBreak",x,y,145);}
+        float shieldBefore=shield;float talentTaken=Math.min(shield,value);shield-=talentTaken;value-=talentTaken;float absorbed=talentTaken+wardTaken+careerTaken;if(shieldBefore>0&&shield<=.0001f&&coreRank(11)>0){for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<145)hit(e,talentTaken*.60f*coreRank(11),false);signal("shieldBreak",x,y,145);}
         if(soulKind()==1&&absorbed>0)gainSoul(Math.min(6,absorbed*.2f));
-        if(absorbed>0)signal("shield",x,y,(int)absorbed);if(talentTaken>0){for(Enemy e:enemies)if(len(e.x-x,e.y-y)<(rank(11)>0?150:95))hit(e,talentTaken*(rank(11)>0?.65f:.25f),true,false);}
+        if(absorbed>0)signal("shield",x,y,(int)absorbed);if(talentTaken>0){for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<(rank(11)>0?150:95))hit(e,talentTaken*(rank(11)>0?1.0f:.35f),true,false);}
         float lost=Math.min(hp,value);roomDamage=Math.min(100000,roomDamage+lost);hp=Math.max(0,hp-value);invulnerable=.65f;signal("hurt",x,y,(int)lost);
         if(hasRelic(7)&&lost>0){for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<120)hit(e,lost*.25f,false);signal("echo",x,y,120);}
         if(hp<=0&&hasRelic(8)&&!relicRevived){relicRevived=true;hp=maxHp()*.25f;invulnerable=1;signal("revive",x,y,0);}
