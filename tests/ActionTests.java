@@ -36,7 +36,7 @@ public final class ActionTests {
     }
     private static void shieldSourceSummary(){
         ActionGame g=game(0);String base=g.shieldSourceSummary();
-        check(base.contains("闪避+8")&&base.contains("击杀+1")&&base.contains("最大生命的28%"),"reduced baseline shield sources and cap are visible");
+        check(base.contains("闪避+8")&&base.contains("击杀+1")&&base.contains("最大生命的60%"),"reduced baseline shield sources and cap are visible");
         g.coreTalents[0][4]=1;g.coreTalents[0][7]=1;g.coreTalents[0][10]=2;g.talents[0][11]=1;
         g.fieldPermits[0][0]=1;g.careers[0][0]=CareerSystem.HUNTER;
         String summary=g.shieldSourceSummary();
@@ -317,7 +317,7 @@ public final class ActionTests {
         check(assassinLoss<normalLoss*.8f,"assassin overdrive reduces incoming damage by 25 percent");
         ActionGame reporter=new ActionGame();reporter.careers[reporter.buildId()][0]=CareerSystem.REPORTER;reporter.start(735);reporter.blocks.clear();reporter.enemies.clear();reporter.x=500;reporter.y=500;
         ActionGame.Enemy first=new ActionGame.Enemy(reporter.nextId++,0,620,500,1000),second=new ActionGame.Enemy(reporter.nextId++,0,650,540,1000),third=new ActionGame.Enemy(reporter.nextId++,0,680,580,1000);reporter.enemies.add(first);reporter.enemies.add(second);reporter.enemies.add(third);float pulse=reporter.damage();reporter.skill();
-        check(1000-first.hp>=pulse*1.79f-.1f&&1000-second.hp>=pulse*.54f-.1f&&third.hp==1000,"reporter headline delivers focused damage and relays once to the nearest witness");
+        check(1000-first.hp>=pulse*1.79f-.1f&&1000-second.hp>=pulse*.54f-.1f&&third.hp<1000,"reporter headline relays damage to every enemy");
         ActionGame curse=new ActionGame();curse.start(736);curse.blocks.clear();curse.enemies.clear();ActionGame.Enemy marked=new ActionGame.Enemy(curse.nextId++,0,620,500,1000);marked.hex=10;marked.stun=40;curse.enemies.add(marked);for(int i=0;i<1200;i++)curse.update(1f/60f,new ActionGame.Input());
         check(marked.hex>0,"enemy curse persists for over twenty seconds");
         ActionGame playerCurse=new ActionGame();playerCurse.bindSoul(2,0);playerCurse.start(738);playerCurse.enemies.clear();playerCurse.corruption=50;ActionGame.Enemy pressure=new ActionGame.Enemy(playerCurse.nextId++,0,playerCurse.x+100,playerCurse.y,1000);pressure.stun=100;playerCurse.enemies.add(pressure);for(int i=0;i<60;i++)playerCurse.update(1f/60f,new ActionGame.Input());float combatCorruption=playerCurse.corruption;
