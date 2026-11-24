@@ -457,10 +457,10 @@ public final class ActionGame {
         // Career-specific soul resonance: every profession converts the same soul
         // into a different tactical advantage when using its general active skill.
         if(kind==1){
-            if(job()==HUNTER){soulWard=Math.min(99999,soulWard+6);cleanse(x,y,120);signal("radiant",x,y,120);}
-            else if(job()==ASSASSIN){soulWard=Math.min(99999,soulWard+3);invulnerable=Math.max(invulnerable,.35f);}
-            else if(job()==DETECTIVE){soulWard=Math.min(99999,soulWard+4);cleanse(x,y,180);for(Enemy e:enemies)if(e.hp>0&&e.hex>0&&len(e.x-x,e.y-y)<520)e.stun=Math.max(e.stun,.25f);}
-            else {heal(maxHp()*.025f);soulWard=Math.min(99999,soulWard+2);}
+            if(job()==HUNTER){addSoulWard(3);cleanse(x,y,120);signal("radiant",x,y,120);}
+            else if(job()==ASSASSIN){addSoulWard(2);invulnerable=Math.max(invulnerable,.35f);}
+            else if(job()==DETECTIVE){addSoulWard(2);cleanse(x,y,180);for(Enemy e:enemies)if(e.hp>0&&e.hex>0&&len(e.x-x,e.y-y)<520)e.stun=Math.max(e.stun,.25f);}
+            else {heal(maxHp()*.025f);addSoulWard(1);}
         }else if(kind==2){
             if(job()==HUNTER){for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<220)e.hex=Math.max(e.hex,3);signal("forbidden",x,y,220);}
             else if(job()==ASSASSIN){double a=Math.atan2(faceY,faceX);for(int n=-2;n<=2;n+=2)throwKnife((float)Math.cos(a+n*.18),(float)Math.sin(a+n*.18),power*.16f);payForbidden(.01f,4);}
