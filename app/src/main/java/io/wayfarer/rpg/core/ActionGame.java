@@ -733,10 +733,10 @@ public final class ActionGame {
             if(isSpec(DETECTIVE,1)&&e.hex>0)value*=1.25f;
             if(isSpec(DETECTIVE,2)&&e.stun>0)value*=1.20f;
             if(isSpec(REPORTER,1)&&e.type==3)value*=1.15f;
-            if(e.type==3)value*=1.40f;
             // Career identities shape every deliberate hit, not only the active skill.
             if(job()==HUNTER&&e.hex>0)value*=1.18f;if(job()==DETECTIVE&&e.hex>0)value*=1+.15f*careerTalentRank(1);
         }
+        if(e.type==3)value*=1.40f;
         if(echoEligible&&relicEcho>0&&hasRelic(3)){value*=1.35f;relicEcho=0;signal("echo",e.x,e.y,65);}
         value*=e.hex>0?1.15f*(hasRelic(6)?1.1f:1)*(1+.12f*tacticRanks[4]):1;if(echoEligible&&coreRank(2)>0&&e.stun>0)value*=1+.12f*coreRank(2);if(echoEligible&&job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0)value*=1+.10f*careerTalentRank(1);float beforeGuard=e.guard;float guardFactor=e.guardType==2?.65f:1f;float guardDamage=value*guardFactor;float absorbed=Math.min(e.guard,guardDamage);e.guard=Math.max(0,e.guard-absorbed);float healthLeak=Math.min(value,absorbed/guardFactor);value-=healthLeak;if(absorbed>0){e.guardDelay=2.5f;signal("enemyShield",e.x,e.y,(int)absorbed);}if(beforeGuard>0&&e.guard<=.0001f)breakEnemyGuard(e);float dealt=Math.min(e.hp,value);e.hp=Math.max(0,e.hp-value);
         e.flash=.12f;if(absorbed==0)e.stun=Math.max(e.stun,e.type==3?.03f:e.type==2||e.type==4?.06f:.12f);signal("hit",e.x,e.y,(int)value);
