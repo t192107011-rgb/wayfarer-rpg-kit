@@ -25,7 +25,7 @@ public final class ActionGame {
     public float soulWardLimit(){return Math.max(6f,maxHp()*.18f);}
     public float shieldEfficiency(){return 1f+coreRank(10)*.08f;}
     public float addTalentShield(float base){if(base<=0)return 0;float before=shield;shield=Math.min(talentShieldLimit(),shield+base*shieldEfficiency());float gained=shield-before;if(gained>0)signal("shield",x,y,Math.round(gained));return gained;}
-    public float addSoulWard(float base){if(base<=0)return 0;float before=soulWard;soulWard=Math.min(soulWardLimit(),soulWard+base);float gained=soulWard-before;if(gained>0)signal("shield",x,y,Math.round(gained));return gained;}
+    public float addSoulWard(float base){if(base<=0)return 0;float before=soulWard;float raised=Math.min(soulWardLimit(),soulWard+base);soulWard=Math.max(before,raised);float gained=soulWard-before;if(gained>0)signal("shield",x,y,Math.round(gained));return gained;}
     public String shieldSourceSummary(){List<String> sources=new ArrayList<>();sources.add("闪避+"+(8+coreRank(4)*4));sources.add("击杀+1");if(fieldPermits[buildId()][0]>0)sources.add("远征许可开局+20（受上限约束）");sources.add("职业技能护盾（按职业变化，受上限约束）");if(tacticRanks[5]>0||coreRank(7)>0)sources.add("通用主动技触发+"+(3*tacticRanks[5]+4*coreRank(7)));if(rank(11)>0)sources.add("镜火反震");if(coreRank(10)>0)sources.add("护盾获取效率+"+(coreRank(10)*8)+"%");sources.add("护盾上限 "+Math.round(talentShieldLimit())+"（最大生命的28%）");return String.join(" · ",sources);}
     public String threatLabel(){return String.format(java.util.Locale.ROOT,"敌势 ×%.2f",threat);}
     private void clearThreat(){threat=1;pressure=0;encounterHpFloor=0;encounterDamageFloor=0;roomDamage=0;roomElapsed=0;bossSummonCd=0;burnTime=0;burnTick=0;burnDamage=0;endless=false;endlessDepth=0;}
