@@ -343,7 +343,7 @@ public final class ActionTests {
         check(leader!=null,"boss room has a commander");
         boss.bossSummonCd=0;boss.update(.016f,new ActionGame.Input());
         long reinforcements=boss.enemies.stream().filter(e->e.hp>0&&e.type!=3).count();
-        check(reinforcements==1&&boss.enemies.stream().anyMatch(e->e.hp>0&&e.type>=4&&e.guard>0),"boss summons a guarded elite when support falls below three");
+        check(reinforcements==3&&boss.enemies.stream().filter(e->e.hp>0&&e.type>=4&&e.guard>0).count()>=1,"boss fills the support line to three with guarded elites");
         ActionGame bossSave=ActionSave.decode(ActionSave.encode(boss));
         check(bossSave.bossSummonCd>0&&bossSave.enemies.stream().anyMatch(e->e.type==3),"boss reinforcement cooldown survives save restore");
         for(ActionGame.Enemy e:boss.enemies)e.hp=0;boss.update(.016f,new ActionGame.Input());
