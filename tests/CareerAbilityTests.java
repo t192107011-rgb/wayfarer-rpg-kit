@@ -19,7 +19,11 @@ public final class CareerAbilityTests {
         check(target.hex>=4.5f&&target.stun>=.29f&&g.careerSkillMode==3,"detective reconstructs the scene, records clues and interrupts suspects");
         g=arena(REPORTER,0);target=mob(g,700,600,1000);ActionGame.Enemy witness=mob(g,800,600,1000),farWitness=mob(g,100,100,1000);float before=witness.hp,farBefore=farWitness.hp;g.skill();
         check(target.hp<1000&&witness.hp<before&&farWitness.hp<farBefore&&g.careerSkillMode==4,"reporter headline conducts damage to every enemy on the field");
-        g=arena(REPORTER,0);target=mob(g,700,600,1000);float singleBefore=target.hp,singleBase=g.damage();g.skill();check(singleBefore-target.hp>=singleBase*2.69f,"reporter gains fifty percent headline damage when only one enemy remains");
+        g=arena(REPORTER,0);target=mob(g,700,600,1000);float singleBefore=target.hp,singleBase=g.damage();g.skill();check(singleBefore-target.hp>=singleBase*2.69f,"reporter headline keeps its 1.8 base multiplier plus the global fifty-percent solo bonus");
+        g=arena(REPORTER,0);target=mob(g,700,600,1000);float soloBase=g.damage();g.hitForTest(target,100);check(Math.abs((1000-target.hp)-150)<.05f,"reporter solo bonus applies to ordinary damage, not only the headline skill");
+        g=arena(HUNTER,0);ActionGame.Enemy ordinary=mob(g,610,700,5000),boss=mob(g,900,600,100);g.skill();check(boss.hex>=8&&boss.hp<100&&ordinary.hp==5000,"hunter career skill prioritizes the boss even when an ordinary enemy has more health");
+        g=arena(HUNTER,0);ordinary=mob(g,610,700,5000);boss=mob(g,900,600,100);g.soulEnergy=100;g.soulSkill();check(boss.hp<100&&ordinary.hp==5000,"hunter soul tracking prioritizes the boss");
+        g=arena(HUNTER,0);g.selectHero(1);g.start(912);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;g.skill();ordinary=mob(g,610,700,5000);boss=mob(g,900,600,100);g.blocks.add(new ActionGame.Block(700,570,50,60,0));ActionGame.Input fire=new ActionGame.Input();fire.attack=true;for(int i=0;i<10;i++)g.update(.05f,fire);check(boss.hp<100&&ordinary.hp==5000,"hunter arrows pierce obstacles during the career hunt window and remain boss-locked");
         System.out.println("PASS four distinct career active loops");
     }
     private static void soulForms(){
@@ -43,7 +47,7 @@ public final class CareerAbilityTests {
         g=arena(DETECTIVE,0);g.careerTalents[g.buildId()][g.job()*3]=2;e=mob(g,700,600,1000);g.skill();check(e.hex>=5.5f,"detective evidence node lengthens clue exposure");
         g=arena(DETECTIVE,0);g.careerTalents[g.buildId()][g.job()*3+1]=2;e=mob(g,700,600,1000);g.skill();float before=e.hp;g.hitForTest(e,20);check(before-e.hp>20,"detective analysis node increases damage to investigated targets");
         g=arena(DETECTIVE,0);g.careerTalents[g.buildId()][g.job()*3+2]=2;g.skill();check(g.shield>=20,"detective protection node adds ward");
-        g=arena(REPORTER,0);g.careerTalents[g.buildId()][g.job()*3]=2;e=mob(g,700,600,1000);ActionGame.Enemy witness=mob(g,800,600,1000);float wb=witness.hp;g.hitForTest(e,100);check(wb-witness.hp>20,"reporter distribution node increases relay ratio");
+        g=arena(REPORTER,0);g.careerTalents[g.buildId()][g.job()*3]=2;e=mob(g,700,600,1000);ActionGame.Enemy witness=mob(g,800,600,1000);float wb=witness.hp;g.hitForTest(e,100);check(wb-witness.hp>=59.9f,"reporter distribution node adds five percent per rank to the fifty-percent relay ratio");
         g=arena(REPORTER,0);g.careerTalents[g.buildId()][g.job()*3+1]=2;g.hp=g.maxHp()-20;float old=g.hp;g.skill();check(g.hp>old,"reporter recovery node works");
         g=arena(REPORTER,0);g.careerTalents[g.buildId()][g.job()*3+2]=2;e=mob(g,700,600,1000);g.skill();check(g.shield>=8,"reporter ward node works");
         System.out.println("PASS twelve career talent effects");
@@ -61,7 +65,7 @@ public final class CareerAbilityTests {
         ActionGame g=arena(HUNTER,0);ActionGame.Enemy distant=mob(g,g.x+300,g.y,1000);distant.hex=5;g.hitForTest(distant,100);check(distant.hp<900,"hunter's marked target passive is tested through a mark");
         g=arena(ASSASSIN,0);ActionGame.Enemy close=mob(g,g.x+90,g.y,1000);float shield=g.shield;g.hitForTest(close,40);check(g.shield>shield,"assassin gains guard from close-quarters hits");
         g=arena(DETECTIVE,0);ActionGame.Enemy suspect=mob(g,g.x+90,g.y,1000);g.hitForTest(suspect,20);check(suspect.hex>=3.5f,"detective marks evidence targets on hit");
-        g=arena(REPORTER,0);ActionGame.Enemy source=mob(g,g.x+90,g.y,1000),witness=mob(g,g.x+180,g.y,1000),farRelay=mob(g,100,100,1000);float witnessHp=witness.hp,farRelayHp=farRelay.hp;g.hitForTest(source,100);check(witness.hp<witnessHp&&witnessHp-witness.hp>=19.9f&&farRelay.hp<farRelayHp,"reporter relays damage to every living enemy regardless of distance");
+        g=arena(REPORTER,0);ActionGame.Enemy source=mob(g,g.x+90,g.y,1000),witness=mob(g,g.x+180,g.y,1000),farRelay=mob(g,100,100,1000);float witnessHp=witness.hp,farRelayHp=farRelay.hp;g.hitForTest(source,100);check(witness.hp<witnessHp&&witnessHp-witness.hp>=49.9f&&farRelay.hp<farRelayHp,"reporter relays fifty percent damage to every living enemy regardless of distance");
         g.soulCd=5;g.generateRoom();check(g.skillCd==0&&g.soulCd==0,"room transition resets both skill cooldowns");
         ActionGame restored=ActionSave.decode(ActionSave.encode(g));check(restored.job()==REPORTER,"career identity survives save restore");
         System.out.println("CAREER ABILITY CHECKS PASSED: "+checks);
