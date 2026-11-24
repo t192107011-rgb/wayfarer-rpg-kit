@@ -336,7 +336,7 @@ public final class ActionTests {
         ActionGame burnSave=ActionSave.decode(ActionSave.encode(burning));
         check(burnSave.burnTime==burning.burnTime&&burnSave.burnDamage==burning.burnDamage,"burn status survives save restore");
         burnSave.invulnerable=0;burnSave.burnTick=.01f;float hp=burnSave.hp;burnSave.update(.05f,new ActionGame.Input());
-        check(burnSave.hp<hp&&burnSave.burnTime<4f,"burn periodically damages through normal defensive layers");
+        check(burnSave.hp<hp&&burnSave.burnTime<4f,"burn tick: hp "+hp+" -> "+burnSave.hp+", time "+burnSave.burnTime+", tick "+burnSave.burnTick+", damage "+burnSave.burnDamage+", mode "+burnSave.mode+", invuln "+burnSave.invulnerable);
 
         ActionGame boss=new ActionGame();boss.start(742);boss.room=5;boss.generateRoom();ActionGame.Enemy leader=null;
         for(ActionGame.Enemy e:boss.enemies)if(e.type==3){leader=e;e.stun=2.9f;}else e.hp=0;
