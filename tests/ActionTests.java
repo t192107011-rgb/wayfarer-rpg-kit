@@ -347,7 +347,7 @@ public final class ActionTests {
         ActionGame bossSave=ActionSave.decode(ActionSave.encode(boss));
         check(bossSave.bossSummonCd>0&&bossSave.enemies.stream().anyMatch(e->e.type==3),"boss reinforcement cooldown survives save restore");
         for(ActionGame.Enemy e:boss.enemies)e.hp=0;boss.update(.016f,new ActionGame.Input());
-        check(boss.enemies.isEmpty()&&boss.mode==ActionGame.Mode.REWARD,"reinforcement loop stops when the boss dies");
+        check(boss.enemies.isEmpty()&&boss.mode==ActionGame.Mode.RESULT&&boss.won,"reinforcement loop stops when the boss dies");
         System.out.println("PASS restored enemy burn, save persistence and boss minimum-support reinforcements");
     }
     private static void threatCap(){
