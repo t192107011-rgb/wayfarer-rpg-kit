@@ -98,7 +98,7 @@ public final class BuildTests {
         System.out.println("PASS 18000 simulation steps with six maxed custom builds and periodic save/restore");
     }
     private static void expandedCoreEffects(){
-        ActionGame g=new ActionGame();points(g);g.coreTalents[0][10]=2;g.start(91);g.shield=0;g.addTalentShield(10);near(g.shield,13,"shield efficiency increases every shield source");
+        ActionGame g=new ActionGame();points(g);g.coreTalents[0][10]=2;g.start(91);g.shield=0;g.addTalentShield(10);near(g.shield,11.6f,"reduced shield efficiency still increases every shield source");
         g=new ActionGame();points(g);g.coreTalents[0][5]=1;arena(g);ActionGame.Enemy e=mob(g,610,600);g.dodge(0,-1);check(e.hp<500,"five-branch dodge counter works without legacy dodge pulse");
         g=new ActionGame();points(g);g.coreTalents[0][7]=2;arena(g);g.activeSkill();near(g.shield,20,"general active skill shield talent adds ten per rank");
         g=new ActionGame();points(g);g.coreTalents[0][8]=1;arena(g);e=mob(g,610,600);g.activeSkill();float boosted=500-e.hp;
