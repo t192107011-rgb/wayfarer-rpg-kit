@@ -27,7 +27,7 @@ public final class ActionTests {
     }
     private static void shieldSaveValidation()throws Exception{
         ActionGame g=game(0);g.shield=99999;byte[] valid=ActionSave.encode(g);
-        ActionGame restored=ActionSave.decode(valid);near(restored.shield,99999,"maximum legal player shield round-trips");
+        ActionGame restored=ActionSave.decode(valid);near(restored.shield,restored.talentShieldLimit(),"legacy oversized shield is normalized to the health-based cap");
         rejectSavedValue(valid,"shield","100000","shield above hard cap");
         rejectSavedValue(valid,"shield","NaN","NaN shield");
         rejectSavedValue(valid,"shield","Infinity","infinite shield");
@@ -36,13 +36,13 @@ public final class ActionTests {
     }
     private static void shieldSourceSummary(){
         ActionGame g=game(0);String base=g.shieldSourceSummary();
-        check(base.contains("闪避+12")&&base.contains("击杀+2"),"baseline shield sources are visible");
+        check(base.contains("闪避+8")&&base.contains("击杀+1")&&base.contains("最大生命的28%"),"reduced baseline shield sources and cap are visible");
         g.coreTalents[0][4]=1;g.coreTalents[0][7]=1;g.coreTalents[0][10]=2;g.talents[0][11]=1;
         g.fieldPermits[0][0]=1;g.careers[0][0]=CareerSystem.HUNTER;
         String summary=g.shieldSourceSummary();
-        check(summary.contains("闪避+20")&&summary.contains("远征许可开局+40"),"dodge and permit shield sources are accurate");
-        check(summary.contains("职业技触发+60")&&summary.contains("通用主动技触发+10"),"active skill shield sources are labeled as triggers");
-        check(summary.contains("镜火反震")&&summary.contains("护盾获取效率+30%"),"shield reflection and efficiency upgrades are visible");
+        check(summary.contains("闪避+12")&&summary.contains("远征许可开局+20")&&summary.contains("受上限约束"),"dodge and permit shield sources are accurate");
+        check(summary.contains("职业技能护盾")&&summary.contains("通用主动技触发+11"),"active skill shield sources are labeled with reduced values");
+        check(summary.contains("镜火反震")&&summary.contains("护盾获取效率+16%"),"shield reflection and efficiency upgrades are visible");
         System.out.println("PASS accurate player shield source summary and trigger labels");
     }
     private static void enemyShieldTypes()throws Exception{
@@ -247,7 +247,7 @@ public final class ActionTests {
         check(g.shopPrice(5)>g.shopPrice(0)&&!g.buyShopItem(6),"expanded shop prices and invalid item guard");
         ActionGame radiant=new ActionGame();radiant.bindSoul(1,0);radiant.start(72);radiant.soulEnergy=98;radiant.soulCd=8;
         radiant.gainSoulForTest(10);near(radiant.soulEnergy,100,"soul energy clamps at full capacity");near(radiant.soulCd,6.56f,"overflow energy automatically shortens a running soul cooldown");
-        radiant.soulCd=0;radiant.soulEnergy=100;radiant.shield=0;radiant.gainSoulForTest(8);near(radiant.soulEnergy,100,"full soul energy remains capped after conversion");near(radiant.shield,10,"overflow energy automatically converts to shield while soul skill is ready");
+        radiant.soulCd=0;radiant.soulEnergy=100;radiant.shield=0;radiant.gainSoulForTest(8);near(radiant.soulEnergy,100,"full soul energy remains capped after conversion");near(radiant.shield,5.2f,"overflow energy converts to a smaller shield while soul skill is ready");
         ActionGame forbidden=new ActionGame();forbidden.bindSoul(2,0);forbidden.start(73);forbidden.soulEnergy=100;forbidden.soulCd=4;forbidden.gainSoulForTest(10);near(forbidden.soulCd,2.2f,"forbidden soul overflow also accelerates cooldown without manual subskills");
         System.out.println("PASS expanded ticket shop and radiant/forbidden soul energy sinks");
     }
@@ -257,7 +257,7 @@ public final class ActionTests {
         g.mode=ActionGame.Mode.REWARD;g.openShop();check(g.buyShopItem(0)&&g.loot==56&&g.bank==500,"run shop spends only expedition tickets");
         g.closeShop();g.mode=ActionGame.Mode.PAUSED;g.abandon();check(g.bank==539&&g.loot==56,"defeat settlement transfers only seventy percent of remaining run tickets");
         g.returnCamp();int before=g.bank;check(g.buyFieldPermit(0)&&g.bank==before-80,"permanent expedition permit spends only camp bank");
-        g.start(702);check(g.shield==40&&g.loot==0,"guard permit grants its starting shield without adding ticket permit rewards");g.loot=30;g.enemies.clear();
+        g.start(702);check(Math.abs(g.shield-g.talentShieldLimit())<.01f&&g.loot==0,"guard permit grants a capped starting shield without adding ticket permit rewards");g.loot=30;g.enemies.clear();
         g.mode=ActionGame.Mode.REWARD;g.openShop();check(g.buyShopItem(0)&&g.loot==6&&g.bank==before-80,"second run shop purchase leaves camp bank untouched");
         ActionGame restored=ActionSave.decode(ActionSave.encode(g));check(restored.bank==before-80&&restored.loot==6&&restored.fieldPermits[0][0]==1,"both currencies and permanent purchases persist independently");
         System.out.println("PASS strict separation of expedition tickets, camp bank, settlement and permit purchases");
@@ -268,8 +268,8 @@ public final class ActionTests {
         check(g.bank==190,"all five permit prices debit camp bank exactly once");
         check(!g.buyFieldPermit(0)&&g.bank==190,"duplicate permanent permit purchase is rejected without debit");
         g.start(703);check(!g.buyFieldPermit(0)&&g.bank==190,"permit purchases are camp-only during an expedition");
-        check(g.shield==40&&g.potions==3&&g.loot==30&&g.damageBonus==4&&g.soulEnergy>=20,"all five permits apply their correct run-start effects");
-        ActionGame saved=ActionSave.decode(ActionSave.encode(g));check(saved.bank==190&&saved.shield==40&&saved.potions==3&&saved.loot==30&&saved.damageBonus==4,"all permit effects and ledgers persist");
+        check(Math.abs(g.shield-g.talentShieldLimit())<.01f&&g.potions==3&&g.loot==30&&g.damageBonus==4&&g.soulEnergy>=20,"all five permits apply their correct run-start effects");
+        ActionGame saved=ActionSave.decode(ActionSave.encode(g));check(saved.bank==190&&Math.abs(saved.shield-saved.talentShieldLimit())<.01f&&saved.potions==3&&saved.loot==30&&saved.damageBonus==4,"all permit effects and ledgers persist");
         System.out.println("PASS all five permanent permit purchases, costs, start effects and persistence");
     }
     private static void permanentEconomy()throws Exception{
@@ -311,7 +311,7 @@ public final class ActionTests {
     private static void careerDefenseAndCurse(){
         ActionGame assassin=new ActionGame();assassin.careers[assassin.buildId()][0]=CareerSystem.ASSASSIN;assassin.start(733);assassin.blocks.clear();assassin.enemies.clear();assassin.skill();
         float shieldBefore=assassin.shield;ActionGame.Enemy target=new ActionGame.Enemy(assassin.nextId++,0,assassin.x+70,assassin.y,1000);assassin.enemies.add(target);assassin.hitForTest(target,20);
-        check(assassin.shield>=shieldBefore+3,"assassin overdrive grants a repeatable base shield on successful hits");
+        check(assassin.shield>=shieldBefore+.9f,"assassin overdrive grants a reduced repeatable shield on successful hits");
         assassin.shield=0;float hp=assassin.hp;assassin.invulnerable=0;assassin.hurtForTest(40);float assassinLoss=hp-assassin.hp;
         ActionGame baseline=new ActionGame();baseline.start(734);baseline.blocks.clear();baseline.enemies.clear();baseline.invulnerable=0;hp=baseline.hp;baseline.hurtForTest(40);float normalLoss=hp-baseline.hp;
         check(assassinLoss<normalLoss*.8f,"assassin overdrive reduces incoming damage by 25 percent");
@@ -325,7 +325,7 @@ public final class ActionTests {
         check(recovery.corruption<combatCorruption-2.9f,"player corruption decays four times faster outside combat");
         ActionGame keeper=new ActionGame();keeper.chooseCareer(CareerSystem.REPORTER,0,5);keeper.bindSoul(2,0);keeper.start(740);keeper.blocks.clear();keeper.enemies.clear();keeper.corruption=100;keeper.hp=keeper.maxHp()-20;ActionGame.Enemy defeated=new ActionGame.Enemy(keeper.nextId++,0,700,500,100);defeated.hp=0;keeper.enemies.add(defeated);keeper.update(1f/60f,new ActionGame.Input());
         check(keeper.hp>keeper.maxHp()-18&&keeper.signals.stream().anyMatch(s->s.kind.equals("heal")&&s.value>0),"cemetery keeper background healing remains visible under maximum forbidden healing reduction");
-        ActionGame scaling=new ActionGame();scaling.start(737);scaling.threat=8;ActionGame.Enemy ordinary=new ActionGame.Enemy(1,0,600,500,100);float incoming=scaling.enemyPower(ordinary,20);check(incoming<=37.1f,"late-game enemy damage growth is capped instead of multiplying directly by threat");
+        ActionGame scaling=new ActionGame();scaling.start(737);scaling.threat=8;ActionGame.Enemy ordinary=new ActionGame.Enemy(1,0,600,500,100);float incoming=scaling.enemyPower(ordinary,20);check(incoming>50f&&incoming<52f,"late-game enemy damage grows with threat but remains bounded");
         System.out.println("PASS reporter conduction, assassin damage reduction and shield, longer curses and controlled enemy damage scaling");
     }
     private static void threatCap(){
