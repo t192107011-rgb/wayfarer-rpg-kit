@@ -17,8 +17,9 @@ public final class CareerAbilityTests {
         check(g.invulnerable>=.8f&&Math.hypot(g.x-x,g.y-600)>200&&g.shield>0,"assassin performs a protected forward shadow strike and gains ward");
         g=arena(DETECTIVE,0);target=mob(g,720,600,1000);g.skill();
         check(target.hex>=4.5f&&target.stun>=.29f&&g.careerSkillMode==3,"detective reconstructs the scene, records clues and interrupts suspects");
-        g=arena(REPORTER,0);target=mob(g,700,600,1000);ActionGame.Enemy witness=mob(g,800,600,1000);float before=witness.hp;g.skill();
-        check(target.hp<1000&&witness.hp<before&&g.careerSkillMode==4,"reporter publishes a headline and propagates damage to a nearby witness");
+        g=arena(REPORTER,0);target=mob(g,700,600,1000);ActionGame.Enemy witness=mob(g,800,600,1000),farWitness=mob(g,100,100,1000);float before=witness.hp,farBefore=farWitness.hp;g.skill();
+        check(target.hp<1000&&witness.hp<before&&farWitness.hp<farBefore&&g.careerSkillMode==4,"reporter headline conducts damage to every enemy on the field");
+        g=arena(REPORTER,0);target=mob(g,700,600,1000);float singleBefore=target.hp,singleBase=g.damage();g.skill();check(singleBefore-target.hp>=singleBase*2.69f,"reporter gains fifty percent headline damage when only one enemy remains");
         System.out.println("PASS four distinct career active loops");
     }
     private static void soulForms(){
