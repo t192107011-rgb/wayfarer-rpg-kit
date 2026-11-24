@@ -328,6 +328,28 @@ public final class ActionTests {
         ActionGame scaling=new ActionGame();scaling.start(737);scaling.threat=8;ActionGame.Enemy ordinary=new ActionGame.Enemy(1,0,600,500,100);float incoming=scaling.enemyPower(ordinary,20);check(incoming>50f&&incoming<52f,"late-game enemy damage grows with threat but remains bounded");
         System.out.println("PASS reporter conduction, assassin damage reduction and shield, longer curses and controlled enemy damage scaling");
     }
+    private static void enemyBurnAndBossReinforcements()throws Exception{
+        ActionGame burning=new ActionGame();burning.start(741);burning.blocks.clear();burning.enemies.clear();burning.invulnerable=0;
+        burning.hazards.add(new ActionGame.Hazard(1,burning.x,burning.y,120,0,.2f,20));
+        burning.update(.05f,new ActionGame.Input());
+        check(burning.burnTime>3.9f&&burning.burnDamage>=1.9f,"fire hazard applies a persistent burn");
+        ActionGame burnSave=ActionSave.decode(ActionSave.encode(burning));
+        check(burnSave.burnTime==burning.burnTime&&burnSave.burnDamage==burning.burnDamage,"burn status survives save restore");
+        burnSave.invulnerable=0;burnSave.burnTick=.01f;float hp=burnSave.hp;burnSave.update(.05f,new ActionGame.Input());
+        check(burnSave.hp<hp&&burnSave.burnTime<4f,"burn periodically damages through normal defensive layers");
+
+        ActionGame boss=new ActionGame();boss.start(742);boss.room=5;boss.generateRoom();ActionGame.Enemy leader=null;
+        for(ActionGame.Enemy e:boss.enemies)if(e.type==3){leader=e;e.stun=100;}else e.hp=0;
+        check(leader!=null,"boss room has a commander");
+        boss.bossSummonCd=0;boss.update(.016f,new ActionGame.Input());
+        long reinforcements=boss.enemies.stream().filter(e->e.hp>0&&e.type!=3).count();
+        check(reinforcements==1&&boss.enemies.stream().anyMatch(e->e.hp>0&&e.type>=4&&e.guard>0),"boss summons a guarded elite when support falls below three");
+        ActionGame bossSave=ActionSave.decode(ActionSave.encode(boss));
+        check(bossSave.bossSummonCd>0&&bossSave.enemies.stream().anyMatch(e->e.type==3),"boss reinforcement cooldown survives save restore");
+        for(ActionGame.Enemy e:boss.enemies)e.hp=0;boss.update(.016f,new ActionGame.Input());
+        check(boss.enemies.isEmpty()&&boss.mode==ActionGame.Mode.REWARD,"reinforcement loop stops when the boss dies");
+        System.out.println("PASS restored enemy burn, save persistence and boss minimum-support reinforcements");
+    }
     private static void threatCap(){
         ActionGame g=new ActionGame();g.startEndless(91);g.endlessDepth=2;float early=ThreatSystem.rating(g);
         g.endlessDepth=80;float late=ThreatSystem.rating(g);check(late>early,"endless enemy threat grows with depth");
@@ -349,5 +371,5 @@ public final class ActionTests {
         ActionGame g=new ActionGame();g.start(12);g.pause();float cd=g.activeSkillCd;for(int i=0;i<30;i++)g.update(1f/60f,new ActionGame.Input());near(g.activeSkillCd,cd,"pause freezes active cooldown");
         System.out.println("PASS five active skills, independent career cooldown, follow-ups, trap persistence and pause");
     }
-    public static void main(String[] args)throws Exception{movement();shieldSaveValidation();shieldSourceSummary();enemyShieldTypes();combat();shopAndItems();currencySeparation();fullPermitFlow();expandedEconomy();careerSoulResonance();careerActiveSoulResonance();careerFollowUpAndSoulSynergy();skillChainReactions();careerDefenseAndCurse();permanentEconomy();legacyTalentBudgetMigration();completeTalentBudgets();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
+    public static void main(String[] args)throws Exception{movement();shieldSaveValidation();shieldSourceSummary();enemyShieldTypes();combat();shopAndItems();currencySeparation();fullPermitFlow();expandedEconomy();careerSoulResonance();careerActiveSoulResonance();careerFollowUpAndSoulSynergy();skillChainReactions();careerDefenseAndCurse();enemyBurnAndBossReinforcements();permanentEconomy();legacyTalentBudgetMigration();completeTalentBudgets();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
 }
