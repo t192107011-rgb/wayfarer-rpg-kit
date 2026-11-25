@@ -639,10 +639,10 @@ public final class ActionGame {
         Enemy boss=null;int support=0;for(Enemy e:enemies)if(e.hp>0){if(e.type==3)boss=e;else support++;}
         if(boss==null){bossSummonCd=0;bossSummonWait=0;return;}
         if(support==0){
-            // Give the player a short, reliable damage window after clearing the support line.
-            if(bossSummonWait<=0){bossSummonWait=3.5f;bossSummonCd=0;}
-            bossSummonWait=Math.max(0,bossSummonWait-dt);
-            if(bossSummonWait>0)return;
+            // -1 marks an elapsed wait so it is not restarted on the next update.
+            if(bossSummonWait==0){bossSummonWait=3.5f;bossSummonCd=0;}
+            if(bossSummonWait>0){bossSummonWait=Math.max(0,bossSummonWait-dt);if(bossSummonWait>0)return;}
+            bossSummonWait=-1;
         }else{
             bossSummonWait=0;
             bossSummonCd=Math.max(0,bossSummonCd-dt);
