@@ -341,13 +341,13 @@ public final class ActionTests {
         check(burnSave.hp<hp&&burnSave.burnTime<4f,"burn tick: hp "+hp+" -> "+burnSave.hp+", time "+burnSave.burnTime+", tick "+burnSave.burnTick+", damage "+burnSave.burnDamage+", mode "+burnSave.mode+", invuln "+burnSave.invulnerable);
 
         ActionGame boss=new ActionGame();boss.start(742);boss.room=5;boss.generateRoom();ActionGame.Enemy leader=null;
-        for(ActionGame.Enemy e:boss.enemies)if(e.type==3){leader=e;e.stun=20f;}else e.hp=0;
+        for(ActionGame.Enemy e:boss.enemies)if(e.type==3){leader=e;e.stun=2.9f;}else e.hp=0;
         check(leader!=null,"boss room has a commander");
         boss.bossSummonCd=0;boss.update(1f,new ActionGame.Input());
         check(boss.enemies.stream().filter(e->e.hp>0&&e.type!=3).count()==0&&boss.bossSummonWait>2.4f,"boss waits before calling reinforcements after becoming alone");
         ActionGame waitingSave=ActionSave.decode(ActionSave.encode(boss));
         check(waitingSave.bossSummonWait==boss.bossSummonWait,"boss summon delay survives save restore");
-        for(int i=0;i<180;i++)boss.update(1f/60f,new ActionGame.Input());
+        for(int i=0;i<180;i++){leader.stun=2.9f;boss.update(1f/60f,new ActionGame.Input());}
         long reinforcements=boss.enemies.stream().filter(e->e.hp>0&&e.type!=3).count();
         check(reinforcements==3&&boss.enemies.stream().filter(e->e.hp>0&&e.type>=4&&e.guard>0).count()>=1,"boss fills the support line to three with guarded elites");
         ActionGame bossSave=ActionSave.decode(ActionSave.encode(boss));
