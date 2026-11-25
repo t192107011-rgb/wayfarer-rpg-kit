@@ -344,11 +344,11 @@ public final class ActionTests {
         for(ActionGame.Enemy e:boss.enemies)if(e.type==3){leader=e;e.stun=2.9f;}else e.hp=0;
         check(leader!=null,"boss room has a commander");
         boss.attackCd=1;
-        boss.bossSummonCd=0;boss.update(1f,new ActionGame.Input());
-        check(boss.enemies.stream().filter(e->e.hp>0&&e.type!=3).count()==0&&boss.bossSummonWait>2.4f,"boss waits before calling reinforcements after becoming alone");
+        boss.bossSummonCd=0;boss.update(.016f,new ActionGame.Input());
+        check(boss.enemies.stream().filter(e->e.hp>0&&e.type!=3).count()==0&&boss.bossSummonWait>3.4f,"boss waits before calling reinforcements after becoming alone");
         ActionGame waitingSave=ActionSave.decode(ActionSave.encode(boss));
         check(waitingSave.bossSummonWait==boss.bossSummonWait,"boss summon delay survives save restore");
-        for(int i=0;i<180;i++){leader.stun=2.9f;boss.attackCd=1;boss.update(1f/60f,new ActionGame.Input());}
+        for(int i=0;i<240;i++){leader.stun=2.9f;boss.attackCd=1;boss.update(1f/60f,new ActionGame.Input());}
         long reinforcements=boss.enemies.stream().filter(e->e.hp>0&&e.type!=3).count();
         check(reinforcements==3,"boss fills support after delay: count="+reinforcements+", wait="+boss.bossSummonWait+", cd="+boss.bossSummonCd+", mode="+boss.mode+", bossHp="+leader.hp+", summons="+boss.signals.stream().filter(s->s.kind.equals("bossSummon")).count());
         ActionGame bossSave=ActionSave.decode(ActionSave.encode(boss));
