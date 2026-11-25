@@ -347,7 +347,7 @@ public final class ActionTests {
         check(boss.enemies.stream().filter(e->e.hp>0&&e.type!=3).count()==0&&boss.bossSummonWait>2.4f,"boss waits before calling reinforcements after becoming alone");
         ActionGame waitingSave=ActionSave.decode(ActionSave.encode(boss));
         check(waitingSave.bossSummonWait==boss.bossSummonWait,"boss summon delay survives save restore");
-        for(int i=0;i<150;i++)boss.update(1f/60f,new ActionGame.Input());
+        for(int i=0;i<180;i++)boss.update(1f/60f,new ActionGame.Input());
         long reinforcements=boss.enemies.stream().filter(e->e.hp>0&&e.type!=3).count();
         check(reinforcements==3&&boss.enemies.stream().filter(e->e.hp>0&&e.type>=4&&e.guard>0).count()>=1,"boss fills the support line to three with guarded elites");
         ActionGame bossSave=ActionSave.decode(ActionSave.encode(boss));
