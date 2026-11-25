@@ -12,7 +12,7 @@ public final class ActionGame {
     public static final int MAX_POTIONS=5;
     public boolean endless=false;
     public int endlessDepth=0,bestDepth=0;
-    public float threat=1,pressure=0,encounterHpFloor=0,encounterDamageFloor=0,roomDamage=0,roomElapsed=0,bossSummonCd=0,burnTime=0,burnTick=0,burnDamage=0;
+    public float threat=1,pressure=0,encounterHpFloor=0,encounterDamageFloor=0,roomDamage=0,roomElapsed=0,bossSummonCd=0,bossSummonWait=0,burnTime=0,burnTick=0,burnDamage=0;
     public float enemyRange(float base){return base*(1+Math.min(.65f,(threat-1)*.05f));}
     public float enemySpeed(float base){return base*(1+Math.min(1f,(threat-1)*.09f));}
     public float enemyPower(Enemy e,float base){float growth=1f+Math.min(1.6f,Math.max(0,threat-1)*.22f);return Math.max(base*growth,encounterDamageFloor)*enemyForce(e);}
@@ -28,7 +28,7 @@ public final class ActionGame {
     public float addSoulWard(float base){if(base<=0)return 0;float before=soulWard;float raised=Math.min(soulWardLimit(),soulWard+base);soulWard=Math.max(before,raised);float gained=soulWard-before;if(gained>0)signal("shield",x,y,Math.round(gained));return gained;}
     public String shieldSourceSummary(){List<String> sources=new ArrayList<>();sources.add("闪避+"+(8+coreRank(4)*4));sources.add("击杀+1");if(fieldPermits[buildId()][0]>0)sources.add("远征许可开局+20（受上限约束）");sources.add("职业技能护盾（按职业变化，受上限约束）");if(tacticRanks[5]>0||coreRank(7)>0)sources.add("通用主动技触发+"+(3*tacticRanks[5]+4*coreRank(7)));if(rank(11)>0)sources.add("镜火反震");if(coreRank(10)>0)sources.add("护盾获取效率+"+(coreRank(10)*8)+"%");sources.add("护盾上限 "+Math.round(talentShieldLimit())+"（最大生命的60%）");return String.join(" · ",sources);}
     public String threatLabel(){return String.format(java.util.Locale.ROOT,"敌势 ×%.2f",threat);}
-    private void clearThreat(){threat=1;pressure=0;encounterHpFloor=0;encounterDamageFloor=0;roomDamage=0;roomElapsed=0;bossSummonCd=0;burnTime=0;burnTick=0;burnDamage=0;endless=false;endlessDepth=0;}
+    private void clearThreat(){threat=1;pressure=0;encounterHpFloor=0;encounterDamageFloor=0;roomDamage=0;roomElapsed=0;bossSummonCd=0;bossSummonWait=0;burnTime=0;burnTick=0;burnDamage=0;endless=false;endlessDepth=0;}
     private boolean collectDrop(Drop d){if(d.potion){if(potions>=MAX_POTIONS)return false;potions++;signal("potion",d.x,d.y,potions);notice="拾取药瓶 · "+potions+" / "+MAX_POTIONS;}else if(d.heal)heal(d.amount);else{int gain=Math.round(d.amount*(1+.12f*tacticRanks[7]));gain=Math.round(gain*(1+coreRank(12)*.08f));loot=Math.min(99999,loot+gain);signal("coin",d.x,d.y,gain);}return true;}
     private void advanceRoom(){if(endless){endlessDepth=Math.min(999999,endlessDepth+1);room=(endlessDepth-1)%5+1;}else room++;generateRoom();}
 
@@ -637,7 +637,17 @@ public final class ActionGame {
     private void updateBurn(float dt){if(burnTime<=0)return;float step=Math.min(dt,burnTime);burnTime=Math.max(0,burnTime-step);burnTick-=step;if(burnTick<=.0001f&&burnTime>0){burnTick=1f;float protectedTime=invulnerable;invulnerable=0;hurt(burnDamage);invulnerable=Math.max(invulnerable,protectedTime);signal("burn",x,y,(int)Math.ceil(burnTime));}if(burnTime<=0){burnTick=0;burnDamage=0;}}
     private void updateBossReinforcements(float dt){
         Enemy boss=null;int support=0;for(Enemy e:enemies)if(e.hp>0){if(e.type==3)boss=e;else support++;}
-        if(boss==null){bossSummonCd=0;return;}bossSummonCd=Math.max(0,bossSummonCd-dt);if(support>=3||bossSummonCd>0)return;
+        if(boss==null){bossSummonCd=0;bossSummonWait=0;return;}
+        if(support==0){
+            // Give the player a short, reliable damage window after clearing the support line.
+            if(bossSummonWait<=0){bossSummonWait=3.5f;bossSummonCd=0;}
+            bossSummonWait=Math.max(0,bossSummonWait-dt);
+            if(bossSummonWait>0)return;
+        }else{
+            bossSummonWait=0;
+            bossSummonCd=Math.max(0,bossSummonCd-dt);
+        }
+        if(support>=3||bossSummonCd>0)return;
         int missing=3-support;
         for(int i=0;i<missing;i++){
             int type=4+random(3);float ex=560,ey=145;int tries=0;
@@ -649,7 +659,7 @@ public final class ActionGame {
             if(type==4){add.guardType=2;add.guard=22+room*2;}else if(type==6){add.guardType=1;add.guard=30+room*2;}
             enemies.add(add);signal("bossSummon",ex,ey,type);
         }
-        bossSummonCd=5.5f;notice="首领召援 · "+missing+" 名强敌加入战场";
+        bossSummonCd=5.5f;bossSummonWait=0;notice="首领召援 · "+missing+" 名强敌加入战场";
     }
     private void addHazard(int type,float px,float py,float radius,float warning,float life,float power){
         if(hazards.size()<18)hazards.add(new Hazard(type,Math.max(64,Math.min(WIDTH-64,px)),Math.max(64,Math.min(HEIGHT-64,py)),enemyRange(radius),warning,life,power));
