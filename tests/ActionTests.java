@@ -343,6 +343,7 @@ public final class ActionTests {
         ActionGame boss=new ActionGame();boss.start(742);boss.room=5;boss.generateRoom();ActionGame.Enemy leader=null;
         for(ActionGame.Enemy e:boss.enemies)if(e.type==3){leader=e;e.stun=2.9f;}else e.hp=0;
         check(leader!=null,"boss room has a commander");
+        boss.attackCd=100;
         boss.bossSummonCd=0;boss.update(1f,new ActionGame.Input());
         check(boss.enemies.stream().filter(e->e.hp>0&&e.type!=3).count()==0&&boss.bossSummonWait>2.4f,"boss waits before calling reinforcements after becoming alone");
         ActionGame waitingSave=ActionSave.decode(ActionSave.encode(boss));
