@@ -14,9 +14,9 @@ public final class ChallengeTests {
     private static void reject(byte[] bytes,String key,String val)throws Exception{boolean bad=false;try{ActionSave.decode(edit(bytes,key,val));}catch(IOException e){bad=true;}check(bad,"reject "+key);}
     private static void skills()throws Exception{
         ActionGame g=new ActionGame();g.chooseCareer(CareerSystem.HUNTER,0,0);g.start(1);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;g.hp=50;ActionGame.Enemy e=mob(g,0,700,600);float baseSpeed=g.speed();g.skill();
-        check(g.careerSkillMode==1&&g.careerSkillTime==4&&e.hex>=8&&e.hp<1000&&g.speed()>baseSpeed,"hunter marks a high-threat target and enters a short hunt window");
+        check(g.careerSkillMode==1&&g.careerSkillTime==6&&e.hex>=8&&e.hp<1000&&g.speed()>baseSpeed,"hunter marks a high-threat target and enters a short hunt window");
         g=new ActionGame();g.chooseCareer(CareerSystem.ASSASSIN,0,0);g.start(2);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;g.invulnerable=0;float oldX=g.x;g.skill();
-        check(g.careerSkillMode==2&&g.careerSkillTime==4&&g.invulnerable>=.8f&&Math.hypot(g.x-oldX,g.y-600)>100&&g.shield>0,"assassin uses a protected dash and receives a ward");
+        check(g.careerSkillMode==2&&g.careerSkillTime==6&&g.invulnerable>=.8f&&Math.hypot(g.x-oldX,g.y-600)>100&&g.shield>0,"assassin uses a protected dash and receives a ward");
         g=new ActionGame();g.chooseCareer(CareerSystem.DETECTIVE,0,0);g.start(3);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;e=mob(g,0,720,600);float detectiveDistance=(float)Math.hypot(e.x-g.x,e.y-g.y);g.skill();
         check(g.careerSkillMode==3&&e.hex>=4.5f&&e.stun>=.29f&&Math.hypot(e.x-g.x,e.y-g.y)==detectiveDistance,"detective reconstructs the scene without forced pulling");
         g=new ActionGame();g.chooseCareer(CareerSystem.REPORTER,0,0);g.start(4);g.blocks.clear();g.enemies.clear();e=mob(g,0,700,600);ActionGame.Enemy witness=mob(g,0,800,600);g.skill();
