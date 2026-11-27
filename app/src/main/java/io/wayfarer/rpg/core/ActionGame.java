@@ -517,7 +517,7 @@ public final class ActionGame {
             payForbidden(j==REPORTER?.10f:.08f,30);
             if(j==TIMEKEEPER){
                 for(Enemy e:enemies)if(e.hp>0){e.hex=Math.max(e.hex,8f);hit(e,power*3.6f*(1+.10f*careerTalentRank(2)),false);e.stun=Math.max(e.stun,2.5f);}
-                corruption=Math.min(100,corruption+8);triggerRupture();signal("forbidden",x,y,5);notice="终末回响：全场冻结2.5秒 · 更高爆发并施加诅咒，代价为生命与侵蚀";
+                signal("forbidden",x,y,5);notice="终末回响：全场冻结2.5秒 · 更高爆发并施加诅咒，代价为生命与侵蚀";
             }else if(j==HUNTER){
                 Enemy target=hunterTarget(Float.POSITIVE_INFINITY);
                 if(target!=null){target.hex=Math.max(target.hex,9f);hit(target,power*(target.hp<target.maxHp*.35f?4.1f:3.3f),false);if(target.hp<=0)heal(maxHp()*.06f);}
