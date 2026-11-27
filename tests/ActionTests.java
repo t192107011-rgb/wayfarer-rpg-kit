@@ -172,8 +172,8 @@ public final class ActionTests {
         a.closeShop();a.mode=ActionGame.Mode.PLAY;a.enemies.clear();ActionGame.Enemy e=new ActionGame.Enemy(a.nextId++,0,a.x+100,a.y,1000);a.enemies.add(e);
         a.useBomb();check(a.bombs==0&&e.hp<1000,"bomb deals area damage");
         a.snares=1;a.useSnare();check(a.snares==0&&e.stun>=2.4f,"snare controls nearby enemy");
-        a.tonics=1;a.useTonic();check(a.tonics==0&&a.battleTonicTime==10,"tonic starts timed combat buff");
-        float boosted=a.damage();a.update(.5f,new ActionGame.Input());check(a.battleTonicTime<10,"tonic timer advances during play");a.battleTonicTime=0;check(a.damage()<boosted,"tonic damage bonus ends when duration expires");a.battleTonicTime=9.5f;
+        a.tonics=1;a.useTonic();check(a.tonics==0&&a.battleTonicTime==15,"tonic starts the extended 15-second combat buff");
+        float boosted=a.damage();a.update(.5f,new ActionGame.Input());check(a.battleTonicTime<15,"tonic timer advances during play");a.battleTonicTime=0;check(a.damage()<boosted,"tonic damage bonus ends when duration expires");a.battleTonicTime=9.5f;
         a=ActionSave.decode(ActionSave.encode(a));check(a.battleTonicTime>0,"active tonic duration persists through save");
         a.mode=ActionGame.Mode.RESULT;a.returnCamp();check(a.bombs==0&&a.snares==0&&a.tonics==0&&a.battleTonicTime==0,"run items clear after settlement");
         System.out.println("PASS in-run shop, currency validation, inventory, consumables and timed buff persistence");
