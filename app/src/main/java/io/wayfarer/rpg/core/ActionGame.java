@@ -166,7 +166,16 @@ public final class ActionGame {
     public int tacticSelected=-1;
     public boolean tacticChosen=false,tacticDraftOpen=false;
     public static final String[] TACTIC_NAMES={"专属技式","追击余势","魂流共鸣","迅捷循环","诅咒猎杀","护盾回路","战斗节拍","战地搜刮"};
-    public static final String[] TACTIC_DESCRIPTIONS={"主动技能伤害 +12% / 级；范围或弹幕强化。","追击伤害 +12% / 级。","魂能获取 +15% / 级。","主动技能冷却 -1秒 / 级。","诅咒目标额外伤害 +12% / 级。","主动技能获得6点护盾 / 级。","攻击速度提高4% / 级。","票券拾取提高12% / 级。"};
+    public static final String[] TACTIC_DESCRIPTIONS={
+        "专属技式：通用主动技能伤害提高12% / 级；同时强化技能范围，或为散射技能增加投射物数量。",
+        "追击余势：追击实际命中时的伤害提高12% / 级；仅强化追击段，不提高普通攻击伤害。",
+        "魂流共鸣：有效攻击获得的魂能提高15% / 级；不改变魂能上限或魂技消耗。",
+        "迅捷循环：通用主动技能冷却缩短1秒 / 级；不影响职业技能与魂技冷却。",
+        "诅咒猎杀：攻击带有线索／诅咒标记的目标时，额外伤害提高12% / 级。",
+        "护盾回路：每次施放通用主动技能额外获得3点天赋护盾 / 级；护盾受角色护盾上限约束。",
+        "战斗节拍：攻击速度提高4% / 级；同时作用于近战攻击与远程普攻。",
+        "战地搜刮：击败敌人拾取的远征票券提高12% / 级；与财富天赋的收益加成相乘。"
+    };
     public boolean hasTacticDraft(){for(int id:tacticOffers)if(id>=0&&id<8&&tacticRanks[id]<3)return true;return false;}
     private int randomTactic(int a,int b){int[] pool=new int[8];int n=0;for(int i=0;i<8;i++)if(i!=a&&i!=b&&tacticRanks[i]<3)pool[n++]=i;return n==0?-1:pool[random(n)];}
     private void prepareTacticDraft(){tacticChosen=false;tacticSelected=-1;tacticDraftOpen=false;tacticOffers[0]=tacticRanks[0]<3?0:randomTactic(-1,-1);tacticOffers[1]=randomTactic(tacticOffers[0],-1);tacticOffers[2]=randomTactic(tacticOffers[0],tacticOffers[1]);}
