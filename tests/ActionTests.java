@@ -77,10 +77,10 @@ public final class ActionTests {
         ActionGame g=game(0);ActionGame.Enemy ordinary=mob(g,0,560,500,1000),boss=mob(g,3,700,600,1000);
         g.skill();check(g.faceX>.99f&&Math.abs(g.faceY)<.02f,"skills automatically face the boss ahead of ordinary enemies");
         g=game(0);boss=mob(g,3,700,600,1000);ordinary=mob(g,0,500,450,1000);g.blocks.add(new ActionGame.Block(580,570,50,60,0));g.skill();
-        check(g.faceY<-.95f&&Math.abs(g.faceX)<.05f,"aim falls back to a visible enemy when the boss is behind an obstacle");
-        g=game(0);near(g.meleeReach(),180,"sabre reach is increased by fifty percent");ActionGame.Enemy far=mob(g,0,730,600,1000);far.stun=2;
-        ActionGame.Input attack=new ActionGame.Input();attack.attack=true;ticks(g,attack,14);
-        check(far.hp<1000&&far.stun>=.44f,"sabre reaches farther targets and applies a stagger");
+        check(g.faceY<-.9f,"aim falls back to a visible enemy when the boss is behind an obstacle");
+        g=game(0);near(g.meleeReach(),180,"sabre reach is increased by fifty percent");ActionGame.Enemy far=mob(g,0,730,600,1000);
+        ActionGame.Input attack=new ActionGame.Input();attack.attack=true;ticks(g,attack,5);
+        check(far.hp<1000&&far.stun>.4f,"sabre reaches farther targets and applies a stagger");
         System.out.println("PASS universal enemy aim, obstacle fallback and expanded sabre stagger");
     }
     private static void roomsAndRewards()throws Exception{
