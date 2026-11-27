@@ -204,7 +204,7 @@ public final class ActionGame {
     }
     public static final class Shot {
         public float x,y,vx,vy,life,damage,radius;
-        public boolean friendly;
+        public boolean friendly,hunterPierce=false;
         public int effect=0,pierce=0;
         public final Set<Integer> hitIds=new LinkedHashSet<>();
         public Shot(float x,float y,float vx,float vy,float damage,boolean friendly){this.x=x;this.y=y;this.vx=vx;this.vy=vy;this.damage=damage;this.friendly=friendly;life=3;radius=friendly?5:8;}
@@ -563,7 +563,7 @@ public final class ActionGame {
         if(hero==1)fire(faceX,faceY,damage()*swingBoost);else if(hero==2){attackAnim=.18f;signal("daggerDash",x,y,combo);}signal(hero==1?"bow":"swing",x,y,combo);
     }
     private void fire(float dx,float dy,float value){fire(dx,dy,value,0,0);}
-    private void fire(float dx,float dy,float value,int effect,int pierce){if(shots.size()<160){Shot s=new Shot(x+dx*20,y+dy*20,dx*640,dy*640,value,true);s.effect=effect;s.pierce=job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0?40:pierce;shots.add(s);}}
+    private void fire(float dx,float dy,float value,int effect,int pierce){if(shots.size()<160){Shot s=new Shot(x+dx*20,y+dy*20,dx*640,dy*640,value,true);s.effect=effect;s.hunterPierce=job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0;s.pierce=s.hunterPierce?2:pierce;shots.add(s);}}
     private void throwKnife(float dx,float dy,float value){if(shots.size()<160){Shot s=new Shot(x+dx*18,y+dy*18,dx*760,dy*760,value,true);s.radius=3.5f;s.life=1.5f;shots.add(s);}}
     /** Hunter targeting always chooses a living boss before ordinary enemies. */
     private Enemy hunterTarget(float range){
@@ -732,7 +732,7 @@ public final class ActionGame {
     private void updateShots(float dt){
         Iterator<Shot> it=shots.iterator();while(it.hasNext()){
             Shot p=it.next();p.life-=dt;float ox=p.x,oy=p.y,nx=p.x+p.vx*dt,ny=p.y+p.vy*dt;
-            boolean hunterPierce=p.friendly&&job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0;
+            boolean hunterPierce=p.friendly&&p.hunterPierce;
             boolean inArena=nx-p.radius>=48&&ny-p.radius>=48&&nx+p.radius<=WIDTH-48&&ny+p.radius<=HEIGHT-48;
             boolean gone=p.life<=0||!(hunterPierce?inArena:free(nx,ny,p.radius)&&lineClear(ox,oy,nx,ny));
             if(!gone&&p.friendly){for(Enemy e:enemies)if(e.hp>0&&!p.hitIds.contains(e.id)&&segmentDistance(e.x,e.y,ox,oy,nx,ny)<e.radius()+p.radius){
