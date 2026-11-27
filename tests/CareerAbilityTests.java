@@ -10,7 +10,7 @@ public final class CareerAbilityTests {
     }
     private static ActionGame.Enemy mob(ActionGame g,float x,float y,float hp){ActionGame.Enemy e=new ActionGame.Enemy(g.nextId++,0,x,y,hp);g.enemies.add(e);return e;}
     private static boolean signal(ActionGame g,String kind){for(ActionGame.Signal s:g.signals)if(s.kind.equals(kind))return true;return false;}
-    private static void activeSkills(){
+    private static void activeSkills() throws Exception{
         ActionGame g=arena(HUNTER,0);ActionGame.Enemy target=mob(g,700,600,1000);float speed=g.speed();g.skill();
         check(target.hex>=8&&target.hp<1000&&g.speed()>speed,"hunter marks and hunts a high-threat target while entering a short hunt window");
         g=arena(ASSASSIN,0);float x=g.x;g.skill();
