@@ -73,6 +73,16 @@ public final class ActionTests {
         check(ActionGame.segmentDistance(5,2,0,0,10,0)==2,"swept collision geometry");
         System.out.println("PASS melee combos, ranged hits, skills, dodge and damage windows");
     }
+    private static void autoAimAndSabre(){
+        ActionGame g=game(0);ActionGame.Enemy ordinary=mob(g,0,560,500,1000),boss=mob(g,3,700,600,1000);
+        g.skill();check(g.faceX>.99f&&Math.abs(g.faceY)<.02f,"skills automatically face the boss ahead of ordinary enemies");
+        g=game(0);boss=mob(g,3,700,600,1000);ordinary=mob(g,0,500,450,1000);g.blocks.add(new ActionGame.Block(580,570,50,60,0));g.skill();
+        check(g.faceY<-.95f&&Math.abs(g.faceX)<.05f,"aim falls back to a visible enemy when the boss is behind an obstacle");
+        g=game(0);near(g.meleeReach(),180,"sabre reach is increased by fifty percent");ActionGame.Enemy far=mob(g,0,730,600,1000);far.stun=2;
+        ActionGame.Input attack=new ActionGame.Input();attack.attack=true;ticks(g,attack,14);
+        check(far.hp<1000&&far.stun>=.44f,"sabre reaches farther targets and applies a stagger");
+        System.out.println("PASS universal enemy aim, obstacle fallback and expanded sabre stagger");
+    }
     private static void roomsAndRewards()throws Exception{
         for(int seed=1;seed<=80;seed++){
             ActionGame g=new ActionGame();g.start(seed);
@@ -379,5 +389,5 @@ public final class ActionTests {
         ActionGame g=new ActionGame();g.start(12);g.pause();float cd=g.activeSkillCd;for(int i=0;i<30;i++)g.update(1f/60f,new ActionGame.Input());near(g.activeSkillCd,cd,"pause freezes active cooldown");
         System.out.println("PASS five active skills, independent career cooldown, follow-ups, trap persistence and pause");
     }
-    public static void main(String[] args)throws Exception{movement();shieldSaveValidation();shieldSourceSummary();enemyShieldTypes();combat();shopAndItems();currencySeparation();fullPermitFlow();expandedEconomy();careerSoulResonance();careerActiveSoulResonance();careerFollowUpAndSoulSynergy();skillChainReactions();careerDefenseAndCurse();enemyBurnAndBossReinforcements();permanentEconomy();legacyTalentBudgetMigration();completeTalentBudgets();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
+    public static void main(String[] args)throws Exception{movement();shieldSaveValidation();shieldSourceSummary();enemyShieldTypes();combat();autoAimAndSabre();shopAndItems();currencySeparation();fullPermitFlow();expandedEconomy();careerSoulResonance();careerActiveSoulResonance();careerFollowUpAndSoulSynergy();skillChainReactions();careerDefenseAndCurse();enemyBurnAndBossReinforcements();permanentEconomy();legacyTalentBudgetMigration();completeTalentBudgets();threatCap();fiveActiveSkills();roomsAndRewards();tacticalInscriptions();persistence();stress();System.out.println("ACTION CHECKS PASSED: "+count);}
 }
