@@ -59,6 +59,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
                 effects.add(new Fx("ring",s.x,s.y,.62f,radius,tint));addBurst(s.x,s.y,tint,s.kind.equals("careerSkill")?22:14,s.kind.equals("careerSkill")?240:170);if(s.kind.equals("slam")||s.kind.equals("careerSkill"))shake=Math.max(shake,4.5f);
             }
             else if(s.kind.equals("radiant")||s.kind.equals("forbidden"))effects.add(new Fx("ring",s.x,s.y,.55f,s.value>3?s.value:(int)game.activeRadius(),s.kind.equals("radiant")?0xFFF2DD9B:0xFFB991DF));
+            else if(s.kind.equals("timePulse")){effects.add(new Fx("ring",s.x,s.y,.7f,760,0xFF75CBEA));addBurst(s.x,s.y,0xFF75CBEA,24,260);}
             else if(s.kind.equals("lance")){effects.add(new Fx("lance",s.x,s.y,.42f,s.value,0xFFFFE8AD));addBurst(s.x,s.y,0xFFFFE8AD,12,210);}
             else if(s.kind.equals("daggerDash")){effects.add(new Fx("ring",s.x,s.y,.32f,105,0xFFB8DCD5));addBurst(s.x,s.y,0xFFB8DCD5,12,190);}
             else if(s.kind.equals("thunder")||s.kind.equals("thunderWarning")){effects.add(new Fx("ring",s.x,s.y,.55f,s.kind.equals("thunder")?125:75,0xFF9CDDF2));addBurst(s.x,s.y,0xFFB8E9FF,s.kind.equals("thunder")?20:8,230);if(s.kind.equals("thunder"))shake=Math.max(shake,3.5f);}
