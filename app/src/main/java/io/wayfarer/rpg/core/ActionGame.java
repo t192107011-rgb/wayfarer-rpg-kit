@@ -45,7 +45,7 @@ public final class ActionGame {
     public final int[][] careers=new int[6][3];
     public float careerWard=0;
     // Career active skill runtime. Modes 1-4 are standard careers; 5 is the Timekeeper gravity field.
-    public float careerSkillTime=0,careerSkillDeathCd=0;
+    public float careerSkillTime=0,careerSkillDeathCd=0,timePushCd=0;
     public int careerSkillMode=0;
     public int job(){return careers[buildId()][0];}
     public int specialization(){return careers[buildId()][1];}
@@ -154,6 +154,7 @@ public final class ActionGame {
         if(mode!=Mode.CAMP||slot<0||slot>=3)throw new IllegalArgumentException("仅能在营地编辑角色");
         BuildSystem.Profile copy=draft.copy();copy.name=BuildSystem.cleanName(copy.name);copy.xp=profiles[slot].xp;BuildSystem.validate(copy);profiles[slot]=copy;selectCustom(slot);
     }
+    public float skillCooldownRate(){return job()==TIMEKEEPER?1.6666667f:1f;}
     public float skillPeriod(){float base=Math.max(8f,24f-rank(9)*.4f-training[buildId()][2]*.35f-(custom>=0&&profile().trait==2?.8f:0)+(soulKind()==1?.5f:soulKind()==2?-.6f:0));return job()==HUNTER?base*(1-.05f*careerTalentRank(1)):base;}
     public float activeSkillPeriod(){return Math.max(4f,18f-rank(9)*.35f-coreRank(6)*.7f-training[buildId()][2]*.35f-(custom>=0&&profile().trait==2?.7f:0)+(soulKind()==1?-.5f:soulKind()==2?.4f:0)-tacticRanks[3]);}
     public float careerCooldownRate(){return 1f+careerCooldownRank*.1f+((careerSkillTime>0&&(careerSkillMode==3||careerSkillMode==4))?1f:0);}
@@ -371,6 +372,12 @@ public final class ActionGame {
             else if(soulKind()==2){corruption=Math.min(100,corruption+5);triggerRupture();}
         }
     }
+    public void timePush(){
+        if(mode!=Mode.PLAY||job()!=TIMEKEEPER||timePushCd>0||rollTime>0)return;
+        aimAtNearest(680);timePushCd=9f;int affected=0;float base=damage()*.95f;
+        for(Enemy e:enemies)if(e.hp>0){float dx=e.x-x,dy=e.y-y,d=len(dx,dy);if(d<=285&&(d<.01f||(dx*faceX+dy*faceY)/d>.25f)){hit(e,base);e.stun=Math.max(e.stun,1.15f);float nx=d>.01f?dx/d:faceX,ny=d>.01f?dy/d:faceY;float px=e.x+nx*95,py=e.y+ny*95;if(free(px,py,e.radius())){e.x=px;e.y=py;}gainSoul(22);affected++;}}
+        signal("timePush",x,y,affected);notice="时针：时序震荡 · 大范围击退与硬直，魂能大量回复";
+    }
     public void followUp(){
         if(mode!=Mode.PLAY||followUpWindow<=0||rollTime>0)return;
         followUpWindow=0;aimAtNearest(680);int style=skillStyle();float ox=x,oy=y,range=(style==0?340:style==1?620:style==2?210:style==3?420:260);float followPower=damage()*(1+.12f*tacticRanks[1]);
@@ -553,7 +560,7 @@ public final class ActionGame {
     }
     private void triggerRupture(){if(corruption>=100&&!ruptureLatched){ruptureLatched=true;ruptureTime=5f;ruptureTick=1.5f;soulBuff=5f;signal("rupture",x,y,0);}}
     private void updateSoul(float dt){
-        soulCd=dec(soulCd,dt);soulBuff=dec(soulBuff,dt);
+        soulCd=dec(soulCd,dt*skillCooldownRate());soulBuff=dec(soulBuff,dt);
         if(soulKind()==2){float decay=enemies.stream().anyMatch(e->e.hp>0&&(e.state>0||len(e.x-x,e.y-y)<560))?1f:4f;corruption=Math.max(0,corruption-dt*decay);}
         triggerRupture();
         if(ruptureTime>0){float elapsed=Math.min(dt,ruptureTime);ruptureTime=dec(ruptureTime,elapsed);ruptureTick-=elapsed;
@@ -580,7 +587,7 @@ public final class ActionGame {
         aimAtNearest(680);
         if(job()==TIMEKEEPER){
             attackCd=attackPeriod();attackAnim=0;comboWindow=.85f;combo=(combo+1)%3;dodgeCharge=0;
-            float pulse=damage()*.18f;int affected=0;for(Enemy e:enemies)if(e.hp>0){hit(e,pulse);affected++;}
+            float pulse=damage()*.32f;int affected=0;for(Enemy e:enemies)if(e.hp>0){hit(e,pulse);affected++;}
             signal("timePulse",x,y,affected);return;
         }
         if(job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0){double base=Math.atan2(faceY,faceX);int spread=(careerKnifeCount()-1)/2;for(int i=-spread;i<=spread;i++)throwKnife((float)Math.cos(base+i*.22),(float)Math.sin(base+i*.22),damage()*(spread==2?.28f:.35f));}
@@ -615,16 +622,16 @@ public final class ActionGame {
         if(mode!=Mode.PLAY)return;
         if(!Float.isFinite(dt)||dt<=0)return;dt=Math.min(dt,.05f);
         if(hitStop>0){hitStop=Math.max(0,hitStop-dt);return;}
-        roomElapsed=Math.min(10000000,roomElapsed+dt);battleTonicTime=dec(battleTonicTime,dt);followUpWindow=dec(followUpWindow,dt);activeSkillCd=dec(activeSkillCd,dt*(1f+careerCooldownRank*.05f+(job()==REPORTER&&careerSkillTime>0?.5f:0)));if(activeSkillDelay>0){activeSkillDelay=dec(activeSkillDelay,dt);if(activeSkillDelay<=0)resolveThunderTrap();}careerSkillTime=dec(careerSkillTime,dt);careerSkillDeathCd=dec(careerSkillDeathCd,dt);if(careerSkillTime<=0)careerSkillMode=0;
+        roomElapsed=Math.min(10000000,roomElapsed+dt);battleTonicTime=dec(battleTonicTime,dt);followUpWindow=dec(followUpWindow,dt);activeSkillCd=dec(activeSkillCd,dt*(1f+careerCooldownRank*.05f+(job()==REPORTER&&careerSkillTime>0?.5f:0))*skillCooldownRate());timePushCd=dec(timePushCd,dt*skillCooldownRate());if(activeSkillDelay>0){activeSkillDelay=dec(activeSkillDelay,dt);if(activeSkillDelay<=0)resolveThunderTrap();}careerSkillTime=dec(careerSkillTime,dt);careerSkillDeathCd=dec(careerSkillDeathCd,dt);if(careerSkillTime<=0)careerSkillMode=0;
         if(careerSkillMode==1&&careerSkillTime>0&&careerSkillDeathCd<=0){float floor=maxHp()*.30f;if(hp>floor){float before=hp;hp=Math.max(floor,hp-maxHp()*.01f);signal("sacrifice",x,y,(int)Math.ceil(before-hp));}careerSkillDeathCd=1f;}
-        updateSoul(dt);updateBurn(dt);relicEcho=dec(relicEcho,dt);time+=dt;attackCd=dec(attackCd,dt);rollCd=dec(rollCd,dt);skillCd=dec(skillCd,dt*careerCooldownRate());invulnerable=dec(invulnerable,dt);comboWindow=dec(comboWindow,dt);dodgeCharge=dec(dodgeCharge,dt);
+        updateSoul(dt);updateBurn(dt);relicEcho=dec(relicEcho,dt);time+=dt;attackCd=dec(attackCd,dt);rollCd=dec(rollCd,dt);skillCd=dec(skillCd,dt*careerCooldownRate()*skillCooldownRate());invulnerable=dec(invulnerable,dt);comboWindow=dec(comboWindow,dt);dodgeCharge=dec(dodgeCharge,dt);
         float mx=Float.isFinite(in.mx)?in.mx:0,my=Float.isFinite(in.my)?in.my:0,mag=len(mx,my);
         if(mag>1){mx/=mag;my/=mag;mag=1;}
         motionX=mx*speed();motionY=my*speed();
         if(rollTime>0){movePlayer(rollX*530*dt,rollY*530*dt);rollTime=dec(rollTime,dt);}else if(hero==2&&attackAnim>0){}
         else {
             if(mag>.1f){if(attackAnim<=0){faceX=mx/mag;faceY=my/mag;}float slow=attackAnim>0?.65f:1;movePlayer(mx*speed()*slow*dt,my*speed()*slow*dt);}
-            if(in.attack&&attackCd<=0)beginAttack();
+            if(job()==TIMEKEEPER&&attackCd<=0)beginAttack();else if(in.attack&&attackCd<=0)beginAttack();
         }
         if(attackAnim>0){
             attackAnim=dec(attackAnim,dt);
