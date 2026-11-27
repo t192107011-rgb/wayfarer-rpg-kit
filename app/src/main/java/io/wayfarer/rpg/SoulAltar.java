@@ -17,16 +17,16 @@ public final class SoulAltar {
     private static String formDetail(int kind,int job){
         if(kind==0)return "尚未缔结灵魂。缔结光辉或禁忌后，将解锁与当前职业绑定的专属魂技。";
         if(kind==1)switch(job){
-            case CareerSystem.HUNTER:return "曙光猎令：获得辉盾并标记全场，精准打击高威胁目标。猎人魂技冷却12秒。";
-            case CareerSystem.ASSASSIN:return "无影圣步：短暂无敌突进，净化路径弹幕，按命中数量获得辉盾。刺客魂技冷却10秒。";
-            case CareerSystem.DETECTIVE:return "真相显影：完成全场调查，短暂中断敌人并暴露弱点，获得辉盾。警探魂技冷却14秒。";
-            default:return "光辉头条：锁定头条目标并向附近敌人传播伤害，同时恢复少量生命与辉盾。记者魂技冷却12秒。";
+            case CareerSystem.HUNTER:return "曙光猎令：消耗40魂能，冷却12秒。获得14点辉盾，为全场存活敌人添加7秒线索标记，并对自动锁定的首领优先目标造成3.1倍伤害与短暂硬直。";
+            case CareerSystem.ASSASSIN:return "无影圣步：消耗40魂能，冷却10秒。获得约1.1秒无敌并净化自身周围180范围的敌方弹幕；向瞄准方向突进，对路径敌人造成2.25倍伤害，按命中数量获得辉盾。";
+            case CareerSystem.DETECTIVE:return "真相显影：消耗40魂能，冷却14秒。为全场敌人补全8秒线索标记，普通敌人受到约0.75秒硬直、首领受到短暂硬直；同时获得16点辉盾并净化自身周围320范围内的敌方弹幕。";
+            default:return "光辉头条：消耗40魂能，冷却12秒。对当前生命值最高的敌人造成2.4倍伤害，再对其附近最近的一名敌人造成0.9倍伤害；同时获得10点辉盾并恢复3%最大生命。";
         }
         switch(job){
-            case CareerSystem.HUNTER:return "血猎追魂：献祭生命与侵蚀，追猎最近目标；目标濒危时伤害显著提高。猎人魂技冷却14秒。";
-            case CareerSystem.ASSASSIN:return "蚀影处决：献祭生命，突进并对路径敌人造成高额伤害，命中后少量恢复生命。刺客魂技冷却16秒。";
-            case CareerSystem.DETECTIVE:return "深渊审讯：按目标调查程度施加审判伤害与硬直；没有线索时先进行初步调查。警探魂技冷却18秒。";
-            default:return "血色头条：献祭生命与侵蚀，对敌群施加诅咒并引发有限次数的连锁爆发。记者魂技冷却20秒。";
+            case CareerSystem.HUNTER:return "血猎追魂：消耗40魂能、最大生命的8%与30点侵蚀，冷却14秒。优先锁定首领并施加9秒标记；目标生命低于35%时造成4.1倍伤害，否则造成3.3倍伤害。击杀目标额外恢复6%最大生命。";
+            case CareerSystem.ASSASSIN:return "蚀影处决：消耗40魂能、最大生命的8%与30点侵蚀，冷却16秒。向瞄准方向突进，对路径敌人施加6秒标记并造成2.8倍伤害；命中后按命中数量恢复生命，最多恢复最大生命的5%，并额外增加8点侵蚀。";
+            case CareerSystem.DETECTIVE:return "深渊审讯：消耗40魂能、最大生命的8%与30点侵蚀，冷却18秒。对全场已有线索标记的目标按标记剩余时间提高审判伤害，并造成硬直；若没有已标记目标，则先为敌人建立初步线索并造成0.9倍伤害。";
+            default:return "血色头条：消耗40魂能、最大生命的10%与38点侵蚀，冷却20秒。为全场敌人添加6秒标记并造成1.25倍伤害；随后每名存活敌人会向其附近最近的另一名敌人传导0.35倍伤害，形成连锁传播。";
         }
     }
     public static AlertDialog show(MainActivity a){
