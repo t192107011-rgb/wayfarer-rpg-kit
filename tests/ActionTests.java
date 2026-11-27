@@ -78,6 +78,9 @@ public final class ActionTests {
         g.skill();check(g.faceX>.99f&&Math.abs(g.faceY)<.02f,"skills automatically face the boss ahead of ordinary enemies");
         g=game(0);boss=mob(g,3,700,600,1000);ordinary=mob(g,0,500,450,1000);g.blocks.add(new ActionGame.Block(580,570,50,60,0));g.skill();
         check(g.faceY<-.9f,"aim falls back to a visible enemy when the boss is behind an obstacle");
+        g=new ActionGame();g.selectHero(1);g.chooseCareer(CareerSystem.HUNTER,0,0);g.start(918);g.blocks.clear();g.enemies.clear();g.x=500;g.y=600;g.careerSkillMode=1;g.careerSkillTime=4;
+        ActionGame.Enemy first=mob(g,0,600,600,1000);first.stun=5;boss=mob(g,3,700,600,1000);boss.stun=5;float arrowDamage=g.damage();ActionGame.Input bow=new ActionGame.Input();bow.attack=true;ticks(g,bow,18);
+        check(Math.abs((1000-first.hp)-arrowDamage)<.1f&&Math.abs((1000-boss.hp)-arrowDamage*.60f)<.1f,"hunter enhanced arrow pierces enemies and deals sixty percent damage to the next target");
         g=game(0);near(g.meleeReach(),180,"sabre reach is increased by fifty percent");ActionGame.Enemy far=mob(g,0,730,600,1000);
         ActionGame.Input attack=new ActionGame.Input();attack.attack=true;ticks(g,attack,5);
         check(far.hp<1000&&far.stun>.4f,"sabre reaches farther targets and applies a stagger");
