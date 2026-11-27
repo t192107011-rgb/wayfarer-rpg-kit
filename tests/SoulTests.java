@@ -1,4 +1,5 @@
 import io.wayfarer.rpg.core.*;
+import static io.wayfarer.rpg.core.CareerSystem.*;
 import java.io.*;
 import java.util.*;
 public final class SoulTests {
