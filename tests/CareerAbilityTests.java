@@ -28,7 +28,9 @@ public final class CareerAbilityTests {
         ActionGame.Shot ranged=new ActionGame.Shot(g.x+25,g.y,-600,0,20,false);ranged.effect=1;g.shots.add(ranged);g.update(.05f,new ActionGame.Input());
         check(g.hp==overdriveHp&&g.burnTime==0,"assassin overdrive ignores ranged fire and its burn application");
         g.hazards.add(new ActionGame.Hazard(1,g.x,g.y,120,0,2,20));g.update(.05f,new ActionGame.Input());
-        check(g.hp==overdriveHp,"assassin overdrive ignores continuous burning area damage");
+        check(g.hp==overdriveHp&&g.burnTime==0,"assassin overdrive ignores the boss's continuous burning area damage and prevents its burn application");
+        g.burnTime=3.5f;g.burnDamage=2f;g.burnTick=.01f;g.update(.05f,new ActionGame.Input());
+        check(g.hp==overdriveHp,"assassin overdrive also ignores burn damage already applied before the overdrive window");
         g.hurtForTest(20);check(g.hp<overdriveHp,"assassin overdrive still takes close-range damage");
         System.out.println("PASS four distinct career active loops");
     }
