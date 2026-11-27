@@ -305,7 +305,7 @@ public final class ActionGame {
         signal("echo",x,y,300);notice="捕缚钉 · 控制 "+caught+" 名敌人";
     }
     public void useTonic(){
-        if(mode!=Mode.PLAY||tonics<=0)return;tonics--;battleTonicTime=Math.max(battleTonicTime,10f);notice="战斗兴奋剂 · 10秒内伤害 +30%，攻速 +20%";
+        if(mode!=Mode.PLAY||tonics<=0)return;tonics--;battleTonicTime=Math.max(battleTonicTime,15f);notice="战斗兴奋剂 · 15秒内伤害 +30%，攻速 +20%";
     }
     public void pause(){if(mode==Mode.PLAY){mode=Mode.PAUSED;notice="已暂停";}}
     public void resume(){if(mode==Mode.PAUSED)mode=Mode.PLAY;}
@@ -330,7 +330,7 @@ public final class ActionGame {
     public void skill(){
         if(mode!=Mode.PLAY||rollTime>0||skillCd>0)return;
         aimAtNearest(680);
-        int j=job();skillCd=skillPeriod();careerSkillMode=j+1;careerSkillTime=4f;float power=damage();int affected=0;
+        int j=job();skillCd=skillPeriod();careerSkillMode=j+1;careerSkillTime=6f;float power=damage();int affected=0;
         if(j==HUNTER){
             if(careerTalentRank(2)>0)addTalentShield(8*careerTalentRank(2));
             Enemy target=hunterTarget(Float.POSITIVE_INFINITY);
@@ -375,12 +375,12 @@ public final class ActionGame {
         if(soulKind()==1){cleanse(x,y,125);if(connected)addSoulWard(4);}
         if(connected){
             resolveFollowUpChain(style,followPower);
-            if(job()==HUNTER)careerSkillTime=Math.min(30,careerSkillTime+1.5f);
+            if(job()==HUNTER)careerSkillTime=Math.min(30,careerSkillTime+2.25f);
             if(job()==ASSASSIN)activeSkillCd=Math.max(0,activeSkillCd-2);
             if(job()==DETECTIVE)for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<160)e.stun=Math.max(e.stun,.25f);
             if(job()==REPORTER)activeSkillCd=Math.max(0,activeSkillCd-1);
             // A confirmed follow-up hit converts career identity into a distinct payoff.
-            if(job()==HUNTER){soulBuff=Math.max(soulBuff,1.25f);if(soulKind()==1)addSoulWard(2);}
+            if(job()==HUNTER){soulBuff=Math.max(soulBuff,1.9f);if(soulKind()==1)addSoulWard(2);}
             else if(job()==ASSASSIN){double a=Math.atan2(faceY,faceX);throwKnife((float)Math.cos(a-.12),(float)Math.sin(a-.12),damage()*.20f);throwKnife((float)Math.cos(a+.12),(float)Math.sin(a+.12),damage()*.20f);}
             else if(job()==DETECTIVE){for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<520){e.hex=Math.max(e.hex,3.5f);e.stun=Math.max(e.stun,.35f);}}
             else {heal(maxHp()*.03f);gainSoul(4);}
@@ -450,7 +450,7 @@ public final class ActionGame {
         }else{
             activeSkillX=Math.max(70,Math.min(WIDTH-70,x+faceX*180));activeSkillY=Math.max(70,Math.min(HEIGHT-70,y+faceY*180));activeSkillDelay=.65f;signal("thunderWarning",activeSkillX,activeSkillY,kind==1?220:190);
         }
-        if(job()==HUNTER){swingBoost=Math.max(swingBoost,1.18f);careerSkillTime=Math.min(30,careerSkillTime+1f);}
+        if(job()==HUNTER){swingBoost=Math.max(swingBoost,1.18f);careerSkillTime=Math.min(30,careerSkillTime+1.5f);}
         if(job()==ASSASSIN){double a=Math.atan2(faceY,faceX);for(int n=-1;n<=1;n++)throwKnife((float)Math.cos(a+n*.24),(float)Math.sin(a+n*.24),power*.22f);}
         if(job()==DETECTIVE){for(Enemy e:enemies)if(e.hp>0&&len(e.x-x,e.y-y)<(style==0?190:520))e.hex=Math.max(e.hex,2.5f);}
         if(job()==REPORTER)activeSkillCd=Math.max(0,activeSkillCd-.8f);
@@ -519,7 +519,7 @@ public final class ActionGame {
             }
         }
         if(kind==1&&specialtyRank(2)>0)addSoulWard(6);
-        if(j==HUNTER){soulBuff=Math.max(soulBuff,1.5f);if(careerSkillTime>0)careerSkillTime=Math.min(8,careerSkillTime+1.5f);}
+        if(j==HUNTER){soulBuff=Math.max(soulBuff,2.25f);if(careerSkillTime>0)careerSkillTime=Math.min(12,careerSkillTime+2.25f);}
         if(j==ASSASSIN)activeSkillCd=Math.max(0,activeSkillCd-1.5f);
         if(j==DETECTIVE)for(Enemy e:enemies)if(e.hp>0&&e.hex>0)e.hex=Math.min(10,e.hex+1f);
         if(j==REPORTER&&kind==1)gainSoul(4);
