@@ -24,6 +24,12 @@ public final class CareerAbilityTests {
         g=arena(HUNTER,0);ActionGame.Enemy ordinary=mob(g,610,700,5000),boss=new ActionGame.Enemy(g.nextId++,3,900,600,100);g.enemies.add(boss);g.skill();check(boss.hex>=8&&boss.hp<100&&ordinary.hp==5000,"hunter career skill prioritizes the boss even when an ordinary enemy has more health");
         g=arena(HUNTER,1);ordinary=mob(g,610,700,5000);boss=new ActionGame.Enemy(g.nextId++,3,900,600,100);g.enemies.add(boss);g.soulEnergy=100;g.soulSkill();check(boss.hp<100&&ordinary.hp==5000,"hunter soul tracking prioritizes the boss");
         g=new ActionGame();g.selectHero(1);g.chooseCareer(HUNTER,0,0);g.start(912);g.blocks.clear();g.enemies.clear();g.x=560;g.y=600;g.skill();ordinary=mob(g,610,700,5000);boss=new ActionGame.Enemy(g.nextId++,3,900,600,100);g.enemies.add(boss);g.blocks.add(new ActionGame.Block(700,570,50,60,0));ActionGame.Input fire=new ActionGame.Input();fire.attack=true;for(int i=0;i<10;i++)g.update(.05f,fire);check(boss.hp<100&&ordinary.hp==5000,"hunter arrows pierce obstacles during the career hunt window and remain boss-locked");
+        g=arena(ASSASSIN,0);g.skill();g.invulnerable=0;float overdriveHp=g.hp;
+        ActionGame.Shot ranged=new ActionGame.Shot(g.x+25,g.y,-600,0,20,false);ranged.effect=1;g.shots.add(ranged);g.update(.05f,new ActionGame.Input());
+        check(g.hp==overdriveHp&&g.burnTime==0,"assassin overdrive ignores ranged fire and its burn application");
+        g.hazards.add(new ActionGame.Hazard(1,g.x,g.y,120,0,2,20));g.update(.05f,new ActionGame.Input());
+        check(g.hp==overdriveHp,"assassin overdrive ignores continuous burning area damage");
+        g.hurtForTest(20);check(g.hp<overdriveHp,"assassin overdrive still takes close-range damage");
         System.out.println("PASS four distinct career active loops");
     }
     private static void soulForms(){
