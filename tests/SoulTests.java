@@ -20,7 +20,7 @@ public final class SoulTests {
         System.out.println("PASS soul binding, save compatibility and camp-only swaps");
     }
     private static void eightCareerForms(){
-        for(int career=0;career<4;career++){
+        for(int career=0;career<5;career++){
             ActionGame radiant=game(career,1);ActionGame.Enemy e=mob(radiant,700,600);radiant.soulEnergy=100;radiant.soulSkill();
             check(radiant.soulEnergy>=60&&radiant.soulEnergy<=100&&radiant.soulCd>0&&signal(radiant,"radiant"),"radiant form spends energy and triggers career effect "+career);
             check(e.hp<1000||e.hex>0||radiant.soulWard>0,"radiant form has an actual combat or defense result "+career);
@@ -45,14 +45,14 @@ public final class SoulTests {
         System.out.println("PASS radiant healing, taboo risk and overrun threshold");
     }
     private static void saves()throws Exception{
-        ActionGame g=game(2,2);mob(g,700,600);g.soulEnergy=80;g.soulSkill();g.pause();byte[] bytes=ActionSave.encode(g);
-        ActionGame a=ActionSave.decode(bytes);check(a.job()==2&&a.soulKind()==2,"career and soul binding survive save");check(a.soulEnergy==g.soulEnergy&&a.corruption==g.corruption&&a.soulCd==g.soulCd,"energy, erosion and cooldown survive save");
+        ActionGame g=game(TIMEKEEPER,2);mob(g,700,600);g.soulEnergy=80;g.soulSkill();g.pause();byte[] bytes=ActionSave.encode(g);
+        ActionGame a=ActionSave.decode(bytes);check(a.job()==TIMEKEEPER&&a.soulKind()==2,"Timekeeper career and soul binding survive save");check(a.soulEnergy==g.soulEnergy&&a.corruption==g.corruption&&a.soulCd==g.soulCd,"energy, erosion and cooldown survive save");
         reject(bytes,"soulEnergy","101");reject(bytes,"soulCd","19");reject(bytes,"corruption","NaN");reject(bytes,"profile0.soul","3");reject(bytes,"profile0.art","5");reject(bytes,"soulFields","20");
         System.out.println("PASS soul state persistence and malformed save rejection");
     }
     private static void reject(byte[] bytes,String key,String value)throws Exception{Properties p=new Properties();p.load(new ByteArrayInputStream(bytes));p.setProperty(key,value);ByteArrayOutputStream out=new ByteArrayOutputStream();p.store(out,"");boolean bad=false;try{ActionSave.decode(out.toByteArray());}catch(IOException e){bad=true;}check(bad,"reject malformed "+key);}
     private static void stress()throws Exception{
-        for(int career=0;career<4;career++)for(int kind=1;kind<=2;kind++){
+        for(int career=0;career<5;career++)for(int kind=1;kind<=2;kind++){
             ActionGame g=game(career,kind);mob(g,700,600);g.soulEnergy=100;g.soulSkill();
             for(int t=0;t<900;t++){if(t%60==0){g=ActionSave.decode(ActionSave.encode(g));check(g.hp>=0&&g.soulEnergy>=0&&g.soulEnergy<=100&&g.corruption<=100,"bounded soul stress state");}g.update(1f/60,new ActionGame.Input());g.signals.clear();}
         }
