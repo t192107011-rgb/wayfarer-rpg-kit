@@ -419,7 +419,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
     private void shop(Canvas c){
         text(c,"前 线 补 给 站",480,94,28,cream,true);text(c,"消耗本轮票券补充战斗资源；即时补给在购买时生效",480,124,14,muted,true);
         String[] title={"爆裂瓶","捕缚钉","战斗兴奋剂","急救补给","魂能结晶","战术改装"};
-        String[] desc={"270范围爆炸，造成210%攻击伤害","300范围定身并造成25%伤害","10秒伤害+30%，攻速+20%","恢复最大生命值的30%","恢复35点魂能","伤害+4；满级后转为冷却或移速"};
+        String[] desc={"270范围爆炸，造成210%攻击伤害","300范围定身并造成25%伤害","15秒内伤害+30%、攻速+20%；持续时间从使用时开始倒计时","恢复最大生命值的30%","恢复35点魂能","伤害+4；满级后转为冷却或移速"};
         int[] count={game.bombs,game.snares,game.tonics,-1,-1,-1};
         for(int i=0;i<6;i++){
             int col=i%3,row=i/3,x=25+col*305,y=150+row*145;
