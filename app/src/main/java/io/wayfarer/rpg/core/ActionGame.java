@@ -17,7 +17,7 @@ public final class ActionGame {
     public float enemySpeed(float base){return base*(1+Math.min(1f,(threat-1)*.09f));}
     public float enemyPower(Enemy e,float base){float growth=1f+Math.min(1.6f,Math.max(0,threat-1)*.22f);return Math.max(base*growth,encounterDamageFloor)*enemyForce(e);}
     public float reachFactor(){return rank(3)>0&&hp<maxHp()*.4f?1.25f:1;}
-    public float meleeReach(){return (hero==0?120:100)*reachFactor();}
+    public float meleeReach(){return (hero==0?180:100)*reachFactor();}
     public float activeRadius(){int k=soulKind();return (skillStyle()==0?(k==1?235:k==2?260:200):(k==1?180:k==2?190:160))*reachFactor()*(specialtyRank(7)>0?1.10f:1); }
     public float followUpDuration(){return rank(7)>0?3:2;}
     /** Persistent shields remain bounded, but can now support sustained boss encounters. */
@@ -329,6 +329,7 @@ public final class ActionGame {
     }
     public void skill(){
         if(mode!=Mode.PLAY||rollTime>0||skillCd>0)return;
+        aimAtNearest(680);
         int j=job();skillCd=skillPeriod();careerSkillMode=j+1;careerSkillTime=4f;float power=damage();int affected=0;
         if(j==HUNTER){
             if(careerTalentRank(2)>0)addTalentShield(8*careerTalentRank(2));
@@ -553,7 +554,7 @@ public final class ActionGame {
     }
     public int careerKnifeCount(){return isSpec(ASSASSIN,2)?5:3;}
     private void beginAttack(){
-        aimAtNearest(hero==1?640:meleeReach()+30);
+        aimAtNearest(680);
         if(job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0){double base=Math.atan2(faceY,faceX);int spread=(careerKnifeCount()-1)/2;for(int i=-spread;i<=spread;i++)throwKnife((float)Math.cos(base+i*.22),(float)Math.sin(base+i*.22),damage()*(spread==2?.28f:.35f));}
         attackCd=attackPeriod();attackAnim=hero==1?.18f:.24f;
         combo=comboWindow>0?(combo+1)%3:0;comboWindow=.85f;swingHits.clear();
@@ -562,7 +563,7 @@ public final class ActionGame {
         if(hero==1)fire(faceX,faceY,damage()*swingBoost);else if(hero==2){attackAnim=.18f;signal("daggerDash",x,y,combo);}signal(hero==1?"bow":"swing",x,y,combo);
     }
     private void fire(float dx,float dy,float value){fire(dx,dy,value,0,0);}
-    private void fire(float dx,float dy,float value,int effect,int pierce){if(shots.size()<160){Shot s=new Shot(x+dx*20,y+dy*20,dx*640,dy*640,value,true);s.effect=effect;s.pierce=pierce;shots.add(s);}}
+    private void fire(float dx,float dy,float value,int effect,int pierce){if(shots.size()<160){Shot s=new Shot(x+dx*20,y+dy*20,dx*640,dy*640,value,true);s.effect=effect;s.pierce=job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0?40:pierce;shots.add(s);}}
     private void throwKnife(float dx,float dy,float value){if(shots.size()<160){Shot s=new Shot(x+dx*18,y+dy*18,dx*760,dy*760,value,true);s.radius=3.5f;s.life=1.5f;shots.add(s);}}
     /** Hunter targeting always chooses a living boss before ordinary enemies. */
     private Enemy hunterTarget(float range){
@@ -573,12 +574,11 @@ public final class ActionGame {
         }
         return boss!=null?boss:other;
     }
+    private boolean hunterPiercingActive(){return job()==HUNTER&&careerSkillMode==1&&careerSkillTime>0;}
     private void aimAtNearest(float range){
-        if(job()==HUNTER){
-            Enemy boss=null;float nearestBoss=range;
-            for(Enemy e:enemies)if(e.hp>0&&e.type==3){float d=len(e.x-x,e.y-y);if(d<nearestBoss){nearestBoss=d;boss=e;}}
-            if(boss!=null&&nearestBoss>.01f){faceX=(boss.x-x)/nearestBoss;faceY=(boss.y-y)/nearestBoss;return;}
-        }
+        Enemy boss=null;float bossDistance=range;
+        for(Enemy e:enemies)if(e.hp>0&&e.type==3){float d=len(e.x-x,e.y-y);if(d<bossDistance&&(lineClear(x,y,e.x,e.y)||hunterPiercingActive())){bossDistance=d;boss=e;}}
+        if(boss!=null&&bossDistance>.01f){faceX=(boss.x-x)/bossDistance;faceY=(boss.y-y)/bossDistance;return;}
         Enemy nearest=null;float best=range;
         for(Enemy e:enemies){float distance=len(e.x-x,e.y-y);if(e.hp>0&&distance<best&&lineClear(x,y,e.x,e.y)){best=distance;nearest=e;}}
         if(nearest!=null&&best>.01f){faceX=(nearest.x-x)/best;faceY=(nearest.y-y)/best;}
@@ -608,7 +608,7 @@ public final class ActionGame {
                 if(hero==0){final float r=meleeReach();final float c=.0f;shots.removeIf(p->{if(p.friendly)return false;float dx=p.x-x,dy=p.y-y,d=len(dx,dy);return d<r&&(d<.01f||(dx*faceX+dy*faceY)/d>c);});}
                 for(Enemy e:enemies){float dx=e.x-x,dy=e.y-y,d=len(dx,dy);
                     if(e.hp>0&&!swingHits.contains(e.id)&&d<range+e.radius()&&(d<.01f||(dx*faceX+dy*faceY)/d>cos)&&lineClear(x,y,e.x,e.y)){
-                        swingHits.add(e.id);hit(e,damage()*swingBoost);hitStop=.025f;
+                        swingHits.add(e.id);hit(e,damage()*swingBoost);if(hero==0)e.stun=Math.max(e.stun,.45f);hitStop=.025f;
                     }
                 }
             }
@@ -634,7 +634,7 @@ public final class ActionGame {
         }
     }
     private void ignite(float duration,float damage){burnTime=Math.max(burnTime,duration);burnDamage=Math.max(burnDamage,damage);burnTick=Math.min(burnTick<=0?1f:burnTick,1f);signal("burn",x,y,(int)Math.ceil(burnTime));}
-    private void updateBurn(float dt){if(burnTime<=0)return;float step=Math.min(dt,burnTime);burnTime=Math.max(0,burnTime-step);burnTick-=step;if(burnTick<=.0001f&&burnTime>0){burnTick=1f;float protectedTime=invulnerable;invulnerable=0;hurt(burnDamage);invulnerable=Math.max(invulnerable,protectedTime);signal("burn",x,y,(int)Math.ceil(burnTime));}if(burnTime<=0){burnTick=0;burnDamage=0;}}
+    private void updateBurn(float dt){if(burnTime<=0)return;float step=Math.min(dt,burnTime);burnTime=Math.max(0,burnTime-step);burnTick-=step;if(burnTick<=.0001f&&burnTime>0){burnTick=1f;float protectedTime=invulnerable;invulnerable=0;hurt(burnDamage,false,true);invulnerable=Math.max(invulnerable,protectedTime);signal("burn",x,y,(int)Math.ceil(burnTime));}if(burnTime<=0){burnTick=0;burnDamage=0;}}
     private void updateBossReinforcements(float dt){
         Enemy boss=null;int support=0;for(Enemy e:enemies)if(e.hp>0){if(e.type==3)boss=e;else support++;}
         if(boss==null){bossSummonCd=0;bossSummonWait=0;return;}
@@ -669,11 +669,11 @@ public final class ActionGame {
             Hazard h=it.next();float wait=Math.min(h.warning,dt);h.warning=dec(h.warning,wait);float active=dt-wait;
             if(h.warning<=0&&active>0){
                 if(h.type==0){
-                    if(len(x-h.x,y-h.y)<h.radius+PLAYER_RADIUS&&lineClear(h.x,h.y,x,y)){hurt(h.damage);if(h.type==1)ignite(4f,Math.max(1.5f,h.damage*.10f));}
+                    if(len(x-h.x,y-h.y)<h.radius+PLAYER_RADIUS&&lineClear(h.x,h.y,x,y)){hurt(h.damage,false,h.type==1);if(h.type==1&&!assassinOverdrive())ignite(4f,Math.max(1.5f,h.damage*.10f));}
                     h.life=0;signal("hazard",h.x,h.y,(int)h.radius);
                 }else{
                     float step=Math.min(h.life,active);h.life=dec(h.life,step);h.tick-=step;
-                    if(h.tick<=.0001f){h.tick+=.65f;if(len(x-h.x,y-h.y)<h.radius+PLAYER_RADIUS&&lineClear(h.x,h.y,x,y)){hurt(h.damage);if(h.type==1)ignite(4f,Math.max(1.5f,h.damage*.10f));}signal("hazard",h.x,h.y,(int)h.radius);}
+                    if(h.tick<=.0001f){h.tick+=.65f;if(len(x-h.x,y-h.y)<h.radius+PLAYER_RADIUS&&lineClear(h.x,h.y,x,y)){hurt(h.damage,false,h.type==1);if(h.type==1&&!assassinOverdrive())ignite(4f,Math.max(1.5f,h.damage*.10f));}signal("hazard",h.x,h.y,(int)h.radius);}
                 }
             }
             if(h.warning<=0&&h.life<=0)it.remove();if(mode!=Mode.PLAY)return;
@@ -736,10 +736,10 @@ public final class ActionGame {
             boolean inArena=nx-p.radius>=48&&ny-p.radius>=48&&nx+p.radius<=WIDTH-48&&ny+p.radius<=HEIGHT-48;
             boolean gone=p.life<=0||!(hunterPierce?inArena:free(nx,ny,p.radius)&&lineClear(ox,oy,nx,ny));
             if(!gone&&p.friendly){for(Enemy e:enemies)if(e.hp>0&&!p.hitIds.contains(e.id)&&segmentDistance(e.x,e.y,ox,oy,nx,ny)<e.radius()+p.radius){
-                p.hitIds.add(e.id);hit(e,p.damage);if(p.effect==2)e.hex=3;
+                int previousHits=p.hitIds.size();p.hitIds.add(e.id);hit(e,hunterPierce&&previousHits>0?p.damage*.60f:p.damage);if(p.effect==2)e.hex=3;
                 if(p.pierce<=0){gone=true;break;}p.pierce--;
             }}
-            else if(!gone&&segmentDistance(x,y,ox,oy,nx,ny)<PLAYER_RADIUS+p.radius){hurt(p.damage);if(!p.friendly&&p.effect==1)ignite(4f,Math.max(1.5f,p.damage*.10f));gone=true;}
+            else if(!gone&&segmentDistance(x,y,ox,oy,nx,ny)<PLAYER_RADIUS+p.radius){hurt(p.damage,true,p.effect==1);if(!p.friendly&&p.effect==1&&!assassinOverdrive())ignite(4f,Math.max(1.5f,p.damage*.10f));gone=true;}
             p.x=nx;p.y=ny;if(gone)it.remove();
         }
     }
@@ -777,8 +777,11 @@ public final class ActionGame {
         if(job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0&&dealt>0){addTalentShield(1+2*careerTalentRank(2));if(e.hp<=0){activeSkillCd=0;heal(maxHp()*.03f);}}
         if(charge&&dealt>0){gainSoul(Math.min(4,dealt*.08f));if(soulBuff>0)heal(Math.min(maxHp()*.015f,dealt*.08f));}
     }
-    private void hurt(float value){
+    private boolean assassinOverdrive(){return job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0;}
+    private void hurt(float value){hurt(value,false,false);}
+    private void hurt(float value,boolean ranged,boolean burning){
         if(invulnerable>0||mode!=Mode.PLAY)return;
+        if(assassinOverdrive()&&(ranged||burning)){signal("evade",x,y,burning?2:1);return;}
         value*= (custom>=0&&profile().trait==1?1.12f:1)*(job()==DETECTIVE&&careerSkillMode==3&&careerSkillTime>0?.90f:1)*(job()==ASSASSIN&&careerSkillMode==2&&careerSkillTime>0?.75f:1)*(rank(3)>0?1.15f:1)*(soulKind()==2?1+corruption*.004f:1);
         float wardTaken=Math.min(soulWard,value);soulWard-=wardTaken;value-=wardTaken;
         float careerTaken=Math.min(careerWard,value);careerWard-=careerTaken;value-=careerTaken;
