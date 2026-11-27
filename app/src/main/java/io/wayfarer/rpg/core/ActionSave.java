@@ -34,7 +34,7 @@ public final class ActionSave {
         put(p,"enemies",g.enemies.size());int i=0;
         for(ActionGame.Enemy e:g.enemies){p.setProperty("enemyTactics"+i,csv(e.guard,e.targetX,e.targetY,e.pattern));put(p,"enemyGuardType"+i,e.guardType);put(p,"enemyGuardBreak"+i,e.guardBreak);put(p,"enemyGuardDelay"+i,e.guardDelay);put(p,"hex"+i,e.hex);p.setProperty("e"+i++,csv(e.id,e.type,e.state,e.x,e.y,e.hp,e.maxHp,e.timer,e.aimX,e.aimY,e.stun,e.flash,e.struck?1:0));}
         put(p,"shots",g.shots.size());i=0;
-        for(ActionGame.Shot s:g.shots){put(p,"shotEffect"+i,s.effect);put(p,"shotPierce"+i,s.pierce);put(p,"shotHunterPierce"+i,s.hunterPierce);StringJoiner hits=new StringJoiner(",");for(int id:s.hitIds)hits.add(Integer.toString(id));p.setProperty("shotHits"+i,hits.toString());p.setProperty("s"+i++,csv(s.x,s.y,s.vx,s.vy,s.life,s.damage,s.radius,s.friendly?1:0));}
+        for(ActionGame.Shot s:g.shots){put(p,"shotEffect"+i,s.effect);put(p,"shotPierce"+i,s.pierce);p.setProperty("shotHunterPierce"+i,Boolean.toString(s.hunterPierce));StringJoiner hits=new StringJoiner(",");for(int id:s.hitIds)hits.add(Integer.toString(id));p.setProperty("shotHits"+i,hits.toString());p.setProperty("s"+i++,csv(s.x,s.y,s.vx,s.vy,s.life,s.damage,s.radius,s.friendly?1:0));}
         put(p,"blocks",g.blocks.size());i=0;
         for(ActionGame.Block b:g.blocks)p.setProperty("b"+i++,csv(b.x,b.y,b.w,b.h,b.style));
         put(p,"drops",g.drops.size());i=0;
