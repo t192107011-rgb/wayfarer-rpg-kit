@@ -38,7 +38,7 @@ public final class ActionGame {
     public final int[][] talents=new int[6][12];
     public final int[][] specialties=new int[6][8];
     public final int[][] coreTalents=new int[6][15];
-    public final int[][] careerTalents=new int[6][12];
+    public final int[][] careerTalents=new int[6][15];
     public final int[][] fieldPermits=new int[6][5];
     public final int[][] training=new int[6][4];
     public float shield=0,dodgeCharge=0;
@@ -137,7 +137,7 @@ public final class ActionGame {
     public int skillStyle(){return custom<0?hero:profile().skill;}
     public int specialtyRank(int node){return specialties[buildId()][node];}
     public int coreRank(int node){return coreTalents[buildId()][node];}
-    public int careerTalentRank(int local){return careerTalents[buildId()][Math.max(0,Math.min(3,job()))*3+local];}
+    public int careerTalentRank(int local){return careerTalents[buildId()][Math.max(0,Math.min(4,job()))*3+local];}
     public int availableCorePoints(){return BuildSystem.corePoints(heroXp())-BuildSystem.coreSpent(coreTalents[buildId()]);}
     public int availableSpecialtyPoints(){return BuildSystem.specialtyPoints(heroXp())-BuildSystem.spent(specialties[buildId()]);}
     public int availableCareerPoints(){return Math.min(8,1+heroXp()/200)-careerTalentSpent();}
@@ -339,7 +339,7 @@ public final class ActionGame {
     public void skill(){
         if(mode!=Mode.PLAY||rollTime>0||skillCd>0)return;
         aimAtNearest(680);
-        int j=job();skillCd=skillPeriod();careerSkillMode=j+1;careerSkillTime=6f;float power=damage();int affected=0;
+        int j=job();skillCd=skillPeriod();careerSkillMode=j+1;careerSkillTime=j==TIMEKEEPER?5f:6f;float power=damage();int affected=0;
         if(j==HUNTER){
             if(careerTalentRank(2)>0)addTalentShield(8*careerTalentRank(2));
             Enemy target=hunterTarget(Float.POSITIVE_INFINITY);
