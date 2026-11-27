@@ -258,11 +258,11 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         }
         for(int i=0;i<4;i++){float tx=i%2==0?80:1040,ty=160+(i/2)*380;glow(c,tx,ty,100,0x32FFC56D);box(c,tx-3,ty-3,6,23,0xFF393C3E);box(c,tx-8,ty-19,16,18,0xFF343B3C);box(c,tx-5,ty-16,10,12,0xFFFFD18B);box(c,tx-11,ty-21,22,4,0xFF65605A);}
         for(ActionGame.SoulField f:game.soulFields){
-            int tint=f.type==1?0xFFE6D78F:0xFFB292DD;float radius=f.type==1?175:185;
-            circle(c,f.x,f.y,radius,f.type==1?0x22E8D391:0x333E245E);ring(c,f.x,f.y,radius,tint,2);
+            int tint=f.type==1?0xFFE6D78F:f.type==3?0xFF7BC8E8:0xFFB292DD;float radius=f.type==1?175:f.type==3?250+20*game.careerTalentRank(1):185;
+            circle(c,f.x,f.y,radius,f.type==1?0x22E8D391:f.type==3?0x224A9DBD:0x333E245E);ring(c,f.x,f.y,radius,tint,2);
             ring(c,f.x,f.y,radius*.78f,tint,1);
-            for(int i=0;i<8;i++){double angle=i*Math.PI/4+visualTime*(f.type==1?.15:-.2);float dx=(float)Math.cos(angle),dy=(float)Math.sin(angle);line(c,f.x+dx*(radius-10),f.y+dy*(radius-10),f.x+dx*(radius+6),f.y+dy*(radius+6),tint,3);}
-            text(c,f.type==1?"曙光圣域":"裂隙之井",f.x,f.y-radius-10,14,tint,true);
+            for(int i=0;i<8;i++){double angle=i*Math.PI/4+visualTime*(f.type==1?.15:f.type==3?.65:-.2);float dx=(float)Math.cos(angle),dy=(float)Math.sin(angle);line(c,f.x+dx*(radius-10),f.y+dy*(radius-10),f.x+dx*(radius+6),f.y+dy*(radius+6),tint,3);}
+            text(c,f.type==1?"曙光圣域":f.type==3?"时针引力场":"裂隙之井",f.x,f.y-radius-10,14,tint,true);
         }
         for(ActionGame.Hazard h:game.hazards){int tint=h.warning>0?0xFFEDB374:0xFFE36D54;circle(c,h.x,h.y,h.radius,h.warning>0?0x22E3A65C:0x66B94D37);ring(c,h.x,h.y,h.radius,tint,3);if(h.warning>0){ring(c,h.x,h.y,h.radius*Math.max(.05f,1-h.warning/1.5f),tint,1);text(c,String.format(java.util.Locale.ROOT,"%.1f",h.warning),h.x,h.y,14,tint,true);}else text(c,h.type==0?"灼烧":"裂地",h.x,h.y,12,tint,true);}
         for(ActionGame.Enemy e:game.enemies)if(e.state==1){
@@ -369,7 +369,7 @@ public final class WorldView extends View implements Choreographer.FrameCallback
         text(c,"移动",117,519,12,muted,true);
         control(c,850,420,58,"攻击",0,input.attack);control(c,737,456,37,"闪避",game.rollCd,false);control(c,855,210,34,"职业技",game.skillCd,false);control(c,855,298,38,game.followUpWindow>0?"追击":"主动技",game.activeSkillCd,false);
         control(c,648,456,29,"药×"+game.potions,0,false);control(c,550,456,27,"爆×"+game.bombs,0,false);control(c,575,390,27,"缚×"+game.snares,0,false);control(c,648,390,27,"剂×"+game.tonics,game.battleTonicTime,false);
-        if(game.soulKind()>0){control(c,735,240,38,game.soulEnergy<40?"蓄能":"魂技",game.soulCd,false);ring(c,735,240,42,game.soulKind()==1?0xFFE8D493:0xFFBE8FDC,2);text(c,game.soulArtName(),735,287,11,game.soulKind()==1?gold:0xFFCAA9E2,true);}
+        if(game.soulKind()>0){control(c,735,240,38,game.soulEnergy<40?"蓄能":"灵魂技",game.soulCd,false);ring(c,735,240,42,game.soulKind()==1?0xFFE8D493:0xFFBE8FDC,2);text(c,game.soulArtName(),735,287,11,game.soulKind()==1?gold:0xFFCAA9E2,true);}
     }
     private void shade(Canvas c){box(c,0,0,960,540,0xD50C1820);}
     private void rewards(Canvas c){
