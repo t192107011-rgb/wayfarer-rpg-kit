@@ -29,7 +29,7 @@ public final class CareerAbilityTests {
         check(g.hp==overdriveHp&&g.burnTime==0,"assassin overdrive ignores ranged fire and its burn application");
         g.hazards.add(new ActionGame.Hazard(1,g.x,g.y,120,0,2,20));g.update(.05f,new ActionGame.Input());
         check(g.hp==overdriveHp,"assassin overdrive ignores continuous burning area damage");
-        g.hurtForTest(20);check(g.hp<overdriveHp,"assassin overdrive still takes close-range damage");
+        g.hurtForTest(20);check(g.hp<overdriveHp,"assassin overdrive still takes close-range damage: hp="+g.hp+", before="+overdriveHp+", inv="+g.invulnerable+", skillTime="+g.careerSkillTime+", mode="+g.careerSkillMode+", shield="+g.shield+", careerWard="+g.careerWard+", soulWard="+g.soulWard+", state="+g.mode);
         System.out.println("PASS four distinct career active loops");
     }
     private static void soulForms(){
