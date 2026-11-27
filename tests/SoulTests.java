@@ -29,7 +29,7 @@ public final class SoulTests {
             check(taboo.soulEnergy==60&&taboo.soulCd>0&&signal(taboo,"forbidden"),"taboo form spends energy and triggers career effect "+career);
             check(taboo.hp<hp&&taboo.corruption>0,"taboo form exacts a life and erosion cost "+career);
         }
-        System.out.println("PASS all eight profession-bound radiant and forbidden forms");
+        System.out.println("PASS all ten profession-bound radiant and forbidden forms");
     }
     private static void energyAndCooldown(){
         ActionGame g=game(0,1);mob(g,700,600);g.soulEnergy=39;g.soulSkill();check(g.soulCd==0&&g.soulEnergy==39,"insufficient energy blocks soul form");
@@ -48,7 +48,7 @@ public final class SoulTests {
     private static void saves()throws Exception{
         ActionGame g=game(TIMEKEEPER,2);mob(g,700,600);g.soulEnergy=80;g.soulSkill();g.pause();byte[] bytes=ActionSave.encode(g);
         ActionGame a=ActionSave.decode(bytes);check(a.job()==TIMEKEEPER&&a.soulKind()==2,"Timekeeper career and soul binding survive save");check(a.soulEnergy==g.soulEnergy&&a.corruption==g.corruption&&a.soulCd==g.soulCd,"energy, erosion and cooldown survive save");
-        reject(bytes,"soulEnergy","101");reject(bytes,"soulCd","19");reject(bytes,"corruption","NaN");reject(bytes,"profile0.soul","3");reject(bytes,"profile0.art","5");reject(bytes,"soulFields","20");
+        reject(bytes,"soulEnergy","101");reject(bytes,"soulCd","21");reject(bytes,"corruption","NaN");reject(bytes,"profile0.soul","3");reject(bytes,"profile0.art","5");reject(bytes,"soulFields","20");
         System.out.println("PASS soul state persistence and malformed save rejection");
     }
     private static void reject(byte[] bytes,String key,String value)throws Exception{Properties p=new Properties();p.load(new ByteArrayInputStream(bytes));p.setProperty(key,value);ByteArrayOutputStream out=new ByteArrayOutputStream();p.store(out,"");boolean bad=false;try{ActionSave.decode(out.toByteArray());}catch(IOException e){bad=true;}check(bad,"reject malformed "+key);}
@@ -57,7 +57,7 @@ public final class SoulTests {
             ActionGame g=game(career,kind);mob(g,700,600);g.soulEnergy=100;g.soulSkill();
             for(int t=0;t<900;t++){if(t%60==0){g=ActionSave.decode(ActionSave.encode(g));check(g.hp>=0&&g.soulEnergy>=0&&g.soulEnergy<=100&&g.corruption<=100,"bounded soul stress state");}g.update(1f/60,new ActionGame.Input());g.signals.clear();}
         }
-        System.out.println("PASS periodic save/restore stress across eight soul forms");
+        System.out.println("PASS periodic save/restore stress across ten soul forms");
     }
     public static void main(String[] args)throws Exception{bindings();eightCareerForms();energyAndCooldown();costsAndSynergies();saves();stress();System.out.println("SOUL CHECKS PASSED: "+count);}
 }
