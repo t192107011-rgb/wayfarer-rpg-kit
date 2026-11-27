@@ -5,7 +5,7 @@ import android.view.*;
 import android.widget.*;
 import io.wayfarer.rpg.core.*;
 
-/** Camp-only editor for the four rebuilt careers. */
+/** Camp-only editor for standard and limited careers. */
 public final class CareerHall {
     private CareerHall(){}
     private static int dp(MainActivity a,int n){return Math.round(n*a.getResources().getDisplayMetrics().density);}
@@ -17,13 +17,13 @@ public final class CareerHall {
         LinearLayout row=new LinearLayout(a);row.setOrientation(LinearLayout.HORIZONTAL);row.setPadding(dp(a,18),0,dp(a,18),0);
         LinearLayout left=new LinearLayout(a),right=new LinearLayout(a);left.setOrientation(LinearLayout.VERTICAL);right.setOrientation(LinearLayout.VERTICAL);right.setPadding(dp(a,18),0,0,0);
         ScrollView ls=new ScrollView(a),rs=new ScrollView(a);ls.addView(left);rs.addView(right);row.addView(ls,new LinearLayout.LayoutParams(0,-1,1));row.addView(rs,new LinearLayout.LayoutParams(0,-1,1));
-        Spinner job=picker(a,left,"职业 · 仅四种","career-job",CareerSystem.CLASSES,draft[0]);
+        Spinner job=picker(a,left,"职业 · 常规职业与限定职业","career-job",CareerSystem.CLASSES,draft[0]);
         TextView base=text(a,left,"",14);
         Spinner spec=picker(a,left,"专精 · 角色 Lv.3 后开放","career-spec",CareerSystem.SPECS[draft[0]],draft[1]);
         TextView special=text(a,left,"",14);
         Spinner background=picker(a,right,"背景经历 · 独立被动","career-background",CareerSystem.BACKGROUNDS,draft[2]);
         TextView passive=text(a,right,"",15);
-        text(a,right,"职业主动技能由职业决定；背景经历与职业独立组合。原有角色、武器、灵魂、出身与特质均保留。旧职业存档已统一重置为猎人。",13);
+        text(a,right,"职业技能与灵魂技能分别使用独立按钮、冷却与效果。时针为限定职业，具有全场范围普攻、5秒引力场职业技能，以及按光辉／禁忌灵魂变化附加效果的全场冻结魂技。背景经历仍可独立组合。",13);
         TextView level=text(a,right,"",14),error=text(a,right,"",13);
         AlertDialog dialog=new AlertDialog.Builder(a).setTitle(g.heroName()+" · 职业").setView(row)
             .setPositiveButton("确认更换",(d,w)->{draft[0]=job.getSelectedItemPosition();draft[1]=Math.min(spec.getSelectedItemPosition(),CareerSystem.SPECS[draft[0]].length-1);draft[2]=background.getSelectedItemPosition();if(g.chooseCareer(draft[0],draft[1],draft[2])){a.save();a.world.invalidate();}})
