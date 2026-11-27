@@ -32,10 +32,14 @@ public final class CareerAbilityTests {
         g.burnTime=3.5f;g.burnDamage=2f;g.burnTick=.01f;g.update(.05f,new ActionGame.Input());
         check(g.hp==overdriveHp,"assassin overdrive also ignores burn damage already applied before the overdrive window");
         g.hurtForTest(20);check(g.hp<overdriveHp,"assassin overdrive still takes close-range damage");
-        System.out.println("PASS four distinct career active loops");
+        g=arena(TIMEKEEPER,0);ActionGame.Enemy clockA=mob(g,740,600,5000),clockB=mob(g,100,100,5000);float aHp=clockA.hp,bHp=clockB.hp;ActionGame.Input pulse=new ActionGame.Input();pulse.attack=true;g.update(.01f,pulse);check(clockA.hp<aHp&&clockB.hp<bHp&&aHp-clockA.hp<g.damage()*.25f,"Timekeeper basic attack deals low damage to every enemy on the field");
+        g=arena(TIMEKEEPER,0);clockA=mob(g,g.x,g.y-185,5000);g.skill();float gravityHp=clockA.hp;g.hitForTest(clockA,100);check(Math.abs((gravityHp-clockA.hp)-150)<.1f,"enemies inside the gravity field take fifty percent more incoming damage");
+        g=arena(TIMEKEEPER,1);clockA=mob(g,740,600,5000);clockB=mob(g,100,100,5000);g.soulEnergy=100;g.soulSkill();check(clockA.stun>=2.5f&&clockB.stun>=2.5f&&clockA.hp<5000&&clockB.hp<5000&&g.soulWard>=22,"radiant Timekeeper soul skill damages and freezes all enemies and grants ward");
+        g=arena(TIMEKEEPER,2);clockA=mob(g,740,600,5000);clockB=mob(g,100,100,5000);float timeHp=g.hp;g.soulEnergy=100;g.soulSkill();check(clockA.stun>=2.5f&&clockB.stun>=2.5f&&clockA.hex>=8&&clockB.hex>=8&&g.corruption>0&&g.hp<timeHp,"forbidden Timekeeper soul skill freezes, curses and exacts life and erosion");
+        System.out.println("PASS five distinct career active loops");
     }
     private static void soulForms(){
-        for(int career=0;career<4;career++){
+        for(int career=0;career<5;career++){
             ActionGame radiant=arena(career,1);ActionGame.Enemy e=mob(radiant,700,600,1000);radiant.soulEnergy=100;radiant.soulSkill();
             check(radiant.soulEnergy>=60&&radiant.soulEnergy<=100&&radiant.soulCd>0&&signal(radiant,"radiant"),"radiant soul form is unique and spends soul energy for career "+career);
             check(e.hp<1000||radiant.soulWard>0||e.hex>0,"radiant soul form resolves a real combat or defense effect for career "+career);
