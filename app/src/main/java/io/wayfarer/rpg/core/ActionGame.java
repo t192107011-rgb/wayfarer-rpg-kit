@@ -570,7 +570,7 @@ public final class ActionGame {
                     hit(e,f.power*(f.type==1?.35f:f.type==3?1f:.5f),false);
                 }
                 if(f.type==1){cleanse(f.x,f.y,175);if(len(x-f.x,y-f.y)<175)heal(maxHp()*.02f);}
-                signal(f.type==1?"radiant":f.type==3?"gravity":"forbidden",f.x,f.y,radius);
+                signal(f.type==1?"radiant":f.type==3?"gravity":"forbidden",f.x,f.y,(int)radius);
             }
             if(f.life<=0)it.remove();
         }
