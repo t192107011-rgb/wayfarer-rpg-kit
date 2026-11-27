@@ -73,7 +73,7 @@ public final class ActionTests {
         check(ActionGame.segmentDistance(5,2,0,0,10,0)==2,"swept collision geometry");
         System.out.println("PASS melee combos, ranged hits, skills, dodge and damage windows");
     }
-    private static void autoAimAndSabre(){
+    private static void autoAimAndSabre()throws Exception{
         ActionGame g=game(0);ActionGame.Enemy ordinary=mob(g,0,560,500,1000),boss=mob(g,3,700,600,1000);
         g.skill();check(g.faceX>.99f&&Math.abs(g.faceY)<.02f,"skills automatically face the boss ahead of ordinary enemies");
         g=game(0);boss=mob(g,3,700,600,1000);ordinary=mob(g,0,500,450,1000);g.blocks.add(new ActionGame.Block(580,570,50,60,0));g.skill();
